@@ -1,0 +1,30 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This template defines a stack that can be created by the player using Service Catalog
+  during their day2. It doesn't require anything special or unique about it. 
+
+# Parameters:
+#   QSS3BucketName:
+#     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+#     ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+#       letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+#       (-).
+#     Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+#       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+#       It cannot start or end with a hyphen (-).
+#     Type: String
+#     Default: tdc-challenges
+#   QSS3KeyPrefix:
+#     AllowedPattern: ^[0-9a-zA-Z-/.]*$
+#     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+#       uppercase letters, hyphens (-), dots(.) and forward slash (/).
+#     Default: ""
+#     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+#       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+#       forward slash (/).
+#     Type: String
+
+Resources:
+# Sample Resource that will be created via Service Catalog
+  AnotherCoolTopic:
+    Type: AWS::SNS::Topic

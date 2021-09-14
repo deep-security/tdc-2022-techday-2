@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Deploys 1 challenge team with a keypair
+
+Resources:
+
+  Main:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: EC2KeyPair
+    Properties:
+      TemplateURL: 'https://tdc-challenges.s3.amazonaws.com/SOME-PATH-TO-CHALLENGE-ROOT/templates/entrypoint_main.template.yaml'
+
+  EC2KeyPair: 
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 'https://tdc-challenges.s3.amazonaws.com/SOME-PATH-TO-CHALLENGE-ROOT/utils/ec2keypair/ec2keypair.template.yaml'
+
+
+
+# Outputs:
+#   Output1:
+#     Value: !GetAtt Main.Outputs.Output1
+#     Description: This is Output1
+
+#   Output2:
+#     Value: !GetAtt Main.Outputs.Output2
+#     Description: This is Output2
+
+#   Output3:
+#     Value: !GetAtt Main.Outputs.Output3
+#     Description: This is Output3
+
+#   Output4:
+#     Value: !GetAtt Main.Outputs.Output4
+#     Description: This is Output4

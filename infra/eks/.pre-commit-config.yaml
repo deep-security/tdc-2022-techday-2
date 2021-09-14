@@ -1,0 +1,6 @@
+repos:
+  - repo: https://github.com/aws-quickstart/qs-cfn-lint-rules
+    rev: master
+    hooks:
+      - id: qs-cfn-lint
+        files: templates/.*\.template\.(yaml)$

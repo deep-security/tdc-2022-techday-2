@@ -1,0 +1,62 @@
+[submodule "submodules/quickstart-aws-vpc"]
+	path = submodules/quickstart-aws-vpc
+	url = git@github.com:aws-quickstart/quickstart-aws-vpc.git
+	branch = main
+[submodule "submodules/quickstart-linux-bastion"]
+	path = submodules/quickstart-linux-bastion
+	url = git@github.com:aws-quickstart/quickstart-linux-bastion.git
+	branch = main
+[submodule "functions/source/EksClusterResource"]
+	path = functions/source/EksClusterResource
+	url = git@github.com:aws-quickstart/quickstart-amazon-eks-cluster-resource-provider.git
+        branch = main
+[submodule "functions/source/HelmReleaseResource"]
+	path = functions/source/HelmReleaseResource
+	url = git@github.com:aws-quickstart/quickstart-helm-resource-provider.git
+        branch = main
+[submodule "submodules/quickstart-eks-snyk"]
+	path = submodules/quickstart-eks-snyk
+	url = git@github.com:aws-quickstart/quickstart-eks-snyk.git
+        branch = main
+[submodule "submodules/quickstart-eks-newrelic-infrastructure"]
+	path = submodules/quickstart-eks-newrelic-infrastructure
+	url = git@github.com:aws-quickstart/quickstart-eks-newrelic-infrastructure.git
+        branch = main
+[submodule "functions/source/kubernetesResources"]
+	path = functions/source/kubernetesResources
+	url = git@github.com:aws-quickstart/quickstart-kubernetes-resource-provider.git
+        branch = main
+[submodule "docs/boilerplate"]
+	path = docs/boilerplate
+	url = git@github.com:aws-quickstart/quickstart-documentation-base-common.git
+	branch = main
+[submodule "submodules/quickstart-amazon-eks-nodegroup"]
+	path = submodules/quickstart-amazon-eks-nodegroup
+	url = git@github.com:aws-quickstart/quickstart-amazon-eks-nodegroup.git
+	branch = main
+[submodule "submodules/quickstart-eks-hashicorp-vault"]
+	path = submodules/quickstart-eks-hashicorp-vault
+	url = git@github.com:aws-quickstart/quickstart-eks-hashicorp-vault.git
+	branch = main
+[submodule "submodules/quickstart-eks-hashicorp-consul"]
+	path = submodules/quickstart-eks-hashicorp-consul
+	url = git@github.com:aws-quickstart/quickstart-eks-hashicorp-consul.git
+	branch = main
+[submodule "submodules/quickstart-eks-tigera-calico"]
+	path = submodules/quickstart-eks-tigera-calico
+	url = git@github.com:aws-quickstart/quickstart-eks-tigera-calico.git
+    branch = main
+[submodule "submodules/quickstart-eks-rancher"]
+	path = submodules/quickstart-eks-rancher
+	url = git@github.com:aws-quickstart/quickstart-eks-rancher.git
+  	branch = main
+[submodule "submodules/quickstart-eks-rafay-systems"]
+	path = submodules/quickstart-eks-rafay-systems
+	url = git@github.com:aws-quickstart/quickstart-eks-rafay-systems.git
+	branch = main
+[submodule "submodules/quickstart-eks-grafana"]
+	path = submodules/quickstart-eks-grafana
+	url = git@github.com:aws-quickstart/quickstart-eks-grafana.git
+[submodule "submodules/quickstart-eks-prometheus"]
+	path = submodules/quickstart-eks-prometheus
+	url = git@github.com:aws-quickstart/quickstart-eks-prometheus.git

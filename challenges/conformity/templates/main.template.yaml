@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This template defines a the main stack for a challenge.
+
+Parameters:
+  # Service Catalog related
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+  # Bucket path related
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+    Default: tdc-challenges
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+Resources:
+  # Everything that needs to be created even before player starts playing.
+  CoolTopic:
+    Type: AWS::SNS::Topic
+  
+  CoolBucket:
+    Type: AWS::S3::Bucket
+
+  # IF your challenge requires you to have the player "deploy a cloudformation template",
+  # you need to use Service Catalog instead. This sample would create an entry in Service
+  # catalog for the player:
+  NewServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: This is a really cool Service Catalog entry that you should check out
+      Name: Cool Service Catalog Entry
+      Owner: Trend Micro
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/example/templates/service-catalog-entry.template.yaml'
+
+  NewServicePorfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref NewServiceCatalogProduct
+
+  NewServiceLaunchRoleConstraint:
+    DependsOn: NewServicePorfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref NewServiceCatalogProduct
+      RoleArn: !Ref ServiceCatalogLaunchRoleArn  

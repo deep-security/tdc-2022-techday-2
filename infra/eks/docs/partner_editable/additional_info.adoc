@@ -1,0 +1,84 @@
+== Test the deployment
+
+NOTE: These steps must be executed from a network that has access to the Kubernetes API, as configured by the *EKS public access endpoint* and *Kubernetes API public access CIDR* parameters. For more information, see https://docs.aws.amazon.com/eks/latest/userguide/install-kubectl.html[Installing kubectl^]. If you enabled the optional bastion host, you can connect to it by using SSH. Use the key pair that you specified during deployment and the IP address from the *Outputs* tab of the AWS CloudFormation stack. The bastion host already has `kubectl` installed and configured so that it connects to the cluster. To test the CLI, connect to the cluster, and run the following command.
+
+```
+$ kubectl version
+```
+
+Confirm that the output includes the server version, which indicates a successful connection to the Kubernetes control plane.
+
+```
+Client Version: version.Info\{Major:"1", Minor:"11", GitVersion:"<version number>", GitCommit:"<commit ID>", GitTreeState:"clean", BuildDate:"2018-12-06T01:33:57Z", GoVersion:"go1.10.3", Compiler:"gc", Platform:"linux/amd64"}
+
+Server Version: version.Info\{Major:"1", Minor:"11+", GitVersion:" <version number>", GitCommit:" <commit ID>", GitTreeState:"clean", BuildDate:"2018-12-06T23:13:14Z", GoVersion:"go1.10.3", Compiler:"gc", Platform:"linux/amd64"}
+```
+
+[start=3]
+. Check for a successful connection between the nodes and cluster by running the `get nodes` command.
+
+```
+$ kubectl get nodes
+NAME STATUS ROLES AGE VERSION
+ip-10-0-25-239.us-west-2.compute.internal Ready <none> 10m <version number>
+ip-10-0-27-244.us-west-2.compute.internal Ready <none> 10m <version number>
+ip-10-0-35-29.us-west-2.compute.internal Ready <none> 10m <version number>
+```
+
+== Best practices for using Amazon EKS
+
+=== Use AWS CloudFormation for ongoing management
+
+We recommend using AWS CloudFormation for managing updates and resources that are created by this Quick Start.
+Using the Amazon EC2 console, CLI, or API to change or delete resources can cause future AWS
+CloudFormation operations on the stack to behave unexpectedly.
+
+=== Monitor additional resource usage
+
+This deployment enables users of the Amazon EKS cluster to create elastic load balancers and Amazon EBS volumes
+as part of their Kubernetes applications. Because these carry additional costs, we recommend that you grant users of the
+Amazon EKS cluster the minumum permissions required according to https://kubernetes.io/docs/reference/access-authn-authz/rbac/[Kubernetes Role Based Access Control (RBAC)^]
+and that you monitor resource usage by using the Kubernetes CLI or API to describe persistent
+volume claims (PVC) and `LoadBalancer` resources across all namespaces. To disable this functionality, update the
+`ControlPlaneRole` IAM role in the child stack to restrict access to the Kubernetes control plane for specific AWS
+APIs, such as `ec2:CreateVolume` and `elb:CreateLoadBalancer`.
+
+== Security
+
+Amazon EKS uses AWS IAM to authenticate your Kubernetes cluster, but it still relies on native Kubernetes RBAC. This means that IAM is used only for valid entities. All permissions for interacting with your Amazon EKS cluster’s Kubernetes API are
+managed by the native Kubernetes RBAC system. We recommend that you grant least-privilege access via Kubernetes RBAC.
+
+== Adding Kubernetes users
+
+This Quick Start creates an IAM role that is used to create the Kubernetes control plane. The AWS CloudFormation custom
+resources and Linux bastion host use the IAM role to provide access to the Kubernetes API. Additional IAM users or
+roles can be added as Kubernetes administrators (**system:master** kubernetes cluster role) by entering an ARN into the
+**Additional EKS admin ARN** parameter when you launch this Quick Start. To add users after the stack launches, see https://docs.aws.amazon.com/eks/latest/userguide/add-user-role.html[Managing users or IAM roles for your cluster^].
+
+== Managing Kubernetes resources using AWS CloudFormation
+
+This Quick Start includes AWS CloudFormation registry types that enable authoring, creating, and
+managing Kubernetes-based applications. For an example, see https://github.com/aws-quickstart/quickstart-aws-eks/blob/master/templates/example-workload.template.yaml[example-workload template^].
+
+== Optional add-ins
+
+This Quick Start contains optional configurations and add-ins for Kubernetes that enhance the functionality and reduce post-deployment configuration tasks for customers.
+
+=== Cluster autoscaler
+
+https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler[Cluster autoscaler^] automatically adjusts the
+size of the Kubernetes cluster when there are insufficient resources or nodes.
+
+=== Managed node group
+
+With Amazon EKS–managed node groups, provisioning and lifecycle management of the nodes is automated. All nodes get
+provisioned as part of an Auto Scaling group, which means you cannot use the *Cluster autoscaler* option. Nodes are created using the latest Amazon EKS–optimized Amazon Linux 2 AMI.
+
+=== EFS `StorageClass`
+
+An optional `EFSStorageClass` volume provides redundant, persistent storage that is untethered to individual Availability
+Zones, so it is well suited for high availability, stateful applications that are required to survive an outage. The Amazon EFS volume is available to Kubernetes pods through the
+https://github.com/helm/charts/tree/master/stable/efs-provisioner[EFS provisioner project^].
+
+There are several configuration options available to tune the performance and throughput of the underlying EFS volume.
+For more information, see https://docs.aws.amazon.com/efs/latest/ug/performance.html[Amazon EFS Performance^].

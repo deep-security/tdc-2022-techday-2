@@ -1,0 +1,21 @@
+:quickstart-project-name: quickstart-amazon-eks
+:partner-product-name: Amazon EKS
+// :partner-company-name: Amazon
+:doc-month: October
+:doc-year: 2020
+// :partner-contributors:
+:quickstart-contributors: Jay McConnell, Troy Ameigh, and Andrew Gargan, AWS Quick Start team
+:deployment_time: 25 and 90 minutes
+:default_deployment_region: us-east-2
+:disable_licenses:
+:disable_regions:
+:disable_requirements:
+:custom_number_of_deploy_steps:
+// hard coding this to work around issues with the draft rendering
+:production_build:
+:parameters_as_appendix:
+// Uncomment these two attributes if you are leveraging
+// - an AWS Marketplace listing.
+// Additional content will be auto-generated based on these attributes.
+// :marketplace_subscription:
+// :marketplace_listing_url: https://example.com/

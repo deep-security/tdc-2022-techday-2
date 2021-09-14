@@ -1,0 +1,14 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Describe what the wrinkle does
+
+#Parameters:
+  # Parameters are passed in from `day2_main.template.yaml`. For the build to work, you must ensure the parameters
+  # there match the ones here.
+
+Resources:
+  # Resources which make up your wrinkle
+
+  # Placeholder S3 bucket to keep the linter happy
+  PlaceholderS3Bucket:
+    Type: AWS::S3::Bucket

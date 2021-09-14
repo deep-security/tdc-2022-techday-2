@@ -1,0 +1,159 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Deploys resources for lockout out players
+
+Parameters:
+  MainStackId:
+    Type: String
+
+Resources:
+  LockoutLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/AdministratorAccess
+  LockoutLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda to lock player out for break
+      Timeout: 30
+      Handler: index.lambda_handler
+      Runtime: python3.8
+      Role: !GetAtt LockoutLambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          MainStackId: !Ref MainStackId
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          import random
+          from random import choice
+          from string import ascii_lowercase, digits, ascii_uppercase
+          def random_string(length=8, chars=ascii_lowercase + digits + ascii_uppercase + "@^_*-"):
+              return "".join(choice(chars) for x in range(length))
+          def lockSecurityGroup(securityGroupId):
+              ec2Resource = boto3.resource('ec2')
+              securityGroup = ec2Resource.SecurityGroup(securityGroupId)
+              sgRevokeIngressResponse = securityGroup.revoke_ingress(IpPermissions=securityGroup.ip_permissions)
+              print(f'received {sgRevokeIngressResponse} from revoke_ingress call')
+          def changePlayerPassword(playerUserName):
+              iamClient = boto3.client('iam')
+              password = random_string(16) + "a^1B"
+              print(f'locked password is {password}')
+              pwChangeResponse = iamClient.update_login_profile(
+                  UserName=playerUserName,
+                  Password=password
+                  )
+              print(f'received {pwChangeResponse} from update_login_profile call')
+          def lockPlayer(playerGroupName, playerUserName):
+              iam = boto3.resource('iam')
+              group = iam.Group(playerGroupName)
+              removeUserResponse = group.remove_user(
+                  UserName=playerUserName
+                  )
+              print(f'received {removeUserResponse} from remove_user call')
+          def lambda_handler(event, context):
+              mainStackId = os.environ['MainStackId']
+              parameters = { }
+              outputs = { }
+              cfnClient = boto3.client('cloudformation')
+              mainStack = cfnClient.describe_stacks(
+                  StackName=mainStackId
+                  )
+              for parameter in mainStack['Stacks'][0]['Parameters']:
+                  parameters[parameter['ParameterKey']] = parameter['ParameterValue']
+              for output in mainStack['Stacks'][0]['Outputs']:
+                  outputs[output['OutputKey']] = output['OutputValue']
+              lockPlayer(outputs['PlayerGroupName'], outputs['PlayerUserName'])
+              changePlayerPassword(outputs['PlayerUserName'])
+              lockSecurityGroup(outputs['ApexOneServerSecurityGroup'])
+              lockSecurityGroup(outputs['DSMSecurityGroup'])
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps("success")
+              }
+  UnlockLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Lambda to unlock player after break
+      Timeout: 30
+      Handler: index.lambda_handler
+      Runtime: python3.8
+      Role: !GetAtt LockoutLambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          MainStackId: !Ref MainStackId
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          def unlockPlayer(playerGroupName, playerUserName):
+              iam = boto3.resource('iam')
+              group = iam.Group(playerGroupName)
+              addUserResponse = group.add_user(
+                  UserName=playerUserName
+                  )
+              print(f'received {addUserResponse} from add_user call')
+          def restorePlayerPassword(playerUserName, password):
+              iamClient = boto3.client('iam')
+              pwChangeResponse = iamClient.update_login_profile(
+                UserName=playerUserName,
+                Password=password
+                )
+              print(f'received {pwChangeResponse} from update_login_profile')
+          def unlockSecurityGroup(securityGroupId, ports):
+              IpPermissions = []
+              for port in ports:
+                  IpPermissions.append(
+                      {
+                          'FromPort': port,
+                          'IpProtocol': 'tcp',
+                          'IpRanges': [
+                              {
+                                  'CidrIp': '0.0.0.0/0'
+                              },
+                          ],
+                          'ToPort': port
+                      }
+                  )
+              ec2Resource = boto3.resource('ec2')
+              securityGroup = ec2Resource.SecurityGroup(securityGroupId)
+              sgAuthorizeIngressResponse = securityGroup.authorize_ingress(IpPermissions=IpPermissions)
+              print(f'received {sgAuthorizeIngressResponse} from authorize_ingress call')
+          def unlockDsm(securityGroupId):
+              return unlockSecurityGroup(securityGroupId, [443, 4120, 4122])
+          def unlockApexOne(securityGroupId):
+              return unlockSecurityGroup(securityGroupId, [4343, 3389])
+          def lambda_handler(event, context):
+              mainStackId = os.environ['MainStackId']
+              parameters = { }
+              outputs = { }
+              cfnClient = boto3.client('cloudformation')
+              mainStack = cfnClient.describe_stacks(
+                StackName=mainStackId
+                )
+              for parameter in mainStack['Stacks'][0]['Parameters']:
+                parameters[parameter['ParameterKey']] = parameter['ParameterValue']
+              for output in mainStack['Stacks'][0]['Outputs']:
+                outputs[output['OutputKey']] = output['OutputValue']
+              unlockPlayer(outputs['PlayerGroupName'],outputs['PlayerUserName'])
+              restorePlayerPassword(outputs['PlayerUserName'],outputs['PlayerPassword'])
+              unlockDsm(outputs['DSMSecurityGroup'])
+              unlockApexOne(outputs['ApexOneServerSecurityGroup'])
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps('successfully unlocked player')
+              }

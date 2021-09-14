@@ -1,0 +1,40 @@
+Parameters:
+
+  # Others
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2021-2
+    Description: S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
+      or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: challenge/fss/lambdas/
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+Resources:
+
+  # Creates RandomString stack
+  RandomStringStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        DestinationBucket: QSS3BucketName
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/randomstring/randomstring.template.yaml'
+      TimeoutInMinutes: 10
+
+  # Generate String
+  SecretPassword:
+   Type: AWS::CloudFormation::CustomResource
+   Properties:
+     Length: "12"
+     ServiceToken: !GetAtt 'RandomStringStack.Outputs.FunctionArn'

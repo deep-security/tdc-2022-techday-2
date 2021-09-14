@@ -1,0 +1,5 @@
+Using Amazon EKS, you can deploy, manage, and scale containerized applications that run Kubernetes on AWS.
+
+To eliminate a single point of failure, Amazon EKS runs the Kubernetes management infrastructure across multiple Availability Zones. Amazon EKS is certified Kubernetes-conformant, so you can use existing tools and plugins from partners and the Kubernetes community. Applications that run in a standard Kubernetes environment are fully compatible with this deployment and can be migrated to Amazon EKS.
+
+This Quick Start provides AWS CloudFormation templates that deploy the Kubernetes control plane, connect worker nodes to the cluster, and configure a bastion host for cluster administrative operations. Additionally, this deployment provides several https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/registry.html[AWS CloudFormation registry resource types^] that let you deploy and manage Kubernetes applications by declaring Kubernetes manifests or Helm charts. This Quick Start also includes optional add-ins from AWS Partners and open-source projects. For more information, see the link:#_optional_add_ins[Optional add-ins] section.

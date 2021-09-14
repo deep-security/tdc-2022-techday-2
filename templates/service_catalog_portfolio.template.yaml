@@ -1,0 +1,43 @@
+AWSTemplateFormatVersion : 2010-09-09
+Description : Service catalog portfolio for player deployed resources
+
+Parameters:
+  GroupAssociationPrincipalArn:
+    Type: String
+
+Resources:
+  ServiceCatalogLaunchRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: servicecatalog.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/AdministratorAccess
+
+  PlayerServiceCatalogPortfolio:
+    Type: AWS::ServiceCatalog::Portfolio
+    Properties:
+      DisplayName: "Trend Micro Automation"
+      ProviderName: "Trend Micro"
+
+  PlayerServiceCatalogPrincipalAssociation:
+    Type: AWS::ServiceCatalog::PortfolioPrincipalAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      PrincipalARN: !Ref GroupAssociationPrincipalArn
+      PrincipalType: "IAM"
+
+Outputs:
+  PlayerServiceCatalogPortfolio:
+    Value: !Ref PlayerServiceCatalogPortfolio
+  ServiceCatalogLaunchRoleArn:
+    Value: !GetAtt ServiceCatalogLaunchRole.Arn

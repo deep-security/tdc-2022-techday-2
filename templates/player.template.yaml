@@ -1,0 +1,87 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Player IAM User.
+
+Parameters:
+  PlayerPassword:
+    Type: String
+    NoEcho: true
+  PlayerUserName:
+    Type: String
+    Default: "Player"
+  PlayerGroupName:
+    Type: String
+    Default: "Players"
+
+Resources:
+  Player:
+    Type: AWS::IAM::User
+    Properties:
+      LoginProfile:
+        Password: !Ref PlayerPassword
+        PasswordResetRequired: false
+      UserName: !Ref PlayerUserName
+      Groups:
+        - !Ref PlayerGroup
+      
+  PlayerGroup:
+    Type: AWS::IAM::Group
+    Properties:
+      GroupName: !Ref PlayerGroupName
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSServiceCatalogEndUserFullAccess
+
+  PlayerPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: "PlayerBasePolicy"
+      Groups:
+        - !Ref PlayerGroup
+      PolicyDocument:
+        Statement:
+          - Action:
+              - ec2:DescribeInstances
+              - ssm:DescribeSessions
+              - ssm:GetConnectionStatus
+              - ssm:DescribeInstanceProperties
+              - ssm:ListDocuments
+              - ssm:GetParameter
+              - ssm:DescribeParameters
+              - ssm:PutParameter
+              - ssm:CreateAssociation
+              - ssm:UpdateAssociation
+              - ssm:DescribeDocumentParameters
+            Resource: "*"
+            Effect: Allow
+          - Action:
+              - ssm:DescribeInstanceInformation
+              - ssm:ListAssociations
+              - ssm:DescribeAssociation
+              - ssm:DeleteAssociation
+            Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:*'
+            Effect: Allow
+          - Condition:
+              StringLike:
+                ssm:resourceTag/PlayerSsmAccess: 'true'
+            Action:
+              - ssm:StartSession
+            Resource: "*"
+            Effect: Allow
+          - Action:
+              - ssm:GetDocument
+            Resource:
+              - arn:aws:ssm:::document/SSM-SessionManagerRunShell
+            Effect: Allow
+          - Action: ssm:TerminateSession
+            Resource: arn:aws:ssm:*:*:session/${aws:username}-*
+            Effect: Allow
+
+
+Outputs:
+  PlayerUserArn:
+    Value: !GetAtt Player.Arn
+  PlayerUserName:
+    Value: !Ref PlayerUserName
+  PlayerGroupArn:
+    Value: !GetAtt PlayerGroup.Arn
+  PlayerGroupName:
+    Value: !Ref PlayerGroupName
