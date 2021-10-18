@@ -1,4 +1,4 @@
-![Mission Control Logo](logo.png)
+![Mission Control Logo](pics/logo-black-red.png)
 
 # Tech Day 2021 II
 > You DO NOT TALK about ~~Fight Club~~ Tech Day bulding.
