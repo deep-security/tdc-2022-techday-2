@@ -20,7 +20,7 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ env.AWS_REGION }}
-        DEST_DIR: ${{ env.S3_FOLDER }}
+        DEST_DIR: 'test'
       - name: Installing Node
         uses: actions/setup-node@v2
         with:
