@@ -3,6 +3,8 @@
 
 [ ] **Vision One**
 
+[ ] **Platform**
+
 ## Service
 
 ie.: Application Security
