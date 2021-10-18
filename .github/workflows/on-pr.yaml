@@ -3,7 +3,7 @@ name: On Pull Request
 env:
   BUCKET_NAME: 'techday-2022-1-staging'
   AWS_REGION: 'us-east-1'
-  S3_FOLDER: ${{ github.base_ref }} 
+  S3_FOLDER: $GITHUB_BASE_REF
 
 on: pull_request
 
