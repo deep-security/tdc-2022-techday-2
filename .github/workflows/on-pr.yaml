@@ -3,7 +3,6 @@ name: On Pull Request
 env:
   BUCKET_NAME: 'techday-2022-1-staging'
   AWS_REGION: 'us-east-1'
-  TEST: ${{GITHUB_HEAD_REF##*/}}
 
 on: pull_request
 
@@ -15,6 +14,10 @@ jobs:
       run: |
         echo ${GITHUB_HEAD_REF}
         echo running on branch ${GITHUB_HEAD_REF##*/}
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_HEAD_REF##*/})"
+      id: extract_branch
     - uses: actions/checkout@master
     - uses: jakejarvis/s3-sync-action@master
       with:
@@ -31,7 +34,7 @@ jobs:
         node-version: '14'
     - name: Deploy to Vending Machine
       env:
-        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${{ env.TEST }}/templates/main.template.yaml'
+        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${{ steps.extract_branch.outputs.branch }}/templates/main.template.yaml'
         VM_API_KEY: ${{ secrets.VM_API_KEY }}
       working-directory: .github/workflows/setup-account-using-vending-machine
       run: |
