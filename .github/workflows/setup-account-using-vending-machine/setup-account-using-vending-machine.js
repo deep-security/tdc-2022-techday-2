@@ -3,7 +3,7 @@ const axios = require('axios').default;
 const VM_ENDPOINT = process.env.VM_ENDPOINT || 'https://rmrs30pwai.execute-api.us-east-1.amazonaws.com/Dev/';
 const VM_API_KEY = process.env.VM_API_KEY;
 const CFN_URL = process.env.CFN_URL;
-const MAX_WAIT_TIME_IN_MINUTES = process.env.MAX_WAIT_TIME_IN_MINUTES || 1;
+const MAX_WAIT_TIME_IN_MINUTES = process.env.MAX_WAIT_TIME_IN_MINUTES || 90;
 
 const hoursToMillisec = (hours) => {
   return hours * 60 * 1000;
@@ -103,9 +103,9 @@ exports.handler = async () => {
       if (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES) {
         // Account hasn't finished building in time.
         throw(new Error(`
-        It looks like something went wrong...
-        Here's the info that we have:
-        ${JSON.stringify((await accounts(id)), null, 2)}`));
+It looks like something went wrong...
+Here's the info that we have:
+${JSON.stringify((await accounts(id)), null, 2)}`));
       }
     }
 
