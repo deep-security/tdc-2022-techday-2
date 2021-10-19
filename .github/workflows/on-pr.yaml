@@ -30,7 +30,7 @@ jobs:
         node-version: '14'
     - name: Deploy to Vending Machine
       env:
-        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${GITHUB_HEAD_REF##*/}/templates/main.template.yaml'
+        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${{ GITHUB_HEAD_REF##*/ }}/templates/main.template.yaml'
         VM_API_KEY: ${{ secrets.VM_API_KEY }}
       working-directory: .github/workflows/setup-account-using-vending-machine
       run: |
