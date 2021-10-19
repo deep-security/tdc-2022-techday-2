@@ -3,7 +3,6 @@ name: On Pull Request
 env:
   BUCKET_NAME: 'techday-2022-1-staging'
   AWS_REGION: 'us-east-1'
-  S3_FOLDER: 'test'
 
 on: pull_request
 
@@ -11,6 +10,10 @@ jobs:
   sync-files:
     runs-on: ubuntu-latest
     steps:
+    - name: Extract branch name
+      shell: bash
+      run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+      id: extract_branch
     - uses: actions/checkout@master
     - uses: jakejarvis/s3-sync-action@master
       with:
@@ -20,14 +23,14 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ env.AWS_REGION }}
-        DEST_DIR: ${{ env.S3_FOLDER }}
+        DEST_DIR: ${{ steps.extract_branch.outputs.branch }}
     - name: Installing Node
       uses: actions/setup-node@v2
       with:
         node-version: '14'
     - name: Deploy to Vending Machine
       env:
-        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${{ env.S3_FOLDER }}/templates/main.template.yaml'
+        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${{ steps.extract_branch.outputs.branch }}/templates/main.template.yaml'
         VM_API_KEY: ${{ secrets.VM_API_KEY }}
       working-directory: .github/workflows/setup-account-using-vending-machine
       run: |
