@@ -103,8 +103,7 @@ exports.handler = async () => {
     return JSON.stringify(parseOutputs((await accounts(id))[0].stackoutput), null, 2);
   }
   catch(err) {
-    console.error(err);
-    return -1;
+    throw err;
   }
 
 };
