@@ -12,8 +12,8 @@ jobs:
     steps:
     - name: Branch name
       run: |
-        echo ${GITHUB_REF}
-        echo running on branch ${GITHUB_REF##*/}
+        echo ${GITHUB_HEAD_REF}
+        echo running on branch ${GITHUB_HEAD_REF##*/}
     - uses: actions/checkout@master
     - uses: jakejarvis/s3-sync-action@master
       with:
@@ -23,14 +23,14 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ env.AWS_REGION }}
-        DEST_DIR: ${GITHUB_REF##*/}
+        DEST_DIR: ${GITHUB_HEAD_REF##*/}
     - name: Installing Node
       uses: actions/setup-node@v2
       with:
         node-version: '14'
     - name: Deploy to Vending Machine
       env:
-        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${GITHUB_REF##*/}/templates/main.template.yaml'
+        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${GITHUB_HEAD_REF##*/}/templates/main.template.yaml'
         VM_API_KEY: ${{ secrets.VM_API_KEY }}
       working-directory: .github/workflows/setup-account-using-vending-machine
       run: |
