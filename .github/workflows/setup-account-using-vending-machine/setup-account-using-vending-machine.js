@@ -3,6 +3,7 @@ const axios = require('axios').default;
 const VM_ENDPOINT = process.env.VM_ENDPOINT || 'https://rmrs30pwai.execute-api.us-east-1.amazonaws.com/Dev/';
 const VM_API_KEY = process.env.VM_API_KEY;
 const CFN_URL = process.env.CFN_URL;
+const MAX_WAIT_TIME_IN_MINUTES = process.env.MAX_WAIT_TIME_IN_MINUTES || 1;
 
 const hoursToMillisec = (hours) => {
   return hours * 60 * 1000;
@@ -94,9 +95,17 @@ exports.handler = async () => {
     const id = (await deploy(CFN_URL, 1)).Id;
     console.info(`Deploy requested. Id is ${id}`);
     // const id = '2cc8ba6d-0a97-4ef5-af9e-6f168dcc4a62';
-    while ( (await state(id)).status != 'completed'){
+    let waitedTimeInMinutes = 0;
+    while (( (await state(id)).status != 'completed') || (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES)){
       console.info('Account not ready... waiting 1 minute and trying again.');
       await sleep(60000);
+      waitedTimeInMinutes =+ 1;
+    }
+    if (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES) {
+      // Account hasn't finished building in time.
+      console.info('It looks like something went wrong...\n');
+      console.info('Here\'s the info that we have:');
+      return JSON.stringify(parseOutputs((await accounts(id))), null, 2);
     }
     console.info('Account is ready!\n');
     console.info('The outputs are:');
