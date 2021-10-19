@@ -18,9 +18,8 @@ jobs:
     - name: Replace QSS3BucketName and QSS3KeyPrefix
       shell: bash
       run: |
-        ls -lah
         pip install jq yq
-        sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat main.template.yaml | yq .Parameters.QSS3KeyPrefix.Default)/Default: BUCKET/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' main.template.yaml > TEST.main.template.yaml && sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat main.template.yaml | yq -r .Parameters.QSS3BucketName.Default)/Default: techday-2021-2-staging/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' TEST.main.template.yaml > main.template.yaml
+        sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat templates/main.template.yaml | yq .Parameters.QSS3KeyPrefix.Default)/Default: BUCKET/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/main.template.yaml > templates/TEMP.main.template.yaml && sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat templates/TEMP.main.template.yaml | yq -r .Parameters.QSS3BucketName.Default)/Default: techday-2021-2-staging/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/TEMP.main.template.yaml > templates/main.template.yaml
     - uses: jakejarvis/s3-sync-action@master
       with:
         args: --acl public-read --follow-symlinks --delete --exclude '.git/*' --exclude '.git/github' 
