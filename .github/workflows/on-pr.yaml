@@ -3,7 +3,7 @@ name: On Pull Request
 env:
   BUCKET_NAME: 'techday-2022-1-staging'
   AWS_REGION: 'us-east-1'
-  TEST: ${{GITHUB_REF##*/}}
+  TEST: ${{GITHUB_HEAD_REF##*/}}
 
 on: pull_request
 
