@@ -96,17 +96,18 @@ exports.handler = async () => {
     console.info(`Deploy requested. Id is ${id}`);
     // const id = '2cc8ba6d-0a97-4ef5-af9e-6f168dcc4a62';
     let waitedTimeInMinutes = 0;
-    while (( (await state(id)).status != 'completed') || (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES)){
+    while ( (await state(id)).status != 'completed' ){
       console.info('Account not ready... waiting 1 minute and trying again.');
       await sleep(60000);
       waitedTimeInMinutes =+ 1;
+      if (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES) {
+        // Account hasn't finished building in time.
+        console.info('It looks like something went wrong...\n');
+        console.info('Here\'s the info that we have:');
+        return JSON.stringify(parseOutputs((await accounts(id))), null, 2);
+      }
     }
-    if (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES) {
-      // Account hasn't finished building in time.
-      console.info('It looks like something went wrong...\n');
-      console.info('Here\'s the info that we have:');
-      return JSON.stringify(parseOutputs((await accounts(id))), null, 2);
-    }
+    
     console.info('Account is ready!\n');
     console.info('The outputs are:');
     return JSON.stringify(parseOutputs((await accounts(id))[0].stackoutput), null, 2);
