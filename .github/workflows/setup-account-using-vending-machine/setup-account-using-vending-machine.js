@@ -102,12 +102,13 @@ exports.handler = async () => {
       waitedTimeInMinutes =+ 1;
       if (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES) {
         // Account hasn't finished building in time.
-        console.info('It looks like something went wrong...\n');
-        console.info('Here\'s the info that we have:');
-        return JSON.stringify(parseOutputs((await accounts(id))), null, 2);
+        throw(new Error(`
+        It looks like something went wrong...
+        Here's the info that we have:
+        ${JSON.stringify(parseOutputs((await accounts(id))), null, 2)}`));
       }
     }
-    
+
     console.info('Account is ready!\n');
     console.info('The outputs are:');
     return JSON.stringify(parseOutputs((await accounts(id))[0].stackoutput), null, 2);
