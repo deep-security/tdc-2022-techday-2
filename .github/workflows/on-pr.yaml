@@ -34,4 +34,4 @@ jobs:
       working-directory: .github/workflows/setup-account-using-vending-machine
       run: |
         npm ci
-        CFN_URL='https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${{ GITHUB_HEAD_REF##*/ }}/templates/main.template.yaml' node setup-account-using-vending-machine.js
+        CFN_URL='https://${env.BUCKET_NAME}.s3.amazonaws.com/${GITHUB_HEAD_REF##*/}/templates/main.template.yaml' node setup-account-using-vending-machine.js
