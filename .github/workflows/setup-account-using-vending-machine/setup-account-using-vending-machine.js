@@ -116,7 +116,9 @@ console.info(VM_API_KEY);
 exports.handler()
   .then(res => {
     console.log(res);
+    return 0;
   })
   .catch(err => {
     console.error(err);
+    return -1;
   });
