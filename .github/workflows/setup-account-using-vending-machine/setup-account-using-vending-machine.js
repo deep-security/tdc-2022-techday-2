@@ -105,7 +105,7 @@ exports.handler = async () => {
         throw(new Error(`
         It looks like something went wrong...
         Here's the info that we have:
-        ${JSON.stringify(parseOutputs((await accounts(id))), null, 2)}`));
+        ${JSON.stringify((await accounts(id)), null, 2)}`));
       }
     }
 
