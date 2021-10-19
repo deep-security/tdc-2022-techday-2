@@ -11,7 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Branch name
-      run: echo running on branch ${GITHUB_REF##*/}
+      run: |
+        echo ${GITHUB_REF}
+        echo running on branch ${GITHUB_REF##*/}
     - uses: actions/checkout@master
     - uses: jakejarvis/s3-sync-action@master
       with:
