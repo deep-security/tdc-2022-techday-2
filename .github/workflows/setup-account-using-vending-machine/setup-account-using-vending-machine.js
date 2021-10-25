@@ -94,10 +94,12 @@ exports.handler = async () => {
     console.info(`Deploying ${CFN_URL} to Vending Machine...`);
     const id = (await deploy(CFN_URL, 1)).Id;
     console.info(`Deploy requested. Id is ${id}`);
-    // const id = '2cc8ba6d-0a97-4ef5-af9e-6f168dcc4a62';
     let waitedTimeInMinutes = 0;
     while ( (await state(id)).status != 'completed' ){
-      console.info('Account not ready... waiting 1 minute and trying again.');
+      console.info(`
+Account not ready... waiting 1 minute and trying again.
+For troubleshooting purposes, the deployment id is: ${id}
+      `);
       await sleep(60000);
       waitedTimeInMinutes =+ 1;
       if (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES) {
