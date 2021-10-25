@@ -286,10 +286,3 @@ Outputs:
 
   AWSAccountId:
     Value: !Ref "AWS::AccountId"
-
-#Application Security Outputs
-  C1ASWebbAppURL:
-    Value: !GetAtt ApplicationSecurityStack.Outputs.ApplicationSecurityWebAppUrl
-
-  C1ASLambdatoProtect:
-    Value: !GetAtt ApplicationSecurityStack.Outputs.ApplicationSecurityBackendLambdaCode
