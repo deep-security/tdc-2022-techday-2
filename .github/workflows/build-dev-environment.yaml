@@ -1,5 +1,9 @@
 name: Build Dev Environment
 
+env:
+  BUCKET_NAME: 'techday-2022-1-dev'
+  AWS_REGION: 'us-east-1'
+
 # Controls when the action will run. Workflow runs when manually triggered using the UI
 # or API.
 on:
@@ -12,15 +16,36 @@ on:
         # Input has to be provided for the workflow to run
         required: true
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "greet"
-  greet:
-    # The type of runner that the job will run on
+  sync-and-deploy-dev:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Runs a single command using the runners shell
-    - name: Send greeting
-      run: echo "Hello ${{ github.event.inputs.name }}"
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ github.event.inputs.name }}
+    - name: Replace QSS3BucketName and QSS3KeyPrefix
+      shell: bash
+      run: |
+        pip install jq yq
+        sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat templates/main.template.yaml | yq .Parameters.QSS3KeyPrefix.Default)/Default: ${{ github.event.inputs.name }}/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/main.template.yaml > templates/TEMP.main.template.yaml && sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat templates/TEMP.main.template.yaml | yq -r .Parameters.QSS3BucketName.Default)/Default: ${{ env.BUCKET_NAME }}/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/TEMP.main.template.yaml > templates/main.template.yaml
+    - uses: jakejarvis/s3-sync-action@master
+      with:
+        args: --acl public-read --follow-symlinks --delete --exclude '.git/*' --exclude '.git/github' 
+      env:
+        AWS_S3_BUCKET: ${{ env.BUCKET_NAME }}
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_REGION: ${{ env.AWS_REGION }}
+        DEST_DIR: ${{ github.event.inputs.name }}
+    - name: Installing Node
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'
+    - name: Deploy to Vending Machine
+      env:
+        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${{ github.event.inputs.name }}/templates/main.template.yaml'
+        VM_API_KEY: ${{ secrets.VM_API_KEY }}
+      working-directory: .github/workflows/setup-account-using-vending-machine
+      run: |
+        npm ci
+        node setup-account-using-vending-machine.js
