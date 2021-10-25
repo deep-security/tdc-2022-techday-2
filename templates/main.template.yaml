@@ -286,3 +286,7 @@ Outputs:
 
   AWSAccountId:
     Value: !Ref "AWS::AccountId"
+
+# #Sample Challenge Outputs
+#   SampleChallengeBucket:
+#     Value: !GetAtt Sample.Outputs.CoolBucketName

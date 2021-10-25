@@ -63,3 +63,8 @@ Resources:
       PortfolioId: !Ref PlayerServiceCatalogPortfolio
       ProductId: !Ref NewServiceCatalogProduct
       RoleArn: !Ref ServiceCatalogLaunchRoleArn  
+
+Outputs:
+  CoolBucketName:
+    Description: An output example.
+    Value:  !Ref CoolBucket
