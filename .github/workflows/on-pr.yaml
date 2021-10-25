@@ -19,7 +19,7 @@ jobs:
       shell: bash
       run: |
         pip install jq yq
-        sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat templates/main.template.yaml | yq .Parameters.QSS3KeyPrefix.Default)/Default: ${{ steps.extract_branch.outputs.branch }}/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/main.template.yaml > templates/TEMP.main.template.yaml && sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat templates/TEMP.main.template.yaml | yq -r .Parameters.QSS3BucketName.Default)/Default: ${{ env.BUCKET_NAME }}/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/TEMP.main.template.yaml > templates/main.template.yaml
+        sed -e '/QSS3KeyPrefix/!b' -e ':a' -e "s/Default: $(cat templates/main.template.yaml | yq .Parameters.QSS3KeyPrefix.Default)/Default: ${{ steps.extract_branch.outputs.branch }}\//;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/main.template.yaml > templates/TEMP.main.template.yaml && sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat templates/TEMP.main.template.yaml | yq -r .Parameters.QSS3BucketName.Default)/Default: ${{ env.BUCKET_NAME }}/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/TEMP.main.template.yaml > templates/main.template.yaml
     - uses: jakejarvis/s3-sync-action@master
       with:
         args: --acl public-read --follow-symlinks --delete --exclude '.git/*' --exclude '.git/github' 
