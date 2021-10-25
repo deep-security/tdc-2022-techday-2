@@ -107,7 +107,7 @@ Parameters:
 
 Resources:
 
-  # SAMPLE: Load Challenges and Infra for Challengs
+  # SAMPLE: Load Challenges and Infra for Challenges
   # Sample:
   #   Type: AWS::CloudFormation::Stack
   #   Properties:
@@ -115,11 +115,6 @@ Resources:
   #       PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
   #       ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
   #     TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/challenges/sample/templates/main.template.yaml'
-
-  ApplicationSecurityStack:
-      Type: AWS::CloudFormation::Stack
-      Properties:
-        TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/application_security/templates/main.template.yaml'
 
   DSMStack:
     Type: AWS::CloudFormation::Stack
