@@ -1,7 +1,7 @@
 ![Mission Control Logo](pics/logo-black-red.png)
 
 # Tech Day 2022 II - AKA Summer Tech Day
-> You DO NOT TALK about ~~Fight Club~~ Tech Day bulding.
+> You DO NOT TALK about ~~Fight Club~~ Tech Day building.
 
 Centralized repository for Tech Day 2022 II. It contains everything to quick-start your challenge development and a guide on how to submit it for approval.
 
