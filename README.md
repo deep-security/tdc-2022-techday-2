@@ -1,19 +1,22 @@
 ![Mission Control Logo](pics/logo-black-red.png)
 
-# Tech Day 2021 II
+# Tech Day 2022 II - AKA Summer Tech Day
 > You DO NOT TALK about ~~Fight Club~~ Tech Day bulding.
 
-Centralized repository for Tech Day 2021 II. It contains everything to quick-start your challenge development and a guide on how to submit it for approval.
+Centralized repository for Tech Day 2022 II. It contains everything to quick-start your challenge development and a guide on how to submit it for approval.
 
 This repository is not intended towards those that just want to *run* a challenge. This is for buiders *only*. 
+
+## Wiki
+Before you begin work on your challenge, you need to read the Build Guide that is part of the wiki [Build Guide](https://github.com/deep-security/tdc-2022-techday-2/wiki).  This will help you craft a better challenge.  The Style Guide will be used later when you create the wording for your challenge.
 
 ## Developing your own challenge
 
 First, clone it!
 
 ```shell
-git clone https://github.com/deep-security/tdc-2021-techday-2.git
-cd tdc-2021-techday-2/
+git clone https://github.com/deep-security/tdc-2022-techday-2.git
+cd tdc-2022-techday-2/
 ```
 
 Make a copy the content of the `example` folder insisde the `challenges` and paste it to your respective challenge folder to bootstrap your challenge development. 
