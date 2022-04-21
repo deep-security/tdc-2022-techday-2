@@ -116,21 +116,21 @@ Resources:
   #       ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
   #     TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/challenges/sample/templates/main.template.yaml'
 
-  DSMStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        DSActivationCode: !Ref DSActivationCode
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        VPC: !GetAtt VPCStack.Outputs.VPCID
-        PublicSubnet1: !GetAtt VPCStack.Outputs.PublicSubnet1ID
-#        ReadS3BucketProfile: !GetAtt Infra.Outputs.ReadS3BucketProfile
-        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-        SecretPassword: !GetAtt Passwords.Outputs.SecretPassword
-        KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
-      TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/dsm/templates/dsm.template.yaml'
-      TimeoutInMinutes: 30
+#   DSMStack:
+#     Type: AWS::CloudFormation::Stack
+#     Properties:
+#       Parameters:
+#         DSActivationCode: !Ref DSActivationCode
+#         QSS3BucketName: !Ref QSS3BucketName
+#         QSS3KeyPrefix: !Ref QSS3KeyPrefix
+#         VPC: !GetAtt VPCStack.Outputs.VPCID
+#         PublicSubnet1: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+# #        ReadS3BucketProfile: !GetAtt Infra.Outputs.ReadS3BucketProfile
+#         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+#         SecretPassword: !GetAtt Passwords.Outputs.SecretPassword
+#         KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
+#       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/dsm/templates/dsm.template.yaml'
+#       TimeoutInMinutes: 30
   # DSAStack:
   #   Type: AWS::CloudFormation::Stack
   #   Properties:
