@@ -91,10 +91,10 @@ Parameters:
   #   MaxLength: '18'
   #   AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
   #   ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  DSActivationCode:
-    Description: DS key
-    Type: String
-    Default: 'DX-XQCT-JQW26-GQ5TS-AZ8KS-3HEWQ-F274C'
+  # DSActivationCode:
+  #   Description: DS key
+  #   Type: String
+  #   Default: 'DX-XQCT-JQW26-GQ5TS-AZ8KS-3HEWQ-F274C'
   MissionControlAccountId:
     Type: Number
     Default: 728151039736
