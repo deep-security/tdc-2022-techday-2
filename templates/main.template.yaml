@@ -294,13 +294,13 @@ Outputs:
     Value: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
     Description: PrivateSubnet2A ID
 
-  DSMURL:
-    Value: !GetAtt DSMStack.Outputs.DSMURL
-    Description: DSM Public URL
+  # DSMURL:
+  #   Value: !GetAtt DSMStack.Outputs.DSMURL
+  #   Description: DSM Public URL
 
-  DSMFQDN:
-    Value: !GetAtt DSMStack.Outputs.DSMFQDN
-    Description: DSM public FQDN
+  # DSMFQDN:
+  #   Value: !GetAtt DSMStack.Outputs.DSMFQDN
+  #   Description: DSM public FQDN
     
   ScoreCheckerArn:
     Value: !GetAtt ScoreChecker.Outputs.MissionControlNotifierFunctionName
