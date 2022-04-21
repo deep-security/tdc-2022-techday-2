@@ -155,6 +155,48 @@ Resources:
   #     TimeoutInMinutes: 30
 
   # ☠️ DON'T TOUCH - Or Webster might have a tak with you... or worse, Amanda! ☠️
+  QSS3BucketNameSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "QSS3BucketName"
+      Value: !Ref QSS3BucketName
+      Type: String
+  QSS3KeyPrefixSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "QSS3KeyPrefix"
+      Value: !If 
+        - IsQSS3KeyPrefixNull
+        - 'None'
+        - !Ref QSS3KeyPrefix
+      Type: String
+
+# Storing Parameters in SSM for use by Service Catalog items
+  VpcIDSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "VpcID"
+      Value: !GetAtt VPCStack.Outputs.VPCID
+      Type: String
+  PublicSubnetIdSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "PublicSubnet1"
+      Value: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+      Type: String
+  PublicSubnetIdSsm2:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "PublicSubnet2"
+      Value: !GetAtt VPCStack.Outputs.PublicSubnet2ID
+      Type: String
+  keypairSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "keypair"
+      Value: !GetAtt KeyPairStack.Outputs.KeyPairName
+      Type: String
+
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
