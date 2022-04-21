@@ -228,8 +228,9 @@ Resources:
     Properties:
       Parameters:
         KeyPairName: !GetAtt KeyPairStack.Outputs.KeyPairName
-        #QSS3BucketName: !Ref QSS3BucketName
-        #QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}eks/'
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}infra/eks/'
+        QSS3BucketRegion: !Sub ${AWS::Region}
         RemoteAccessCIDR: '0.0.0.0/0'
         AdditionalEKSAdminUserArn: ""
         AdditionalEKSAdminRoleArn: ""
@@ -240,10 +241,13 @@ Resources:
         PrivateSubnet1ID: !GetAtt VPCStack.Outputs.PrivateSubnet1AID
         PrivateSubnet2ID: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
         PrivateSubnet3ID: !GetAtt VPCStack.Outputs.PrivateSubnet3AID
-        ProvisionBastionHost: "Disabled"
-        ALBIngressController: "Disabled"
+        ProvisionBastionHost: "Enabled"
+        ALBIngressController: "Enabled"
+        EKSPublicAccessEndpoint: "Enabled"
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/eks/templates/amazon-eks-entrypoint-existing-vpc.template.yaml'
-      TimeoutInMinutes: 60
+    DependsOn: 
+      - VPCStack
+      - KeyPairStack
 
   Wrinkles:
     Type: AWS::CloudFormation::Stack
