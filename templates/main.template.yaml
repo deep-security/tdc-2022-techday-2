@@ -138,7 +138,7 @@ Resources:
 #         SecretPassword: !GetAtt Passwords.Outputs.SecretPassword
 #         KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
 #       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/dsm/templates/dsm.template.yaml'
-#       TimeoutInMinutes: 30
+
   # DSAStack:
   #   Type: AWS::CloudFormation::Stack
   #   Properties:
@@ -153,7 +153,6 @@ Resources:
   #       KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
   #       VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
   #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/infra/dsm/templates/ds_clients.template.yaml'
-  #     TimeoutInMinutes: 30
 
   # ☠️ DON'T TOUCH - Or Webster might have a tak with you... or worse, Amanda! ☠️
   QSS3BucketNameSsm:
@@ -276,13 +275,11 @@ Resources:
       Parameters:
         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/player.template.yaml'
-      TimeoutInMinutes: 10
 
   KeyPairStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/ec2keypair/ec2keypair.template.yaml'
-      TimeoutInMinutes: 10
 
 #  Day2Resources:
 #    Type: AWS::CloudFormation::Stack
