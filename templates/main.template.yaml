@@ -255,7 +255,6 @@ Resources:
       Parameters:
         MainStackId: !Ref AWS::StackId
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/wrinkles_trigger.template.yaml'
-      TimeoutInMinutes: 5
 
   LockoutInfraStack:
     Type: AWS::CloudFormation::Stack
@@ -263,13 +262,11 @@ Resources:
       Parameters:
         MainStackId: !Ref AWS::StackId
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lockout_infra.template.yaml'
-      TimeoutInMinutes: 5
 
   ServiceCatalogPortfolioStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/service_catalog_portfolio.template.yaml'
-      TimeoutInMinutes: 10
       Parameters:
         GroupAssociationPrincipalArn: !GetAtt PlayerStack.Outputs.PlayerGroupArn
 
