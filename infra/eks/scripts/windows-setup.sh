@@ -1,7 +1,7 @@
 #!/bin/bash
 echo ${AWS_REGION}
 yum install -y jq  && yum install -y openssl
-curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.15.10/2020-02-22/bin/linux/amd64/kubectl
+curl -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
 chmod +x ./kubectl
 mv ./kubectl /usr/bin/kubectl
 kubectl apply -f https://amazon-eks.s3.us-west-2.amazonaws.com/manifests/${AWS_REGION}/vpc-resource-controller/latest/vpc-resource-controller.yaml

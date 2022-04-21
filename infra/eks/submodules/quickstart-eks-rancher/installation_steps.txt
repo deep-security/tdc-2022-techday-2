@@ -1,0 +1,57 @@
+# Pre Requistes:
+
+# Install Kubectl
+sudo curl --silent --location -o /usr/local/bin/kubectl \
+  https://amazon-eks.s3.us-west-2.amazonaws.com/1.17.7/2020-07-08/bin/linux/amd64/kubectl
+
+sudo chmod +x /usr/local/bin/kubectl
+
+# Update awscli
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+
+# Install jq, envsubst (from GNU gettext utilities) and bash-completion
+sudo yum -y install jq gettext bash-completion moreutils
+
+# Install yq for yaml processing
+echo 'yq() {
+  docker run --rm -i -v "${PWD}":/workdir mikefarah/yq yq "$@"
+}' | tee -a ~/.bashrc && source ~/.bashrc
+
+# Verify the binaries are in the path and executable
+for command in kubectl jq envsubst aws
+  do
+    which $command &>/dev/null && echo "$command in path" || echo "$command NOT FOUND"
+  done
+
+# Enable kubectl bash_completion
+kubectl completion bash >>  ~/.bash_completion
+. /etc/profile.d/bash_completion.sh
+. ~/.bash_completion
+
+# Start by creating the mandatory resources for NGINX Ingress in your cluster:
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v0.35.0/deploy/static/provider/aws/deploy.yaml
+
+#   Install Helm:
+curl -sSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash
+
+#Download latest Rancher repository
+helm repo add rancher-latest https://releases.rancher.com/server-charts/latest
+helm fetch rancher-latest/rancher
+
+# Create NameSpace:
+kubectl create namespace cattle-system
+
+# The Rancher management server is designed to be secure by default and requires SSL/TLS configuration.
+# Defining the Ingress resource (with SSL termination) to route traffic to the services created above 
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout tls.key -out tls.crt -subj "/CN=ranchereksqs.awscloudbuilder.com/O=ranchereksqs.awscloudbuilder.com"
+
+#Create the secret in the cluster:
+kubectl create secret tls tls-secret --key tls.key --cert tls.crt
+
+
+helm upgrade --install rancher rancher-latest/rancher \
+  --namespace cattle-system \
+  --set hostname=ranchereksqs.awscloudbuilder.com  \
+  --set ingress.tls.source=secret

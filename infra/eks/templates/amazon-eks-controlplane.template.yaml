@@ -1,8 +1,10 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "Deploys the EKS control plane (qs-1p7nknofn)"
+#Transform: [QuickStartParameterResolver]
 Metadata:
   QSLint:
     Exclusions: [W9002, W9003, W9004, W9006]
+  #ConfigSetName: !Ref ConfigSetName
 Parameters:
   SecurityGroupIds:
     Type: List<AWS::EC2::SecurityGroup::Id>
@@ -18,8 +20,10 @@ Parameters:
     Default: ""
   KubernetesVersion:
     Type: String
-    AllowedValues: [ "1.18", "1.17", "1.16", "1.15" ]
-    Default: "1.18"
+    Default: ""
+  CustomNodeRole:
+    Type: String
+    Default: ""
   BastionRole:
     Type: String
     Default: ""
@@ -52,9 +56,12 @@ Parameters:
     Default: "Enabled"
   EKSClusterName:
     Type: String
+  #ConfigSetName:
+  #  Type: String
 Conditions:
   AddUser: !Not [ !Equals [ !Ref AdditionalEKSAdminUserArn, "" ] ]
   AddRole: !Not [ !Equals [ !Ref AdditionalEKSAdminRoleArn, "" ] ]
+  CustomeNodeRoleProvided: !Not [ !Equals [ !Ref CustomNodeRole, "" ] ]
   BastionRole: !Not [ !Equals [ !Ref BastionRole, "" ] ]
   EnablePrivateEndpoint: !Equals [ !Ref EKSPrivateAccessEndpoint, "Enabled" ]
   EnablePublicEndpoint: !Equals [ !Ref EKSPublicAccessEndpoint, "Enabled" ]
@@ -71,6 +78,13 @@ Resources:
   KMSKey:
     Condition: CreateKey
     Type: "AWS::KMS::Key"
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyActionWildcard, EKMSKeyEnableKeyRotation]
+          ignore_reasons:
+            EKMSKeyEnableKeyRotation: 'Need to experiment further with the effets of rotating keys and EKS secrets'
+            EIAMPolicyWildcardResource: 'this is the default kms policy as per https://docs.aws.amazon.com/kms/latest/developerguide/key-policies.html#key-policy-default'
     Properties:
       KeyPolicy: {
         "Version": "2012-10-17",
@@ -109,7 +123,12 @@ Resources:
       Version: !Ref KubernetesVersion
       KubernetesApiAccess:
         Roles:
-          - Arn: !Sub ['arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${Prefix}-UnmanagedNodeInstance', {Prefix: !FindInMap [Config, Prefix, Value]}]
+          - Arn: !Sub
+              - 'arn:${AWS::Partition}:iam::${AWS::AccountId}:role/${NodeRole}'
+              - NodeRole: !If
+                  - CustomeNodeRoleProvided
+                  - !Ref CustomNodeRole
+                  - !Sub [ '${Prefix}-UnmanagedNodeInstance', { Prefix: !FindInMap [ Config, Prefix, Value ] } ]
             Username: 'system:node:{{EC2PrivateDNSName}}'
             Groups: [ 'system:bootstrappers', 'system:nodes', 'eks:kube-proxy-windows' ]
           - Arn: !Ref FunctionRoleArn
@@ -162,85 +181,14 @@ Resources:
       ServiceToken: !Sub ['arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${Prefix}-GetCallerArn', {Prefix: !FindInMap [Config, Prefix, Value]}]
   ClusterOIDCProvider:
     Condition: EnableIamOidcProvider
-    Type: Custom::ClusterOIDCProvider
+    Type: AWS::IAM::OIDCProvider
     Properties:
-      ServiceToken: !GetAtt ClusterOIDCProviderFunction.Arn
-      OIDCIssuerURL: !GetAtt EKS.OIDCIssuerURL
-  ClusterOIDCProviderFunction:
-    Condition: EnableIamOidcProvider
-    Type: AWS::Lambda::Function
-    Properties:
-      Runtime: python3.7
-      Handler: index.lambda_handler
-      MemorySize: 128
-      Role: !GetAtt ClusterOIDCLambdaExecutionRole.Arn
-      Timeout: 30
-      Code:
-        ZipFile: |
-          import boto3
-          from botocore.exceptions import ClientError
-          import json
-          import cfnresponse
-          iam = boto3.client("iam")
-          def lambda_handler(event, context):
-            data = {}
-            try:
-              oidc_issuer_url = event['ResourceProperties']['OIDCIssuerURL']
-              if event['RequestType'] == 'Create':
-                # This is the ca thumbprint of AWS's issuer
-                issuer_thumbprint = '9e99a48a9960b14926bb7f3b02e22da2b0ab7280'
-                resp = iam.create_open_id_connect_provider(Url=oidc_issuer_url,ClientIDList=['sts.amazonaws.com'],ThumbprintList=[issuer_thumbprint])
-                provider_arn = resp['OpenIDConnectProviderArn']
-                data["Reason"] = "Provider with ARN " + provider_arn + " created"
-                cfnresponse.send(event, context, cfnresponse.SUCCESS, data, provider_arn)
-              elif event['RequestType'] == 'Delete':
-                provider_arn = event["PhysicalResourceId"]
-                if provider_arn is None:
-                  data["Reason"] = "Provider not present"
-                  cfnresponse.send(event, context, cfnresponse.SUCCESS, data, provider_arn)
-                else:
-                  resp = iam.delete_open_id_connect_provider(OpenIDConnectProviderArn=provider_arn)
-                  data["Reason"] = "Provider with ARN " + provider_arn + " deleted"
-                  cfnresponse.send(event, context, cfnresponse.SUCCESS, data, provider_arn)
-              else:
-                data["Reason"] = "Unknown operation: " + event['RequestType']
-                cfnresponse.send(event, context, cfnresponse.FAILED, data, "")
-            except Exception as e:
-              data["Reason"] = "Cannot " + event['RequestType'] + " Provider" + str(e)
-              cfnresponse.send(event, context, cfnresponse.FAILED, data, "")
-  ClusterOIDCLambdaExecutionRole:
-    Condition: EnableIamOidcProvider
-    Type: AWS::IAM::Role
-    Properties:
-      Path: /
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-            - Effect: Allow
-              Action:
-              - eks:DescribeCluster
-              Resource: !Sub "arn:${AWS::Partition}:eks:${AWS::Region}:${AWS::AccountId}:cluster/${EKS}"
-            - Effect: Allow
-              Action:
-              - iam:*OpenIDConnectProvider*
-              Resource: "*"
-            - Effect: Allow
-              Action:
-              - logs:CreateLogGroup
-              - logs:CreateLogStream
-              - logs:PutLogEvents
-              Resource: "*"
+      ClientIdList:
+        - sts.amazonaws.com
+      ThumbprintList:
+        - 9e99a48a9960b14926bb7f3b02e22da2b0ab7280
+      Url: !GetAtt EKS.OIDCIssuerURL
+
 Outputs:
   EksArn:
     Value: !GetAtt EKS.Arn

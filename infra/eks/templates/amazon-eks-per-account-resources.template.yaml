@@ -25,7 +25,7 @@ Resources:
           Statement:
             - Effect: Allow
               Action: s3:GetObject
-              Resource: '*'
+              Resource: !Sub 'arn:${AWS::Partition}:s3:::*/*'
   ResourceReaderRole:
     Type: AWS::IAM::Role
     Properties:
@@ -109,6 +109,14 @@ Resources:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonEKSServicePolicy'
   CleanupLoadBalancersRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-CleanupLoadBalancers', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
@@ -146,6 +154,14 @@ Resources:
                 Resource: "*"
   CleanupSecurityGroupDependenciesRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-CleanupSecurityGroupDependencies', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
@@ -178,6 +194,14 @@ Resources:
                 Resource: "*"
   CleanupLambdasRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-CleanupLambdas', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
@@ -207,6 +231,14 @@ Resources:
                 Resource: "*"
   GetCallerArnRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-GetCallerArn', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
@@ -235,6 +267,14 @@ Resources:
                 Resource: "*"
   RegisterTypeRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-RegisterType', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
@@ -254,7 +294,12 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "cloudformation:*"
+                  - "cloudformation:DescribeTypeRegistration"
+                  - "cloudformation:DescribeType"
+                  - "cloudformation:RegisterType"
+                  - "cloudformation:SetTypeDefaultVersion"
+                  - "cloudformation:ListTypeVersions"
+                  - "cloudformation:DeregisterType"
                   - "iam:PassRole"
                   - "iam:CreateRole"
                   - "iam:CreatePolicy"
@@ -269,6 +314,14 @@ Resources:
                 Resource: "*"
   RegisterCustomResourceRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-RegisterCustomResource', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
@@ -288,7 +341,66 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "lambda:*"
+                  - "lambda:DeleteFunctionCodeSigningConfig"
+                  - "lambda:DeleteFunction"
+                  - "lambda:GetFunctionConcurrency"
+                  - "lambda:ListVersionsByFunction"
+                  - "lambda:GetPolicy"
+                  - "lambda:ListAliases"
+                  - "lambda:GetFunctionEventInvokeConfig"
+                  - "lambda:CreateEventSourceMapping"
+                  - "lambda:PutProvisionedConcurrencyConfig"
+                  - "lambda:ListFunctionsByCodeSigningConfig"
+                  - "lambda:PublishVersion"
+                  - "lambda:AddLayerVersionPermission"
+                  - "lambda:GetAlias"
+                  - "lambda:PutFunctionEventInvokeConfig"
+                  - "lambda:ListFunctions"
+                  - "lambda:UpdateFunctionEventInvokeConfig"
+                  - "lambda:CreateAlias"
+                  - "lambda:DeleteAlias"
+                  - "lambda:DeleteFunctionEventInvokeConfig"
+                  - "lambda:InvokeAsync"
+                  - "lambda:UpdateFunctionCode"
+                  - "lambda:DeleteLayerVersion"
+                  - "lambda:CreateCodeSigningConfig"
+                  - "lambda:GetFunctionCodeSigningConfig"
+                  - "lambda:DeleteEventSourceMapping"
+                  - "lambda:EnableReplication"
+                  - "lambda:AddPermission"
+                  - "lambda:RemovePermission"
+                  - "lambda:DisableReplication"
+                  - "lambda:InvokeFunction"
+                  - "lambda:GetCodeSigningConfig"
+                  - "lambda:ListCodeSigningConfigs"
+                  - "lambda:GetFunctionConfiguration"
+                  - "lambda:GetFunction"
+                  - "lambda:TagResource"
+                  - "lambda:UpdateFunctionCodeSigningConfig"
+                  - "lambda:GetAccountSettings"
+                  - "lambda:RemoveLayerVersionPermission"
+                  - "lambda:DeleteFunctionConcurrency"
+                  - "lambda:UpdateEventSourceMapping"
+                  - "lambda:ListTags"
+                  - "lambda:ListFunctionEventInvokeConfigs"
+                  - "lambda:CreateFunction"
+                  - "lambda:UpdateAlias"
+                  - "lambda:DeleteCodeSigningConfig"
+                  - "lambda:PublishLayerVersion"
+                  - "lambda:UntagResource"
+                  - "lambda:ListProvisionedConcurrencyConfigs"
+                  - "lambda:UpdateCodeSigningConfig"
+                  - "lambda:GetLayerVersionPolicy"
+                  - "lambda:GetProvisionedConcurrencyConfig"
+                  - "lambda:ListLayerVersions"
+                  - "lambda:UpdateFunctionConfiguration"
+                  - "lambda:GetLayerVersion"
+                  - "lambda:GetEventSourceMapping"
+                  - "lambda:ListEventSourceMappings"
+                  - "lambda:PutFunctionConcurrency"
+                  - "lambda:DeleteProvisionedConcurrencyConfig"
+                  - "lambda:ListLayers"
+                  - "lambda:PutFunctionCodeSigningConfig"
                   - "iam:PassRole"
                   - "iam:CreateRole"
                   - "iam:CreatePolicy"
@@ -302,6 +414,14 @@ Resources:
                 Resource: "*"
   NodeSGRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-NodeSG', {Prefix: !FindInMap [Config, Prefix, Value]}]
       ManagedPolicyArns:
@@ -338,6 +458,14 @@ Resources:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonEKSFargatePodExecutionRolePolicy'
   FargateProfileRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-FargateProfile', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
@@ -357,7 +485,9 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "eks:*"
+                  - "eks:DescribeFargateProfile"
+                  - "eks:CreateFargateProfile"
+                  - "eks:DeleteFargateProfile"
                   - "iam:PassRole"
                   - "iam:GetRole"
                   - "iam:CreateServiceLinkedRole"
@@ -405,6 +535,14 @@ Resources:
         - !Ref ManagedNodeInstanceRole
   UnmanagedNodeInstanceRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-UnmanagedNodeInstance', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:
@@ -432,6 +570,14 @@ Resources:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonElasticFileSystemReadOnlyAccess'
   ManagedNodeInstanceRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource:  >
+              the roles in this template are re-used across more than 1 eks qs deployment and as such resource names that
+              will only be created in the future are unknown
     Properties:
       RoleName: !Sub ['${Prefix}-ManagedNodeInstance', {Prefix: !FindInMap [Config, Prefix, Value]}]
       AssumeRolePolicyDocument:

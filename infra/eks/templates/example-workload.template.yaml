@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: "deploy an example workload into an existing kubernetes cluster"
 Metadata:
-  cfn-lint: { config: { ignore_checks: [W9002, W9003, W9004, W9006, E9007] } }
+  cfn-lint: { config: { ignore_checks: [W9002, W9003, W9004, W9006, E9007, E9008] } }
 Parameters:
   KubeClusterName:
     Type: String
