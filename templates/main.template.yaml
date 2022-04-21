@@ -105,6 +105,13 @@ Parameters:
     AllowedValues: [true, false]
     Default: "false"
 
+Conditions:
+  BuildEks:
+    !Equals [true, !Ref BuildEks]
+
+  IsQSS3KeyPrefixNull: 
+    !Equals [ !Ref QSS3KeyPrefix, "" ]
+
 Resources:
 
   # SAMPLE: Load Challenges and Infra for Challenges
@@ -240,13 +247,6 @@ Resources:
 #        QSS3BucketName: !Ref QSS3BucketName
 #        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}'
 #      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/templates/day2_main.template.yaml'
-
-Conditions:
-  BuildEks:
-    !Equals [true, !Ref BuildEks]
-
-  IsQSS3KeyPrefixNull: 
-    !Equals [ !Ref QSS3KeyPrefix, "" ]
 
 Outputs:
   PrivateSubnet2AID:
