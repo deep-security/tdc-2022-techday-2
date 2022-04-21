@@ -203,11 +203,12 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/vpc/templates/aws-vpc.template.yaml'
       Parameters:
-        NumberOfAZs: 3
+        NumberOfAZs: 4
         AvailabilityZones: !FindInMap
           - RegionMap
           - !Ref 'AWS::Region'
           - AZs
+        CreateAdditionalPrivateSubnets: 'true'
 
   Passwords:
     Type: AWS::CloudFormation::Stack
