@@ -123,6 +123,7 @@ Resources:
   #       ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
   #     TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/challenges/sample/templates/main.template.yaml'
 
+# Comment Out DSM and DSA Stack - likely unused this year.
 #   DSMStack:
 #     Type: AWS::CloudFormation::Stack
 #     Properties:
