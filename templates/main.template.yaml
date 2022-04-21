@@ -221,7 +221,6 @@ Resources:
       Parameters:
         MissionControlAccountId: !Ref MissionControlAccountId
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/MissionControlChecker/templates/template.yaml'
-      TimeoutInMinutes: 5
 
   EKSStack:
     Condition: BuildEks
