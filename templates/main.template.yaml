@@ -245,6 +245,9 @@ Conditions:
   BuildEks:
     !Equals [true, !Ref BuildEks]
 
+  IsQSS3KeyPrefixNull: 
+    !Equals [ !Ref QSS3KeyPrefix, "" ]
+
 Outputs:
   PrivateSubnet2AID:
     Value: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
