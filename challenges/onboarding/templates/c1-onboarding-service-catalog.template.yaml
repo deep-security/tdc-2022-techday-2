@@ -63,7 +63,7 @@ Resources:
           - !Ref QSS3BucketNameSSMValue
           - '.s3.amazonaws.com/'
           - !If [ IsQSS3KeyPrefixSSMValueNone, !Ref 'AWS::NoValue', !Ref QSS3KeyPrefixSSMValue ]
-          - 'challenges/onboarding/templates/c1-common-service-catalog.child-template.yaml'
+          - 'challenges/onboarding/templates/c1-onboarding-service-catalog.child-template.yaml'
 
 Outputs:
   # Returns the AWS Lambda Function ARN of the Cloud One Onboarding module.

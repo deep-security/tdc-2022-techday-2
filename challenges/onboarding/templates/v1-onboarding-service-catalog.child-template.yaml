@@ -140,7 +140,7 @@ Resources:
       Policies:
         - PolicyName: !Join
             - "-"
-            - - techday-visionone-common
+            - - techday-visionone-onboarding
               - prod
               - lambda
               - ssm
@@ -176,7 +176,7 @@ Resources:
       Path: /
       Tags:
         - Key: BusinessCase
-          Value: C1Common-TechDay
+          Value: C1onboarding-TechDay
     
   # Creates an AWS Lambda function with the Vision One Onboarding module.
   V1OnboardingLambdaFunction:
@@ -377,10 +377,10 @@ Resources:
       Runtime: python3.8
       MemorySize: 256
       Timeout: !Ref LambdaFunctionTimeout
-      Description: Vision One module for C1Common-TechDay
+      Description: Vision One module for C1onboarding-TechDay
       Tags:
         - Key: BusinessCase
-          Value: C1Common-TechDay
+          Value: C1onboarding-TechDay
       Environment:
         Variables:
           awsRegion: !Ref AWS::Region
@@ -439,13 +439,13 @@ Resources:
                   return True
       Handler: index.handler
       Runtime: python3.8
-      FunctionName: techday-cloudone-common-prod-verifyV1Onboarding
+      FunctionName: techday-cloudone-onboarding-prod-verifyV1Onboarding
       MemorySize: 256
       Timeout: 30
-      Description: Task 1 - Vision One Onboarding verification module for C1Common-TechDay
+      Description: Task 1 - Vision One Onboarding verification module for C1onboarding-TechDay
       Tags:
         - Key: BusinessCase
-          Value: C1Common-TechDay
+          Value: C1onboarding-TechDay
       Environment:
         Variables:
           awsRegion: !Ref AWS::Region
@@ -573,13 +573,13 @@ Resources:
               return True
       Handler: index.handler
       Runtime: python3.8
-      FunctionName: techday-cloudone-common-prod-verifyC1V1Connectivity
+      FunctionName: techday-cloudone-onboarding-prod-verifyC1V1Connectivity
       MemorySize: 256
       Timeout: 30
-      Description: Task 2 - Cloud One - Vision One Connectivity verification for C1Common-TechDay
+      Description: Task 2 - Cloud One - Vision One Connectivity verification for C1onboarding-TechDay
       Tags:
         - Key: BusinessCase
-          Value: C1Common-TechDay
+          Value: C1onboarding-TechDay
       Environment:
         Variables:
           awsRegion: !Ref AWS::Region

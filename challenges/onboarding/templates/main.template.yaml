@@ -40,7 +40,7 @@ Resources:
       Owner: Trend Micro            
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onboarding/templates/c1-common-service-catalog.template.yaml'
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onboarding/templates/c1-onboarding-service-catalog.template.yaml'
   
   # Service Catalog Associations
   C1onboardingTask1ServiceCatalogProductAssociation:
@@ -65,7 +65,7 @@ Resources:
       Owner: Trend Micro            
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onboarding/templates/v1-common-service-catalog.template.yaml'
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onboarding/templates/v1-onboarding-service-catalog.template.yaml'
   
   V1onboardingTask1ServiceCatalogProductAssociation:
     Type: AWS::ServiceCatalog::PortfolioProductAssociation
