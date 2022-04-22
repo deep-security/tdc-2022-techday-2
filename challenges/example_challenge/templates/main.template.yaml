@@ -40,29 +40,21 @@ Resources:
   # IF your challenge requires you to have the player "deploy a cloudformation template",
   # you need to use Service Catalog instead. This sample would create an entry in Service
   # catalog for the player:
-  NewServiceCatalogProduct:
+  ExampleServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
-      Description: This is a really cool Service Catalog entry that you should check out
-      Name: Cool Service Catalog Entry
+      Description: This is a really cool C1WS Challenge Service Catalog that you should check out. Run This product and get Intrusion prevention rules can be created in DSM for use in Challenge.
+      Name: DSM IP Rule Creation
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/example/templates/service-catalog-entry.template.yaml'
-
-  NewServicePorfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/day1/forServiceCatalog.yaml
+  C1WSProductID:
+    Type: AWS::SSM::Parameter
     Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref NewServiceCatalogProduct
-
-  NewServiceLaunchRoleConstraint:
-    DependsOn: NewServicePorfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref NewServiceCatalogProduct
-      RoleArn: !Ref ServiceCatalogLaunchRoleArn  
+      Name: "C1WSProductID"
+      Value: !Ref NewServiceCatalogProduct
+      Type: String
 
 Outputs:
   CoolBucketName:
