@@ -36,7 +36,7 @@ Parameters:
 # C1 Onboarding Service Catalog takes the C1 API Key from the player, and stores multiple useful SSM parameters:
 # /player/C1/c1ApiKey, /player/C1/c1AccountId, /player/C1/c1Region, /player/C1/c1AccountsApiBaseUrl, /player/C1/c1ServicesApiBaseUrl"
 #######################
-  ExampleSSMParameter:
+  C1AccountIDSSMParameter:
     Default: "/player/C1/c1AccountId"
     Description: Retrieve the C1 Account ID from SSM Parameter Store
     Type: String
