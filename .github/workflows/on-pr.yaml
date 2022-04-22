@@ -10,16 +10,12 @@ jobs:
   sync-files:
     runs-on: ubuntu-latest
     steps:
-    - name: Extract branch name
-      shell: bash
-      run: echo "##[set-output name=branch;]$(echo ${GITHUB_HEAD_REF##*/})"
-      id: extract_branch
     - uses: actions/checkout@master
     - name: Replace QSS3BucketName and QSS3KeyPrefix
       shell: bash
       run: |
         pip install jq yq
-        sed -e '/QSS3KeyPrefix/!b' -e ':a' -e "s/Default: $(cat templates/main.template.yaml | yq .Parameters.QSS3KeyPrefix.Default)/Default: ${{ steps.extract_branch.outputs.branch }}\//;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/main.template.yaml > templates/TEMP.main.template.yaml && sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat templates/TEMP.main.template.yaml | yq -r .Parameters.QSS3BucketName.Default)/Default: ${{ env.BUCKET_NAME }}/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/TEMP.main.template.yaml > templates/main.template.yaml
+        sed -e '/QSS3KeyPrefix/!b' -e ':a' -e "s/Default: $(cat templates/main.template.yaml | yq .Parameters.QSS3KeyPrefix.Default | sed -e 's/[\/&]/\\&/g')/Default: ${{ github.sha }}\//;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/main.template.yaml > templates/TEMP.main.template.yaml && sed -e '/QSS3BucketName/!b' -e ':a' -e "s/Default: $(cat templates/TEMP.main.template.yaml | yq -r .Parameters.QSS3BucketName.Default)/Default: ${{ env.BUCKET_NAME }}/;t trail" -e 'n;ba' -e ':trail' -e 'n;btrail' templates/TEMP.main.template.yaml > templates/main.template.yaml
     - uses: jakejarvis/s3-sync-action@master
       with:
         args: --acl public-read --follow-symlinks --delete --exclude '.git/*' --exclude '.git/github' 
@@ -28,14 +24,14 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         AWS_REGION: ${{ env.AWS_REGION }}
-        DEST_DIR: ${GITHUB_HEAD_REF##*/}
+        DEST_DIR: ${{ github.sha }}
     - name: Installing Node
       uses: actions/setup-node@v2
       with:
         node-version: '14'
     - name: Deploy to Vending Machine
       env:
-        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${{ steps.extract_branch.outputs.branch }}/templates/main.template.yaml'
+        CFN_URL: 'https://${{ env.BUCKET_NAME }}.s3.amazonaws.com/${{ github.sha }}/templates/main.template.yaml'
         VM_API_KEY: ${{ secrets.VM_API_KEY }}
       working-directory: .github/workflows/setup-account-using-vending-machine
       run: |
