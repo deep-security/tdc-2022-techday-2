@@ -114,7 +114,7 @@ Parameters:
 
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
-  TechDayC1CommonsLambdaRole:
+  TechDayC1onboardingLambdaRole:
     Type: "AWS::IAM::Role"
     Properties:
       ManagedPolicyArns:
@@ -418,7 +418,7 @@ Resources:
           c1ApiKey: !Ref c1ApiKey
           c1UsersList: !Ref c1UsersList
           c1LicenseValidationDayCount: 3         
-      Role: !GetAtt TechDayC1CommonsLambdaRole.Arn
+      Role: !GetAtt TechDayC1onboardingLambdaRole.Arn
   
   # Task 1 - Creates an AWS Lambda function with the Cloud One Onboarding verification module.
   VerifyC1OnboardingLambdaFunction:
@@ -482,11 +482,11 @@ Resources:
           awsRegion: !Ref AWS::Region
           ssmParametersList: !Join [ ",", [ !Ref c1OnboardingStatusSSMKey ] ]
           ssmParameterValue: !Ref ssmParameterValue
-      Role: !GetAtt TechDayC1CommonsLambdaRole.Arn
+      Role: !GetAtt TechDayC1onboardingLambdaRole.Arn
 
   # Triggers an AWS Lambda function when the stack is created to check credentials passed from the AWS Service Catalog product.
   C1OnboardingLambdaCustomResource:
-    Type: 'Custom::TechDay-C1Commons-SvcCatalog'
+    Type: 'Custom::TechDay-C1onboarding-SvcCatalog'
     Properties:
       ServiceToken: !GetAtt C1OnboardingLambdaFunction.Arn
 
