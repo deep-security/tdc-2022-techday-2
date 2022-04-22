@@ -1,7 +1,7 @@
 name: On Main Merge
 
 env:
-  BUCKET_NAME: 'techday-2022-1'
+  BUCKET_NAME: 'techday-2022-2'
   AWS_REGION: 'us-east-1'
 
 on:

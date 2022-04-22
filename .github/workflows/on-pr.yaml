@@ -1,7 +1,7 @@
 name: On Pull Request
 
 env:
-  BUCKET_NAME: 'techday-2022-1-staging'
+  BUCKET_NAME: 'techday-2022-2-staging'
   AWS_REGION: 'us-east-1'
 
 on: pull_request

@@ -1,7 +1,7 @@
 name: Build Dev Environment
 
 env:
-  BUCKET_NAME: 'techday-2022-1-dev'
+  BUCKET_NAME: 'techday-2022-2-dev'
   AWS_REGION: 'us-east-1'
 
 # Controls when the action will run. Workflow runs when manually triggered using the UI
