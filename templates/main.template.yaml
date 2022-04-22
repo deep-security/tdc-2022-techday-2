@@ -103,7 +103,7 @@ Parameters:
   BuildEks:
     Type: String
     AllowedValues: [true, false]
-    Default: "false"
+    Default: false
 
 Conditions:
   BuildEks:
