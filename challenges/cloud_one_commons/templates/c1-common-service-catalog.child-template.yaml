@@ -490,8 +490,6 @@ Resources:
     Properties:
       ServiceToken: !GetAtt C1OnboardingLambdaFunction.Arn
 
-  # Tech Day Game Resources
-
   # Service Catalog associations
 
   # ExampleChallengePortfolioProductAssociation:
