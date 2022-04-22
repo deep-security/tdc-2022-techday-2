@@ -23,7 +23,7 @@ Mappings:
       AZs: 'us-west-1a,us-west-1b'
     us-west-2:
       HostedId: "Z2OJLYMUO9EFXC"
-      AZs: 'us-west-2a,us-west-2b,us-west-2c'
+      AZs: 'us-west-2a,us-west-2b,us-west-2c,us-west-2d'
     ap-south-1:
       HostedId: "Z3VO1THU9YC4UR"
       AZs: 'ap-south-1a,ap-south-1b,ap-south-1c'
