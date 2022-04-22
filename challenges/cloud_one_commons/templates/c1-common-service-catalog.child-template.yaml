@@ -1,0 +1,597 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloud One Onboarding tasks - Tech Day. This is the template that actually creates the resources required for the Tech Day Onboarding Stack. This template includes more config parameters that the parent templates, such as LambdaFunctionTimeout, Zip filenames, and so on, so that we can abstract these values from the Player. 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Cloud One Configuration"
+        Parameters:
+          - c1ApiKey
+          - c1UsersList
+      -
+        Label:
+          default: "DO NOT MODIFY. Game Configuration"
+        Parameters:       
+          - QSS3KeyPrefixSSMValue          
+          - ssmParameterValue
+          - LambdaFunctionTimeout
+      -
+        Label:
+          default: "DO NOT MODIFY. Game Configuration - SSM Parameter Configuration"
+        Parameters:
+          - QSS3BucketNameSSMKey
+          - QSS3KeyPrefixSSMKey
+          - c1OnboardingStatusSSMKey
+          - c1ApiKeySSMKey
+          - c1AccountIdSSMKey
+          - c1RegionSSMKey
+          - c1AccountsApiBaseUrlSSMKey
+          - c1ServicesApiBaseUrlSSMKey
+    ParameterLabels:
+      c1ApiKey:
+        default: "Cloud One API Key"
+      c1UsersList:
+        default: "Cloud One User comma-separated list of email addresses"
+      QSS3BucketNameSSMKey:
+        default: "DO NOT MODIFY. Game Engine Config. SSM Key for S3 Bucket Name"
+      QSS3KeyPrefixSSMKey:
+        default: "DO NOT MODIFY. Game Engine Config. SSM Key for S3 Key Prefix"
+      QSS3KeyPrefixSSMValue:
+        default: "DO NOT MODIFY. Game Engine Config. SSM Value for S3 Key Prefix"
+      c1OnboardingStatusSSMKey:
+        default: "DO NOT MODIFY. Game Engine Config. SSM Key for Cloud One Onboarding status"
+      c1ApiKeySSMKey:
+        default: "DO NOT MODIFY. Game Engine Config. SSM Key for Cloud One API Key"
+      c1AccountIdSSMKey:
+        default: "DO NOT MODIFY. Game Engine Config. SSM Key for Cloud One Account ID"
+      c1RegionSSMKey:
+        default: "DO NOT MODIFY. Game Engine Config. SSM Key for Cloud One Hosted Region"
+      c1AccountsApiBaseUrlSSMKey:
+        default: "DO NOT MODIFY. Game Engine Config. SSM Key for Cloud One Accounts API Base URL"
+      c1ServicesApiBaseUrlSSMKey:
+        default: "DO NOT MODIFY. Game Engine Config. SSM Key for Cloud One Services API Base URL "
+      LambdaFunctionTimeout:
+        default: "DO NOT MODIFY. Game Engine Config. Lambda function global timeout parameter"
+
+Parameters:  
+  c1ApiKey:
+    AllowedPattern: ([a-zA-Z0-9]+):([a-zA-Z0-9]+)
+    ConstraintDescription: Must contain only alphanumeric characters separated by a colon (:)
+    Description: Cloud One API Key
+    Type: String
+    NoEcho: true
+  c1UsersList:
+    Description: Comma-separated email addresses that are part of the Cloud One account.
+    Type: String
+    AllowedPattern: ".+"
+    MinLength: 6
+  QSS3BucketNameSSMKey:
+    Type: String
+    Default: QSS3BucketName
+    AllowedValues: ["QSS3BucketName"]
+    Description: DO NOT CHANGE THIS VALUE
+  QSS3KeyPrefixSSMKey:
+    Type: String
+    Default: QSS3KeyPrefix
+    AllowedValues: ["QSS3KeyPrefix"]
+    Description: DO NOT CHANGE THIS VALUE
+  QSS3KeyPrefixSSMValue:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3KeyPrefix
+    Description: DO NOT CHANGE THIS VALUE
+  c1OnboardingStatusSSMKey:
+    Default: "/player/C1/c1OnboardingStatus"
+    Description: DO NOT MODIFY. SSM Parameter Key for validating Cloud One onboarding status.
+    Type: String
+  c1ApiKeySSMKey:
+    Default: "/player/C1/c1ApiKey"
+    Description: DO NOT MODIFY. SSM Parameter Key for Cloud One API Key.
+    Type: String
+  c1AccountIdSSMKey:
+    Default: "/player/C1/c1AccountId"
+    Description: DO NOT MODIFY. SSM Parameter Key for Cloud One Account ID.
+    Type: String
+  c1RegionSSMKey:
+    Default: "/player/C1/c1Region"
+    Description: DO NOT MODIFY. SSM Parameter Key for Cloud One Hosted Region.
+    Type: String
+  c1AccountsApiBaseUrlSSMKey:
+    Default: "/player/C1/c1AccountsApiBaseUrl"
+    Description: DO NOT MODIFY. SSM Parameter Key for Cloud One Accounts API Base URL.
+    Type: String
+  c1ServicesApiBaseUrlSSMKey:
+    Default: "/player/C1/c1ServicesApiBaseUrl"
+    Description: DO NOT MODIFY. SSM Parameter Key for Cloud One Services API Base URL.
+    Type: String
+  ssmParameterValue:
+    Default: "Success"
+    Description: DO NOT MODIFY. Expected value of the SSM Parameter Value for the Onboarding tasks.
+    Type: String
+  LambdaFunctionTimeout:
+    Type: Number
+    Default: 900
+
+Resources:
+  # Creates an IAM role for the AWS Lambda functions.
+  TechDayC1CommonsLambdaRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - "sts:AssumeRole"
+      Policies:
+        - PolicyName: !Join
+            - "-"
+            - - techday-cloudone-common
+              - prod
+              - lambda
+              - ssm
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Resource:
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${QSS3BucketNameSSMKey}
+                    - QSS3BucketNameSSMKey: !Ref QSS3BucketNameSSMKey
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${QSS3KeyPrefixSSMKey}
+                    - QSS3KeyPrefixSSMKey: !Ref QSS3KeyPrefixSSMKey
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${c1OnboardingStatusSSMKey}
+                    - c1OnboardingStatusSSMKey: !Ref c1OnboardingStatusSSMKey
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${c1ApiKeySSMKey}
+                    - c1ApiKeySSMKey: !Ref c1ApiKeySSMKey                  
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${c1AccountIdSSMKey}
+                    - c1AccountIdSSMKey: !Ref c1AccountIdSSMKey
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${c1RegionSSMKey}
+                    - c1RegionSSMKey: !Ref c1RegionSSMKey
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${c1AccountsApiBaseUrlSSMKey}
+                    - c1AccountsApiBaseUrlSSMKey: !Ref c1AccountsApiBaseUrlSSMKey
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${c1ServicesApiBaseUrlSSMKey}
+                    - c1ServicesApiBaseUrlSSMKey: !Ref c1ServicesApiBaseUrlSSMKey            
+                Action:
+                  - "ssm:GetParameter"
+                  - "ssm:PutParameter"
+      Path: /
+      Tags:
+        - Key: BusinessCase
+          Value: C1Common-TechDay
+  
+  # Creates an AWS Lambda function with the Cloud One Onboarding module.
+  C1OnboardingLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Code:
+        ZipFile: |
+          import json
+          import os
+          from datetime import datetime
+          import boto3
+          import urllib3
+          import logging
+          import cfnresponse
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          c1TrendRegion = None
+          c1AccountId = None
+
+          # Returns Cloud One Accounts API Global Endpoint URL.
+          def c1AccountsApiEndpointBaseUrl():
+              
+              return "https://accounts.cloudone.trendmicro.com/api"
+
+          # Returns Cloud One region-based Services API Endpoint URL.
+          def c1ServicesApiEndpointBaseUrl(c1TrendRegion):
+              
+              return "https://services." + str(c1TrendRegion) + ".cloudone.trendmicro.com/api"
+
+          # Retrieve API Key ID from the raw API Key passed to this function.
+          def parseApiKeyForKeyId(rawApiKey):
+
+              return rawApiKey.split(':')[0]
+
+          # Validates the Cloud One API Key passed to this function by checking enabled status in DescribeApiKey response, returns Cloud One Trend Region and Cloud One Account ID.
+          def c1DescribeApiKey(http, httpHeaders, apiKeyId):
+
+              c1DescribeApiKeyResponse = json.loads(http.request('GET', c1AccountsApiEndpointBaseUrl() + "/apikeys/" + apiKeyId, headers=httpHeaders).data)
+
+              if "enabled" in c1DescribeApiKeyResponse:
+
+                  if c1DescribeApiKeyResponse["enabled"] and "urn" in c1DescribeApiKeyResponse:
+
+                      return c1DescribeApiKeyResponse["urn"].split(":")[3], c1DescribeApiKeyResponse["urn"].split(":")[4]
+
+                  else:
+                      raise Exception('Error: Invalid/inactive API Key')
+              else:
+                  raise Exception('Error: Invalid response')
+
+          # Returns True if Cloud One licenses are valid for the duration of the event.
+          def c1CheckServicesStatus(http, httpHeaders, c1TrendRegion, c1LicenseValidationDayCount):
+
+              c1CheckServicesStatusResponse = json.loads(http.request('GET', c1ServicesApiEndpointBaseUrl(c1TrendRegion) + "/services", headers=httpHeaders).data)
+
+              for service in c1CheckServicesStatusResponse["services"]:
+
+                  # Check if licensed
+                  if "license" in service:
+
+                      if "unlicensed" in service["license"]:
+
+                          raise Exception('Unlicensed for ' + service["name"] + ". Unable to proceed with this account.")
+
+                      # Check if licenses are expired for API responses that provide "expires" and "expired" fields in their response.
+                      if "expired" in service:
+                          
+                          if service["expired"]:
+
+                              raise Exception('Expired license for ' + service["name"] + ". Unable to proceed with this account.")
+
+                          # Check if the licenses are expiring during the duration of the TDC.
+                          if "expires" in service:
+                          
+                              if (datetime.strptime(service["expires"], '%Y-%m-%dT%H:%M:%SZ') - datetime.now()).days <= c1LicenseValidationDayCount:
+
+                                  raise Exception('License expiry imminent for ' + service["name"] + ". Unable to proceed with this license status.")
+
+                              else:
+                                  print("License for", service["name"], "- Valid")
+                  
+                  # Message for some accounts that do not provide "expires" and "expired" fields in their API response
+                  else:
+                      print("License for", service["name"], "- Valid")
+
+              return True
+
+          # Invites player to the Cloud One account via email, assigns a Cloud One Role based on the params passed to this function.
+          def c1InvitePlayer(http, httpHeaders, emailId, c1Role):
+
+              httpBody = {
+                  "email": str(emailId),
+                  "roleID": str(c1Role)
+              }
+
+              c1InvitePlayerResponse = json.loads(http.request('POST', c1AccountsApiEndpointBaseUrl() + "/invitations", headers=httpHeaders, body=json.dumps(httpBody)).data)
+
+              if "message" in c1InvitePlayerResponse:        
+
+                  for field in c1InvitePlayerResponse["fields"]:
+
+                      print(str(c1InvitePlayerResponse["message"]), str(c1InvitePlayerResponse["fields"][field]).capitalize(), "-", str(emailId))
+              
+              elif "state" in c1InvitePlayerResponse:
+
+                  if "invited" in c1InvitePlayerResponse["state"]:
+
+                      print("Invitation sent to " + str(emailId) + " with \"" + str(c1Role) + "\" role. Invitation ID - " + str(c1InvitePlayerResponse["id"]) + ".")
+
+                      return True
+
+                  else:
+                      raise Exception('Error: Invitation unsuccessful.')
+
+          # Verify Users exist in the Cloud One account
+          def c1VerifyUsers(http, httpHeaders, c1UsersList):
+
+              c1UsersResponse = json.loads(http.request('GET', c1AccountsApiEndpointBaseUrl() + "/users", headers=httpHeaders).data)
+
+              c1UsersDict = {}
+              
+              for user in c1UsersResponse["users"]:
+                  
+                  c1UsersDict.update({user["email"].lower(): user["state"]})
+
+              for user in c1UsersList:
+
+                  if user not in c1UsersDict.keys():
+
+                      raise Exception('Error: User "' + str(user) + '" not found in the Cloud One Account')
+
+                  elif "enabled" not in c1UsersDict[user]:
+
+                      raise Exception('Error: User "' + str(user) + '" is disabled in the Cloud One Account')
+
+              return True
+
+          # Retrieve SSM Parameter value based on parameter key passed.
+          def getC1SsmParameter(ssmClient, paramKey):
+              
+              parameter = ssmClient.get_parameter(Name='/player/C1/' + paramKey, WithDecryption=True)
+
+              return parameter ['Parameter']['Value']
+
+          # Store SSM Parameter key and value on the AWS backend for future use.
+          def setC1SsmParameter(ssmClient, paramKey, paramValue):
+              
+              parameter = ssmClient.put_parameter(Name='/player/C1/' + paramKey, Value=paramValue, Type='String', Overwrite=True)
+
+              print(str(parameter))
+
+          def handler(event, context):
+
+              # Setup
+              logger.info("event: {}".format(event))
+              status = cfnresponse.SUCCESS
+              responseData = {}
+              responseData['Data'] = {}
+              try:
+                  if event['RequestType'] == 'Create':
+
+                      # Read AWS Lambda Environment variables into the Lambda runtime as variables.
+                      awsRegion = str(os.environ.get("awsRegion"))
+                      c1ApiKey = str(os.environ.get("c1ApiKey"))
+                      c1UsersList = str(os.environ.get("c1UsersList")).lower()
+                      c1LicenseValidationDayCount = int(os.environ.get("c1LicenseValidationDayCount"))
+
+                      if c1UsersList[-1] == ",":
+                          c1UsersList = c1UsersList[:-1].replace(" ", "").split(",")
+                      else:
+                          c1UsersList = c1UsersList.replace(" ", "").split(",")
+
+                      http = urllib3.PoolManager()
+
+                      # HTTP Headers for Cloud One API calls.
+                      headers = {
+                          "Content-Type": "application/json;charset=utf-8",
+                          "Authorization": "ApiKey " + c1ApiKey,
+                          "Api-Version": "v1"
+                      }
+
+                      # Retrieve Cloud One Region information and Account ID based on the API Key ID passed to this function.
+                      c1TrendRegion, c1AccountId = c1DescribeApiKey(http, headers, parseApiKeyForKeyId(c1ApiKey))
+
+                      # Creating an SSM Client to store values in the AWS SSM Parameter Store.
+                      ssmClient = boto3.client('ssm', region_name=awsRegion)
+
+                      # If Account ID and Trend region are none, raise exception, else go ahead.
+                      if not c1AccountId and not c1TrendRegion:
+
+                          raise Exception('Error: Invalid Cloud One Account ID or Region. Please contact organizer.')
+
+                      # If valid Account Id and Trend region, store those values in AWS SSM Parameter Store for future use.
+                      else:
+
+                          print("Cloud One Account Id - " + str(c1AccountId))
+
+                          # Stores global Trend C1 Account ID as an SSM Parameter  "c1AccountId".
+                          setC1SsmParameter(ssmClient, "c1AccountId", c1AccountId)
+
+                          # Stores global Trend C1 API Key as an SSM Parameter  "c1ApiKey".
+                          setC1SsmParameter(ssmClient, "c1ApiKey", c1ApiKey)
+
+                          print("Trend Region - " + str(c1TrendRegion))
+
+                          # Stores Trend hosted Cloud One Region Identifier.
+                          setC1SsmParameter(ssmClient, "c1Region", c1TrendRegion)
+
+                          # Stores global Trend C1 Accounts API Base URL as an SSM Parameter  "c1AccountsApiBaseUrl".
+                          setC1SsmParameter(ssmClient, "c1AccountsApiBaseUrl", c1AccountsApiEndpointBaseUrl())
+
+                          # Stores region specific Trend C1 Services API Base URL as an SSM Parameter  "c1ServicesApiBaseUrl".
+                          setC1SsmParameter(ssmClient, "c1ServicesApiBaseUrl", c1ServicesApiEndpointBaseUrl(c1TrendRegion))
+
+                          # Check if all Cloud One services are licensed for the duration of the TDC.
+                          if c1CheckServicesStatus(http, headers, c1TrendRegion, c1LicenseValidationDayCount):
+
+                              print("All Services are Go!!!")
+
+                              # Verify if all users exist in the Cloud One account, raises exception if any one user fails.
+                              if c1VerifyUsers(http, headers, c1UsersList):
+                                  
+                                  print("Success: User(s) exist in the Cloud One account")
+
+                                  # Stores onboarding success as an SSM Parameter "c1Onboarding" for Mission Control verification.
+                                  setC1SsmParameter(ssmClient, "c1OnboardingStatus", "Success")
+              except Exception as e:
+                  logger.info("Exception: {}".format(e))
+                  status = cfnresponse.FAILED
+              
+              cfnresponse.send(event, context, status, responseData, None)
+      Handler: index.handler
+      Runtime: python3.8
+      MemorySize: 256
+      Timeout: !Ref LambdaFunctionTimeout
+      Description: Cloud One module for C1Common-TechDay
+      Tags:
+        - Key: BusinessCase
+          Value: C1Common-TechDay
+      Environment:
+        Variables:
+          awsRegion: !Ref AWS::Region
+          c1ApiKey: !Ref c1ApiKey
+          c1UsersList: !Ref c1UsersList
+          c1LicenseValidationDayCount: 3         
+      Role: !GetAtt TechDayC1CommonsLambdaRole.Arn
+  
+  # Task 1 - Creates an AWS Lambda function with the Cloud One Onboarding verification module.
+  VerifyC1OnboardingLambdaFunction:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Code:
+        ZipFile: |
+          import os
+          import boto3
+
+          ssmParametersList = []
+          ssmParameterValue = None
+
+          # Retrieve SSM Parameter value based on parameter key passed.
+          def getSsmParameter(ssmClient, paramKey):
+              
+              parameter = ssmClient.get_parameter(Name=paramKey, WithDecryption=True)
+
+              return parameter ['Parameter']['Value']
+
+          def handler(event, context):
+
+              # Read AWS Lambda Environment variables into the Lambda runtime as variables.
+              awsRegion = str(os.environ.get("awsRegion"))    
+              ssmParametersList = str(os.environ.get("ssmParametersList"))
+              ssmParameterValue = str(os.environ.get("ssmParameterValue"))
+
+              if ssmParametersList[-1] == ",":
+                  ssmParametersList = ssmParametersList[:-1].replace(" ", "").split(",")
+              else:
+                  ssmParametersList = ssmParametersList.replace(" ", "").split(",")
+
+              # Creating an SSM Client to store values in the AWS SSM Parameter Store.
+              ssmClient = boto3.client('ssm', region_name=awsRegion)
+
+              # If SSM Parameters List is empty and the expected ssmParameterValue is not defined.
+              if not len(ssmParametersList) and not ssmParameterValue:
+
+                  raise Exception('Error: Input Invalid with SSM Parameter List and the expected SSM Parameter Value')
+              
+              else:
+
+                  for ssmParameterKey in ssmParametersList:
+
+                      if ssmParameterValue not in getSsmParameter(ssmClient, ssmParameterKey):
+
+                          raise Exception('Error: Onboarding task incomplete or failed')
+
+                  return True
+      Handler: index.handler
+      Runtime: python3.8
+      FunctionName: techday-cloudone-common-prod-verifyC1Onboarding
+      MemorySize: 256
+      Timeout: 30
+      Description: Task 1 - Cloud One Onboarding verification module for C1Common-TechDay
+      Tags:
+        - Key: BusinessCase
+          Value: C1Common-TechDay
+      Environment:
+        Variables:
+          awsRegion: !Ref AWS::Region
+          ssmParametersList: !Join [ ",", [ !Ref c1OnboardingStatusSSMKey ] ]
+          ssmParameterValue: !Ref ssmParameterValue
+      Role: !GetAtt TechDayC1CommonsLambdaRole.Arn
+
+  # Triggers an AWS Lambda function when the stack is created to check credentials passed from the AWS Service Catalog product.
+  C1OnboardingLambdaCustomResource:
+    Type: 'Custom::TechDay-C1Commons-SvcCatalog'
+    Properties:
+      ServiceToken: !GetAtt C1OnboardingLambdaFunction.Arn
+
+  # Tech Day Game Resources
+
+  FSSallinonePortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:FSSallinoneProductID:1}}'
+
+  FSSallinoneLaunchRoleConstraint:
+    DependsOn: FSSallinonePortfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:FSSallinoneProductID:1}}'
+      RoleArn: '{{resolve:ssm:RoleArn:1}}'
+
+  FSSstoragestackPortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:FSSstoragestackProductID:1}}'
+
+  FSSstoragestackLaunchRoleConstraint:
+    DependsOn: FSSstoragestackPortfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:FSSstoragestackProductID:1}}'
+      RoleArn: '{{resolve:ssm:RoleArn:1}}'
+
+  FSSsechubPortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:FSSsechubProductID:1}}'
+
+  FSSsechubLaunchRoleConstraint:
+    DependsOn: FSSsechubPortfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:FSSsechubProductID:1}}'
+      RoleArn: '{{resolve:ssm:RoleArn:1}}'
+
+  ConformityDeployPortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:ConformityDeployProductID:1}}'
+
+  ConformityDeployLaunchRoleConstraint:
+    DependsOn: ConformityDeployPortfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:ConformityDeployProductID:1}}'
+      RoleArn: '{{resolve:ssm:RoleArn:1}}'
+
+  ConformityPipelinePortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:ConformityPipelineProductID:1}}'
+
+  ConformityPipelineLaunchRoleConstraint:
+    DependsOn: ConformityPipelinePortfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:ConformityPipelineProductID:1}}'
+      RoleArn: '{{resolve:ssm:RoleArn:1}}'
+
+  ContainerPortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:ContainerProductID:1}}'
+
+  ContainerLaunchRoleConstraint:
+    DependsOn: ContainerPortfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:ContainerProductID:1}}'
+      RoleArn: '{{resolve:ssm:RoleArn:1}}'
+
+  C1WSPortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:C1WSProductID:1}}'
+
+  C1WSLaunchRoleConstraint:
+    DependsOn: C1WSPortfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:C1WSProductID:1}}'
+      RoleArn: '{{resolve:ssm:RoleArn:1}}'
+  
+Outputs:
+  # Returns the AWS Lambda Function ARN of the Cloud One Onboarding module.
+  C1OnboardingLambdaFunctionArn:
+    Description: Cloud One Onboarding Lambda function ARN
+    Value: !GetAtt C1OnboardingLambdaFunction.Arn
