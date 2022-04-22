@@ -1,0 +1,524 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Deploys the HashiCorp Consul Helm chart into an Amazon EKS cluster (qs-1r79drkob)."
+Metadata:
+  QuickStartDocumentation:
+    EntrypointName: "Launch into an existing EKS cluster"
+  QSLint:
+    Exclusions: [W9002, W9003, W9004, W9006]
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Network configuration
+        Parameters:
+          - RemoteAccessCIDR
+          - HttpProxy
+          - PrivateSubnet1ID
+          - PrivateSubnet2ID
+          - PrivateSubnet3ID
+      - Label:
+          default: HashiCorp Consul configuration
+        Parameters:
+          - ConsulVersion
+          - ConsulDeploymentSize
+          - ConsulReplicas
+          - KeyPairName
+          - KubernetesNameSpace
+          - LoadBalancerType
+          - DomainName
+          - HostedZoneID
+          - ACMSSLCertificateArn
+      - Label:
+          default: Quick Start configuration
+        Parameters:
+          - QSS3BucketName
+          - QSS3BucketRegion
+          - QSS3KeyPrefix
+    ParameterLabels:
+      PrivateSubnet1ID:
+        default: First subnet ID for Consul node Auto Scaling group
+      PrivateSubnet2ID:
+        default: Second subnet ID for Consul node Auto Scaling group
+      PrivateSubnet3ID:
+        default: Third subnet ID for Consul node Auto Scaling group
+      KeyPairName:
+        default: EC2 key pair
+      QSS3BucketName:
+        default: Quick Start S3 bucket name
+      QSS3KeyPrefix:
+        default: Quick Start S3 object key prefix
+      QSS3BucketRegion:
+        default: Quick Start S3 bucket Region
+      RemoteAccessCIDR:
+        default: Permitted IP range
+      LoadBalancerType:
+        default: Type of load balancer
+      ACMSSLCertificateArn:
+        default: ACM SSL certificate ARN
+      HostedZoneID:
+        default: Route 53 hosted zone ID
+      DomainName:
+        default: Load balancer DNS name
+      ConsulVersion:
+        default: HashiCorp Consul version
+      ConsulDeploymentSize:
+        default: HashiCorp Consul deployment size
+      ConsulReplicas:
+        default: Number of HashiCorp Consul server nodes
+      HttpProxy:
+        default: HTTP proxy
+Mappings:
+  Scaling:
+    small:
+      InstanceType: "m5.large"
+      VolumeSize: "50"
+    medium:
+      InstanceType: "m5.xlarge"
+      VolumeSize: "50"
+    large:
+      InstanceType: "m5.2xlarge"
+      VolumeSize: "100"
+    extralarge:
+      InstanceType: "m5.4xlarge"
+      VolumeSize: "100"
+Parameters:
+  ConsulDeploymentSize:
+    Type: String
+    Default: "small"
+    Description: Deployment size of dedicated HashiCorp Consul EKS nodes.
+    AllowedValues:
+      - "small"
+      - "medium"
+      - "large"
+      - "extralarge"
+  ClusterName:
+    Type: String
+    Description: Amazon EKS Cluster.
+  KeyPairName:
+    Type: "AWS::EC2::KeyPair::KeyName"
+    Description: Name of an existing key pair that allows you
+      to connect to your instance after it launches.
+  ConsulVersion:
+    Type: String
+    Default: "1.8.4"
+    Description: Consul version.
+    AllowedValues: 
+    - "1.8.4"
+  ConsulReplicas:
+    Type: String
+    Default: "3"
+    Description: Number of Consul nodes to deploy.
+    AllowedValues:
+    - "3"
+    - "5"
+    - "7"
+  KubernetesNameSpace:
+    Type: String
+    Default: "consul-qs"
+    Description: Kubernetes namespace for Consul resources.
+  LoadBalancerType:
+    Type: String
+    Default: "Internal"
+    Description: Specify whether the load balancer for HashiCorp Consul is internal or external.
+    AllowedValues:
+    - "Internal"
+    - "External"
+  DomainName:
+    Type: String
+    Description: Fully qualified domain name for the HashiCorp Consul load balancer.
+      If you don't provide a value for "ACMSSLCertificateArn," use "HostedZoneID."
+    MaxLength: 128
+    Default: ""
+  HostedZoneID:
+    Type: String
+    Description: Route 53 hosted zone ID of the domain name. If you don't provide an
+      ACMSSLCertificateArn value, the Quick Start creates the ACM certificate for you using
+      "HostedZoneID" together with "DomainName."
+    Default: ""
+  ACMSSLCertificateArn:
+    Description: Amazon Resource Name (ARN) of the load balancer's SSL certificate. If you
+      don't provide values for "DomainName" and "HostedZoneID,"" provide a value for
+      "ACMSSLCertificateArn."
+    Type: String
+    Default: ""
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: aws-quickstart
+    Description: S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
+      or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), periods (.) and forward slash (/).
+    Default: quickstart-eks-hashicorp-consul/
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), periods (.) and
+      forward slash (/).
+    Type: String
+  QSS3BucketRegion:
+    Default: 'us-east-1'
+    Description: Region where the Quick Start S3 bucket (QSS3BucketName) is
+      hosted. If you use your own bucket, you must specify this value.
+    Type: String
+  RemoteAccessCIDR:
+    AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/([0-9]|[1-2][0-9]|3[0-2]))$
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/x
+    Description: CIDR IP range that is permitted to access the Consul UI. We recommend
+      that you set this value to a trusted IP range.
+    Type: String
+  HttpProxy:
+    Type: String
+    Default: ""
+    Description: "(Optional) HTTP(S) proxy configuration. If you provide a value for this, all Consul nodes and pod egress traffic uses this proxy (e.g., http://10.101.0.100:3128/)."
+  PrivateSubnet1ID:
+    Type: "AWS::EC2::Subnet::Id"
+    Description: ID of private subnet 1, in Availability Zone 1 (e.g., subnet-xxxxxxxx).
+  PrivateSubnet2ID:
+    Type: "AWS::EC2::Subnet::Id"
+    Description: ID of private subnet 2, in Availability Zone 2 (e.g., subnet-xxxxxxxx).
+  PrivateSubnet3ID:
+    Type: "AWS::EC2::Subnet::Id"
+    Description: ID of private subnet 3, in Availability Zone 3 (e.g., subnet-xxxxxxxx).
+Conditions:
+  UsingDefaultBucket: !Equals [!Ref QSS3BucketName, 'aws-quickstart']
+  InternalLoadBalancer: !Equals [!Ref LoadBalancerType, 'Internal']
+  CustomDns: !Not [!Equals [!Ref DomainName, ""]]
+  HostedZoneExists: !Not [!Equals [!Ref HostedZoneID, ""]]
+  CreateDns: !And
+    - !Not
+      - !Equals
+        - !Ref 'HostedZoneID'
+        - ""
+    - !Not
+      - !Equals
+        - !Ref 'DomainName'
+        - ""
+Resources:
+  ConsulNameSpace:
+    Type: "AWSQS::Kubernetes::Resource"
+    Properties:
+      ClusterName: !Ref ClusterName
+      Manifest: !Sub |
+          kind: Namespace
+          apiVersion: v1
+          metadata:
+            name: ${KubernetesNameSpace}
+      Namespace: default
+  GetClusterVPCID:
+    Type: Custom::GetClusterVPCID
+    Properties:
+      ServiceToken: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:eks-quickstart-ResourceReader"
+      AwsCliCommand: !Sub "eks describe-cluster --name ${ClusterName} --query 'cluster.resourcesVpcConfig.{vpcId:vpcId}'"
+      IdField: 'vpcId'
+  GetClusterVPCCIDR:
+    Type: Custom::GetClusterVPCCIDR
+    Properties:
+      ServiceToken: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:eks-quickstart-ResourceReader"
+      AwsCliCommand: !Sub "ec2 describe-vpcs --vpc-ids ${GetClusterVPCID} --query 'Vpcs[0].CidrBlockAssociationSet[0].{CidrBlock:CidrBlock}'"
+      IdField: 'CidrBlock'
+  # DO NOT USE this is created for a random id only
+  Random:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: DoNotUse
+  ConsulNodeGroup:
+    # TODO: Nodegroup create with Labels only for Consul other stuff is dissallowed
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/quickstart-amazon-eks-nodegroup/templates/amazon-eks-nodegroup.template.yaml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        HttpProxy: !Ref HttpProxy
+        KeyPairName: !Ref 'KeyPairName'
+        # TODO: Get from existing VPC rather than have as parameters
+        Subnet1ID: !Ref PrivateSubnet1ID
+        Subnet2ID: !Ref PrivateSubnet2ID
+        Subnet3ID: !Ref PrivateSubnet3ID
+        NodeInstanceType: !FindInMap [ "Scaling", !Ref ConsulDeploymentSize, "InstanceType" ]
+        # TODO: Investigate
+        # NodeTaints: "app=consul:NoSchedule"
+        NumberOfNodes: !Ref ConsulReplicas
+        MaxNumberOfNodes: !Ref ConsulReplicas
+        NodeGroupName: !Sub "Consul-${Random.GroupId}"
+        NodeVolumeSize: !FindInMap [ "Scaling", !Ref ConsulDeploymentSize, "VolumeSize" ]
+        EKSClusterName: !Ref ClusterName
+  PreworkStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: ConsulNameSpace
+    Properties:
+      Parameters:
+        ClusterName: !Ref ClusterName
+        KubernetesNameSpace: !Ref KubernetesNameSpace
+        ConsulVersion: !Ref ConsulVersion
+        OIDCProvider: !Sub
+          - "${OIDCProvider1}/${OIDCProvider2}/${OIDCProvider3}"
+          - OIDCProvider1: !Select [ 2, !Split [ "/", !Ref GetOIDCProvider ] ]
+            OIDCProvider2: !Select [ 3, !Split [ "/", !Ref GetOIDCProvider ] ]
+            OIDCProvider3: !Select [ 4, !Split [ "/", !Ref GetOIDCProvider ] ]
+        GossipScriptURL: !Sub
+        - s3://${S3Bucket}/${QSS3KeyPrefix}scripts/generate_gossip_secrets.sh
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      TemplateURL: !Sub
+      - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/quickstart-eks-hashicorp-consul-prework.template.yml'
+      - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+        S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+  ACMCertificate:
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks:
+            - W9196
+            - W9197
+            - W9198
+            - W9199
+    Type: AWS::CloudFormation::Stack
+    Condition: CreateDns
+    Properties:
+      TemplateURL:
+        !Sub
+        - 'https://${S3Bucket}.s3.${S3Region}.${AWS::URLSuffix}/${QSS3KeyPrefix}submodules/quickstart-aws-acm-certificate/templates/quickstart-aws-acm-certificate.template.yml'
+        - S3Region: !If [UsingDefaultBucket, !Ref 'AWS::Region', !Ref QSS3BucketRegion]
+          S3Bucket: !If [UsingDefaultBucket, !Sub '${QSS3BucketName}-${AWS::Region}', !Ref QSS3BucketName]
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3BucketRegion: !Ref QSS3BucketRegion
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}submodules/quickstart-aws-acm-certificate/
+        DomainName: !Ref DomainName
+        HostedZoneID: !Ref HostedZoneID
+  #Custom resource to fetch LoadBalancer Cannonical DNS name
+  GetOIDCProvider:
+    Type: Custom::GetOIDCProvider
+    Properties:
+      ServiceToken: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:eks-quickstart-ResourceReader"
+      AwsCliCommand: !Sub "eks describe-cluster --name ${ClusterName} --query 'cluster.identity.oidc.{issuer:issuer}'"
+      IdField: 'issuer'
+  GetELBDetail:
+    DependsOn: ConsulUiIngress
+    Type: AWSQS::Kubernetes::Get
+    Properties:
+      ClusterName: !Ref "ClusterName"
+      Name: "ingress/consul-ui"
+      Namespace: !Ref "KubernetesNameSpace"
+      JsonPath: "{.status.loadBalancer.ingress[0].hostname}"
+  GetELBHostedZone:
+    Type: Custom::GetELBHostedZone
+    DependsOn: ConsulHelmChart
+    Properties:
+      ServiceToken: !Sub "arn:aws:lambda:${AWS::Region}:${AWS::AccountId}:function:eks-quickstart-ResourceReader"
+      AwsCliCommand: !Sub "elbv2 describe-load-balancers  --query 'LoadBalancers[?DNSName==`${GetELBDetail.Response}`]| [0].{HostedZoneId:CanonicalHostedZoneId}'"
+      IdField: 'HostedZoneId'
+  ELBDNSRecord:
+    Condition: CreateDns
+    Type: AWS::Route53::RecordSet
+    Properties:
+      Type: A
+      Name: !Ref "DomainName"
+      AliasTarget:
+        HostedZoneId: !Ref "GetELBHostedZone"
+        DNSName: !Sub "${GetELBDetail.Response}"
+      HostedZoneId: !Ref "HostedZoneID"
+  ConsulUiIngress:
+    Type: "AWSQS::Kubernetes::Resource"
+    DependsOn: ConsulHelmChart
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: !Ref KubernetesNameSpace
+      Manifest: !Sub
+        - |
+          apiVersion: extensions/v1beta1
+          kind: Ingress
+          metadata:
+            name: consul-ui
+            namespace: ${KubernetesNameSpace}
+            labels:
+              app: consul
+              component: server
+              release: consul
+            annotations:
+              kubernetes.io/ingress.class: alb
+              alb.ingress.kubernetes.io/backend-protocol: HTTPS
+              alb.ingress.kubernetes.io/certificate-arn: ${SSLCertificate}
+              alb.ingress.kubernetes.io/healthcheck-path: /ui/
+              alb.ingress.kubernetes.io/scheme: ${IsInternalLoadBalancer}
+              alb.ingress.kubernetes.io/target-type: instance
+              alb.ingress.kubernetes.io/inbound-cidrs: ${RemoteAccessCIDR}
+          spec:
+            rules:
+            - http:
+                paths:
+                - path: /*
+                  backend:
+                    serviceName: "consul-consul-ui"
+                    servicePort: 443
+        - SSLCertificate: !If [ CreateDns, !GetAtt "ACMCertificate.Outputs.ACMCertificate", !Ref "ACMSSLCertificateArn" ]
+          IsInternalLoadBalancer: !If [ InternalLoadBalancer , 'internal', "internet-facing" ]
+  ConsulHelmChart:
+    Type: "AWSQS::Kubernetes::Helm"
+    DependsOn: PreworkStack
+    Properties:
+      ClusterID: !Ref ClusterName
+      Repository: https://helm.releases.hashicorp.com
+      Namespace: !Ref KubernetesNameSpace
+      Chart: hashicorp/consul
+      Name: consul
+      Version: '0.29.0'
+      ValueYaml: !Sub
+      - |
+        global:
+          datacenter: "${AWS::Region}"
+
+          gossipEncryption:
+            secretName: "consul-gossip-encryption-key"
+            secretKey: "key"
+
+          enablePodSecurityPolicies: true
+
+          tls:
+            enabled: true
+            enableAutoEncrypt: true
+            ${DNSSAN}
+
+            verify: true
+            httpsOnly: true
+
+            caCert:
+              secretName: "consul-ca-cert"
+              secretKey: "tls.crt"
+            caKey:
+              secretName: "consul-ca-key"
+              secretKey: "tls.key"
+
+          federation:
+            enabled: true
+            createFederationSecret: true
+
+        server:
+          replicas: ${ConsulReplicas}
+          bootstrapExpect: ${ConsulReplicas}
+          extraConfig: |
+            {
+              "log_level": "WARN"
+            }
+
+          affinity: |
+            podAntiAffinity:
+              requiredDuringSchedulingIgnoredDuringExecution:
+                - labelSelector:
+                    matchLabels:
+                      app: {{ template "consul.name" . }}
+                      release: "{{ .Release.Name }}"
+                      component: server
+                  topologyKey: kubernetes.io/hostname
+
+          nodeSelector: |
+            ${NodeSelector}
+
+        client:
+          enabled: true
+          grpc: true
+          extraConfig: |
+            {
+              "log_level": "WARN"
+            }
+
+        ui:
+          enabled: "true"
+          service:
+            enabled: true
+            type: NodePort
+
+        syncCatalog:
+          enabled: true
+          default: true
+          k8sPrefix: k8s
+          k8sAllowNamespaces: ["*"]
+          k8sDenyNamespaces: []
+
+          consulNamespaces:
+            consulDestinationNamespace: "default"
+            mirroringK8S: false
+            mirroringK8SPrefix: ""
+
+          addK8SNamespaceSuffix: true
+          consulPrefix: consul
+          k8sTag: k8s
+          syncClusterIPServices: true
+          nodeSelector: |
+            ${NodeSelector}
+
+          logLevel: warn
+
+        connectInject:
+          enabled: true
+          default: false # true will inject by default, otherwise requires annotation
+          certs:
+            # secretName: null
+            caBundle: ""
+            certName: tls.crt
+            keyName: tls.key
+
+          aclBindingRuleSelector: "serviceaccount.name!=default"
+
+          overrideAuthMethodName: ""
+
+        meshGateway:
+          enabled: true
+          globalMode: local
+          replicas: ${ConsulReplicas}
+
+          wanAddress:
+            source: "Service"
+            port: 443
+          service:
+            enabled: true
+          nodeSelector: |
+            ${NodeSelector}
+      - SSLCertificate: !If [ CreateDns, !GetAtt "ACMCertificate.Outputs.ACMCertificate", !Ref "ACMSSLCertificateArn" ]
+        IsInternalLoadBalancer: !If [ InternalLoadBalancer , 'service.beta.kubernetes.io/aws-load-balancer-internal: "true"', "" ]
+        DNSSAN: !If [ CreateDns, !Sub "serverAdditionalDNSSANs: ['${DomainName}']", ""]
+        ExternalName: !If [ CreateDns, !Sub '"external-dns.alpha.kubernetes.io/hostname": "${DomainName}"', "" ]
+        NameSpace: !Ref KubernetesNameSpace
+        TTL: '"external-dns.alpha.kubernetes.io/ttl": "30"'
+        NodeSelector: !Sub "eks.amazonaws.com/nodegroup: Consul-${Random.GroupId}"
+Outputs:
+  ConsulReleaseName:
+    Value: consul
+    Description: "Helm release name of Consul deployment."
+  ELBUrl:
+    Value:
+      !Sub
+      - "https://${DNSAddress}/"
+      - DNSAddress: !If [ CustomDns, !Ref DomainName, !Sub "${GetELBDetail.Response}" ]
+    Description: "Consul UI URL."
+Rules:
+  DomainNamePresentWithHostedID:
+    RuleCondition: !Equals [ !Ref HostedZoneID, '' ]
+    Assertions:
+      - Assert: !Not [!Equals [!Ref DomainName, '']]
+        AssertDescription: 'Specify a domain name if you specified a value for "Route 53–hosted zone ID."'
+  HostedIDPresentWithDomainName:
+    RuleCondition: !Equals [ !Ref DomainName, '' ]
+    Assertions:
+      - Assert: !Not [!Equals [!Ref HostedZoneID, '']]
+        AssertDescription: 'Specify a value for "Route 53 Hosted Zone ID" if you specified a domain name.'
+  GenerateOrProvideSSL:
+    RuleCondition: !Not [!Equals [!Ref ACMSSLCertificateArn, '']]
+    Assertions:
+      - Assert: !And
+          - !Equals [!Ref HostedZoneID, '']
+          - !Equals [!Ref DomainName, '']
+        AssertDescription: 'Using an SSL certificate is enforced. A "CertificateArn" or "HostedZoneID" and domain name must be provided.'
+  NoLoadBalancerInfoSupplied:
+    Assertions:
+      - Assert: !Or
+          - !Not [!Equals [!Ref HostedZoneID, '']]
+          - !Not [!Equals [!Ref ACMSSLCertificateArn, '']]
+          - !Not [!Equals [!Ref DomainName, '']]
+        AssertDescription: 'Using an SSL certificate is enforced. A "CertificateArn" or "HostedZoneID" and domain name must be provided.'

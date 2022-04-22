@@ -1,0 +1,253 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Deploys dependencies for HashiCorp Consul on an Amazon EKS cluster (qs-1r79drkqt)."
+Metadata:
+  QSLint:
+    Exclusions: [W9002, W9003, W9004, W9006]
+Parameters:
+  ClusterName:
+    Type: String
+    Description: Amazon EKS cluster.
+  KubernetesNameSpace:
+    Type: String
+    Default: "default"
+    Description: Kubernetes namespace.
+  OIDCProvider:
+    Type: String
+    Description: Amazon EKS cluster OIDC provider, without the protocol (e.g., oidc.eks.us-east-1.amazonaws.com/id/SADFASFFASFXCCVXCVSDFSDF).
+  ConsulVersion:
+    Type: String
+    Description: Amazon EKS cluster OIDC provider, without the protocol (e.g., oidc.eks.us-east-1.amazonaws.com/id/SADFASFFASFXCCVXCVSDFSDF).
+  GossipScriptURL:
+    Type: String
+    Description: Script to generate
+Resources:
+  RandomId:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "RandomID"
+  ConsulIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "Consul-${RandomId.GroupId}"
+      AssumeRolePolicyDocument: !Sub
+        - |
+          {
+            "Version": "2012-10-17",
+            "Statement": [
+              {
+                "Effect": "Allow",
+                "Principal": {
+                  "Federated": "arn:aws:iam::${AWS::AccountId}:oidc-provider/${OIDCProvider}"
+                },
+                "Action": "sts:AssumeRoleWithWebIdentity",
+                "Condition": {
+                  "StringEquals": {
+                    "${OIDCProvider}:sub": "system:serviceaccount:${NameSpace}:${ResourceName}"
+                  }
+                }
+              }
+            ]
+          }
+        - NameSpace: !Ref KubernetesNameSpace
+          ResourceName: !Sub "generate-gossip-secret-${RandomId.GroupId}"
+      Path: "/"
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogStream
+                  - logs:DescribeLogStreams
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:Vault-Audit-Logs-${AWS::StackName}"
+              - Effect: Allow
+                Action:
+                  - logs:PutLogEvents
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:Vault-Audit-Logs-${AWS::StackName}:log-stream:*"
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeInstances
+                Resource: "*"
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - "*"
+              - Effect: Allow
+                Action:
+                  - secretsmanager:UpdateSecretVersionStage
+                  - secretsmanager:UpdateSecret
+                  - secretsmanager:PutSecretValue
+                  - secretsmanager:GetSecretValue
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:Consul-Abc*"
+              - Effect: Allow
+                Action:
+                  - iam:GetRole
+                Resource: !Sub "arn:${AWS::Partition}:secretsmanager:${AWS::Region}:${AWS::AccountId}:role/Consul-${RandomId.GroupId}"
+  ConsulRoleBinding:
+    Type: AWSQS::Kubernetes::Resource
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: !Ref KubernetesNameSpace
+      Manifest: !Sub
+        - |
+          apiVersion: rbac.authorization.k8s.io/v1
+          kind: ClusterRoleBinding
+          metadata:
+            labels:
+              app.kubernetes.io/name: ${ResourceName}
+            name: ${ResourceName}
+          roleRef:
+            apiGroup: rbac.authorization.k8s.io
+            kind: ClusterRole
+            name: ${ResourceName}
+          subjects:
+          - kind: ServiceAccount
+            name: ${ResourceName}
+            namespace: ${NameSpace}
+        - ResourceName: !Sub "generate-gossip-secret-${RandomId.GroupId}"
+          NameSpace: !Ref KubernetesNameSpace
+  ConsulServiceAccount:
+    Type: AWSQS::Kubernetes::Resource
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: !Ref KubernetesNameSpace
+      Manifest: !Sub
+        - |
+          apiVersion: v1
+          kind: ServiceAccount
+          metadata:
+            labels:
+              app.kubernetes.io/name: ${ResourceName}
+            annotations:
+              eks.amazonaws.com/role-arn: arn:aws:iam::${AWS::AccountId}:role/${RoleName}
+            name: ${ResourceName}
+            namespace: ${NameSpace}
+        - ResourceName: !Sub "generate-gossip-secret-${RandomId.GroupId}"
+          NameSpace: !Ref KubernetesNameSpace
+          RoleName: !Ref "ConsulIAMRole"
+  GenerateGossipSecret:
+    DependsOn: [ ConsulIAMRole, ConsulRole, ConsulServiceAccount, ConsulRoleBinding ]
+    Type: AWSQS::Kubernetes::Resource
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: !Ref KubernetesNameSpace
+      Manifest: !Sub
+        - |
+          apiVersion: batch/v1
+          kind: Job
+          metadata:
+            name: ${ResourceName}
+            namespace: ${NameSpace}
+          spec:
+            template:
+              spec:
+                containers:
+                - name: ${ResourceName}
+                  image: amazonlinux:2
+                  command: ["/bin/bash","-c"]
+                  args:
+                  - >
+                    sleep 15;
+                    yum update -y;
+                    yum install -y awscli;
+                    export AWS_REGION=${AWS::Region};
+                    export NS=${NameSpace};
+                    export VERSION=${Version};
+                    aws sts get-caller-identity;
+                    aws s3 cp ${!S3_SCRIPT_URL} ./script.sh &&
+                    chmod +x ./script.sh &&
+                    ./script.sh
+                  env:
+                  - name: S3_SCRIPT_URL
+                    value: ${S3ScriptURL}
+                  - name: AWS_REGION
+                    value: ${AWS::Region}
+                serviceAccountName: ${ResourceName}
+                restartPolicy: Never
+            backoffLimit: 4
+        - ResourceName: !Sub "generate-gossip-secret-${RandomId.GroupId}"
+          NameSpace: !Ref "KubernetesNameSpace"
+          S3ScriptURL: !Ref "GossipScriptURL"
+          Version: !Ref "ConsulVersion"
+  ConsulRole:
+    Type: AWSQS::Kubernetes::Resource
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: !Ref KubernetesNameSpace
+      Manifest: !Sub
+      - |
+        apiVersion: rbac.authorization.k8s.io/v1
+        kind: ClusterRole
+        metadata:
+          labels:
+            app.kubernetes.io/name: ${ResourceName}
+          name: ${ResourceName}
+        # Modify for your scripts here
+        rules:
+        - apiGroups:
+          - ""
+          resources:
+          - secrets
+          verbs:
+          - create
+          - delete
+      - ResourceName: !Sub "generate-gossip-secret-${RandomId.GroupId}"
+        NameSpace: !Ref "KubernetesNameSpace"
+        S3ScriptURL: !Ref "GossipScriptURL"
+  ConsulCaCertSecret:
+    Type: AWSQS::Kubernetes::Resource
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: !Ref KubernetesNameSpace
+      Manifest: !Sub
+      - |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: ${ResourceName}
+        type: Opaque
+        data:
+          username: cGxhY2Vob2xkZXIK
+          password: cGxhY2Vob2xkZXIK
+      - ResourceName: "consul-ca-cert"
+  ConsulCaKeySecret:
+    DependsOn: ConsulServiceAccount
+    Type: AWSQS::Kubernetes::Resource
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: !Ref KubernetesNameSpace
+      Manifest: !Sub
+      - |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: ${ResourceName}
+        type: Opaque
+        data:
+          username: cGxhY2Vob2xkZXIK
+          password: cGxhY2Vob2xkZXIK
+      - ResourceName: "consul-ca-key"
+  ConsulGossipSecret:
+    Type: AWSQS::Kubernetes::Resource
+    Properties:
+      ClusterName: !Ref ClusterName
+      Namespace: !Ref KubernetesNameSpace
+      Manifest: !Sub
+      - |
+        apiVersion: v1
+        kind: Secret
+        metadata:
+          name: ${ResourceName}
+        type: Opaque
+        data:
+          username: cGxhY2Vob2xkZXIK
+          password: cGxhY2Vob2xkZXIK
+      - ResourceName: "consul-gossip-encryption-key"
+Outputs:
+  Something:
+    Value: !Sub "generate-gossip-secret-${RandomId.GroupId}"

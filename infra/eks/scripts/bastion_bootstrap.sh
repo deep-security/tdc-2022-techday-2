@@ -175,6 +175,7 @@ function setup_logs () {
 
     echo "${FUNCNAME[0]} Started"
     URL_SUFFIX="${URL_SUFFIX:-amazonaws.com}"
+    HARDWARE=`uname -m`
 
     if [[ "${release}" == "SLES" ]]; then
         curl "https://amazoncloudwatch-agent-${REGION}.s3.${REGION}.${URL_SUFFIX}/suse/amd64/latest/amazon-cloudwatch-agent.rpm" -O
@@ -188,7 +189,11 @@ function setup_logs () {
         curl "https://amazoncloudwatch-agent-${REGION}.s3.${REGION}.${URL_SUFFIX}/ubuntu/amd64/latest/amazon-cloudwatch-agent.deb" -O
         dpkg -i -E ./amazon-cloudwatch-agent.deb
         rm ./amazon-cloudwatch-agent.deb
-    elif [[ "${release}" == "AMZN" ]]; then
+    elif [[ "${release}" == "AMZN" ]] && [[ "${HARDWARE}" == "aarch64" ]]; then
+        curl "https://amazoncloudwatch-agent-${REGION}.s3.${REGION}.${URL_SUFFIX}/amazon_linux/arm64/latest/amazon-cloudwatch-agent.rpm" -O
+        rpm -U ./amazon-cloudwatch-agent.rpm
+        rm ./amazon-cloudwatch-agent.rpm
+    elif [[ "${release}" == "AMZN" ]] && [[ "${HARDWARE}" == "x86_64" ]]; then
         curl "https://amazoncloudwatch-agent-${REGION}.s3.${REGION}.${URL_SUFFIX}/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm" -O
         rpm -U ./amazon-cloudwatch-agent.rpm
         rm ./amazon-cloudwatch-agent.rpm
@@ -399,6 +404,7 @@ function prevent_process_snooping() {
 
 function setup_kubeconfig() {
     mkdir -p /home/${user}/.kube
+    source /root/.bashrc
     cat > /home/${user}/.kube/config <<EOF
 apiVersion: v1
 clusters:
@@ -428,45 +434,44 @@ users:
         - "--region"
         - "${REGION}"
 EOF
-    cp -r /home/${user}/.kube/ /root/.kube/
+    mkdir -p /root/.kube/
+    cp /home/${user}/.kube/config /root/.kube/
     chown -R ${user}:${user_group} /home/${user}/.kube/
 }
 
 function install_kubernetes_client_tools() {
     mkdir -p /usr/local/bin/
-    retry_command 20 curl --retry 5 -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.18.8/2020-09-18/bin/linux/amd64/kubectl
+    HARDWARE=`uname -m`
+    if [[ "${HARDWARE}" == "aarch64" ]]; then
+        retry_command 20 curl --retry 5 -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/arm64/kubectl
+    elif [[ "${HARDWARE}" == "x86_64" ]]; then
+        retry_command 20 curl --retry 5 -o kubectl https://amazon-eks.s3-us-west-2.amazonaws.com/1.21.2/2021-07-05/bin/linux/amd64/kubectl
+    fi
     chmod +x ./kubectl
     mv ./kubectl /usr/local/bin/
+    mkdir -p /root/bin
+    ln -s /usr/local/bin/kubectl /root/bin/
     cat > /etc/profile.d/kubectl.sh <<EOF
 #!/bin/bash
-if [[ ":$PATH:" != *":/usr/local/bin:"* ]]; then     PATH="$PATH:/usr/local/bin";   fi
-source <(kubectl completion bash)
+source <(/usr/local/bin/kubectl completion bash)
 EOF
-    chmod +x /etc/profile.d/kubectl.sh
-    retry_command 20 curl --retry 5 -o helm.tar.gz https://get.helm.sh/helm-v3.3.4-linux-amd64.tar.gz
-    tar -xvf helm.tar.gz
-    chmod +x ./linux-amd64/helm
-#    chmod +x ./linux-amd64/tiller
-    mv ./linux-amd64/helm /usr/local/bin/helm
-#    mv ./linux-amd64/tiller /usr/local/bin/
-    rm -rf ./linux-amd64/
-#    touch /var/log/tiller.log
-#    chown ${user}:${user_group} /var/log/tiller.log
-#    cat > /usr/local/bin/helm <<"EOF"
-#!/bin/bash
-#/usr/local/bin/tiller -listen 127.0.0.1:44134 -alsologtostderr -storage secret &>> /var/log/tiller.log &
-# Give tiller a moment to come up
-#sleep 2
-#export HELM_HOST=127.0.0.1:44134
-#/usr/local/bin/helm-client "$@"
-#EXIT_CODE=$?
-#kill %1
-#exit ${EXIT_CODE}
-#EOF
-#    chmod +x /usr/local/bin/helm
- #   su ${user} -c "/usr/local/bin/helm init --client-only"
-}
 
+    chmod +x /etc/profile.d/kubectl.sh
+    if [[ "${HARDWARE}" == "aarch64" ]]; then
+        retry_command 20 curl --retry 5 -o helm.tar.gz https://get.helm.sh/helm-v3.3.4-linux-arm64.tar.gz
+        tar -xvf helm.tar.gz
+        chmod +x ./linux-arm64/helm
+        mv ./linux-arm64/helm /usr/local/bin/helm
+        rm -rf ./linux-arm64/
+
+    elif [[ "${HARDWARE}" == "x86_64" ]]; then
+        retry_command 20 curl --retry 5 -o helm.tar.gz https://get.helm.sh/helm-v3.3.4-linux-amd64.tar.gz
+        tar -xvf helm.tar.gz
+        chmod +x ./linux-amd64/helm
+        mv ./linux-amd64/helm /usr/local/bin/helm
+        rm -rf ./linux-amd64/
+    fi
+}
 ##################################### End Function Definitions
 
 # Call checkos to ensure platform is Linux

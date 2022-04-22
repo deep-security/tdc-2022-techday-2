@@ -94,34 +94,12 @@ Resources:
         lambda list-layer-versions --layer-name ${Prefix}-AwsCli --query 'max_by(LayerVersions, &Version)'
       - Prefix: !FindInMap [Config, Prefix, Value]
       IdField: 'LayerVersionArn'
-  KubeGetLambda:
+  KubeResourceLambda:
     DependsOn: [LambdaSGCleanup, CopyZips]
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: !Sub 'awsqs-kubernetes-resource-get-proxy-${EKSClusterName}'
-      Handler: awsqs_kubernetes_get.handlers.proxy_wrap
-      MemorySize: 256
-      Role: !Ref KubernetesAdminRoleArn
-      Runtime: python3.7
-      Timeout: 900
-      Code:
-        S3Bucket: !Sub ['${Prefix}-lambdazips-${AWS::Region}-${AWS::AccountId}', {Prefix: !FindInMap [Config, Prefix, Value]}]
-        S3Key: !Sub '${QSS3KeyPrefix}functions/packages/kubernetesResources/awsqs_kubernetes_get_vpc.zip'
-      Environment:
-        Variables:
-          KUBECONFIG: /tmp/.kube/config
-          HTTPS_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
-          HTTP_PROXY: !If [NoProxy, !Ref 'AWS::NoValue', !Ref HttpProxy]
-          NO_PROXY: !Sub '${GetVpcCidr},localhost,127.0.0.1,169.254.169.254,.internal'
-      VpcConfig:
-        SecurityGroupIds: [!Ref EKSLambdaSecurityGroup]
-        SubnetIds: !Ref EKSSubnetIds
-  KubeApplyLambda:
-    DependsOn: [LambdaSGCleanup, CopyZips]
-    Type: AWS::Lambda::Function
-    Properties:
-      FunctionName: !Sub 'awsqs-kubernetes-resource-apply-proxy-${EKSClusterName}'
-      Handler: awsqs_kubernetes_resource.handlers.proxy_wrap
+      FunctionName: !Sub 'awsqs-kubernetes-resource-proxy-${EKSClusterName}'
+      Handler: awsqs_kubernetes_resource.utils.proxy_wrap
       MemorySize: 256
       Role: !Ref KubernetesAdminRoleArn
       Runtime: python3.7

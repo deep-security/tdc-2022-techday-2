@@ -17,13 +17,13 @@ Mappings:
       AZs: 'us-east-2a,us-east-2b,us-east-2c'
     us-east-1:
       HostedId: "Z1UJRXOUMOOFQ8"
-      AZs: 'us-east-1a,us-east-1b,us-east-1c'
+      AZs: 'us-east-1a,us-east-1b,us-east-1c,us-east-1d'
     us-west-1:
       HostedId: "Z2MUQ32089INYE"
       AZs: 'us-west-1a,us-west-1b'
     us-west-2:
       HostedId: "Z2OJLYMUO9EFXC"
-      AZs: 'us-west-2a,us-west-2b,us-west-2c'
+      AZs: 'us-west-2a,us-west-2b,us-west-2c,us-west-2d'
     ap-south-1:
       HostedId: "Z3VO1THU9YC4UR"
       AZs: 'ap-south-1a,ap-south-1b,ap-south-1c'
@@ -66,7 +66,7 @@ Parameters:
     ConstraintDescription: Quick Start bucket name can include numbers, lowercase
       letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
       (-).
-    Default: techday-2021-2
+    Default: techday-2022-2
     Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
@@ -91,10 +91,10 @@ Parameters:
   #   MaxLength: '18'
   #   AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
   #   ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  DSActivationCode:
-    Description: DS key
-    Type: String
-    Default: 'DX-XQCT-JQW26-GQ5TS-AZ8KS-3HEWQ-F274C'
+  # DSActivationCode:
+  #   Description: DS key
+  #   Type: String
+  #   Default: 'DX-XQCT-JQW26-GQ5TS-AZ8KS-3HEWQ-F274C'
   MissionControlAccountId:
     Type: Number
     Default: 728151039736
@@ -103,7 +103,14 @@ Parameters:
   BuildEks:
     Type: String
     AllowedValues: [true, false]
-    Default: "false"
+    Default: false
+
+Conditions:
+  BuildEks:
+    !Equals [true, !Ref BuildEks]
+
+  IsQSS3KeyPrefixNull: 
+    !Equals [ !Ref QSS3KeyPrefix, "" ]
 
 Resources:
 
@@ -116,21 +123,22 @@ Resources:
   #       ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
   #     TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/challenges/sample/templates/main.template.yaml'
 
-  DSMStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        DSActivationCode: !Ref DSActivationCode
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        VPC: !GetAtt VPCStack.Outputs.VPCID
-        PublicSubnet1: !GetAtt VPCStack.Outputs.PublicSubnet1ID
-#        ReadS3BucketProfile: !GetAtt Infra.Outputs.ReadS3BucketProfile
-        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-        SecretPassword: !GetAtt Passwords.Outputs.SecretPassword
-        KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
-      TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/dsm/templates/dsm.template.yaml'
-      TimeoutInMinutes: 30
+# Comment Out DSM and DSA Stack - likely unused this year.
+#   DSMStack:
+#     Type: AWS::CloudFormation::Stack
+#     Properties:
+#       Parameters:
+#         DSActivationCode: !Ref DSActivationCode
+#         QSS3BucketName: !Ref QSS3BucketName
+#         QSS3KeyPrefix: !Ref QSS3KeyPrefix
+#         VPC: !GetAtt VPCStack.Outputs.VPCID
+#         PublicSubnet1: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+# #        ReadS3BucketProfile: !GetAtt Infra.Outputs.ReadS3BucketProfile
+#         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+#         SecretPassword: !GetAtt Passwords.Outputs.SecretPassword
+#         KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
+#       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/dsm/templates/dsm.template.yaml'
+
   # DSAStack:
   #   Type: AWS::CloudFormation::Stack
   #   Properties:
@@ -145,19 +153,61 @@ Resources:
   #       KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
   #       VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
   #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/infra/dsm/templates/ds_clients.template.yaml'
-  #     TimeoutInMinutes: 30
 
   # ☠️ DON'T TOUCH - Or Webster might have a tak with you... or worse, Amanda! ☠️
+  QSS3BucketNameSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "QSS3BucketName"
+      Value: !Ref QSS3BucketName
+      Type: String
+  QSS3KeyPrefixSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "QSS3KeyPrefix"
+      Value: !If 
+        - IsQSS3KeyPrefixNull
+        - 'None'
+        - !Ref QSS3KeyPrefix
+      Type: String
+
+# Storing Parameters in SSM for use by Service Catalog items
+  VpcIDSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "VpcID"
+      Value: !GetAtt VPCStack.Outputs.VPCID
+      Type: String
+  PublicSubnetIdSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "PublicSubnet1"
+      Value: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+      Type: String
+  PublicSubnetIdSsm2:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "PublicSubnet2"
+      Value: !GetAtt VPCStack.Outputs.PublicSubnet2ID
+      Type: String
+  keypairSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "keypair"
+      Value: !GetAtt KeyPairStack.Outputs.KeyPairName
+      Type: String
+
   VPCStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/vpc/templates/aws-vpc.template.yaml'
       Parameters:
-        NumberOfAZs: 3
+        NumberOfAZs: 4
         AvailabilityZones: !FindInMap
           - RegionMap
           - !Ref 'AWS::Region'
           - AZs
+        CreateAdditionalPrivateSubnets: 'true'
 
   Passwords:
     Type: AWS::CloudFormation::Stack
@@ -170,7 +220,6 @@ Resources:
       Parameters:
         MissionControlAccountId: !Ref MissionControlAccountId
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/MissionControlChecker/templates/template.yaml'
-      TimeoutInMinutes: 5
 
   EKSStack:
     Condition: BuildEks
@@ -178,8 +227,9 @@ Resources:
     Properties:
       Parameters:
         KeyPairName: !GetAtt KeyPairStack.Outputs.KeyPairName
-        #QSS3BucketName: !Ref QSS3BucketName
-        #QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}eks/'
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}infra/eks/'
+        QSS3BucketRegion: !Sub ${AWS::Region}
         RemoteAccessCIDR: '0.0.0.0/0'
         AdditionalEKSAdminUserArn: ""
         AdditionalEKSAdminRoleArn: ""
@@ -190,10 +240,13 @@ Resources:
         PrivateSubnet1ID: !GetAtt VPCStack.Outputs.PrivateSubnet1AID
         PrivateSubnet2ID: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
         PrivateSubnet3ID: !GetAtt VPCStack.Outputs.PrivateSubnet3AID
-        ProvisionBastionHost: "Disabled"
-        ALBIngressController: "Disabled"
+        ProvisionBastionHost: "Enabled"
+        ALBIngressController: "Enabled"
+        EKSPublicAccessEndpoint: "Enabled"
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/eks/templates/amazon-eks-entrypoint-existing-vpc.template.yaml'
-      TimeoutInMinutes: 60
+    DependsOn: 
+      - VPCStack
+      - KeyPairStack
 
   Wrinkles:
     Type: AWS::CloudFormation::Stack
@@ -201,7 +254,6 @@ Resources:
       Parameters:
         MainStackId: !Ref AWS::StackId
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/wrinkles_trigger.template.yaml'
-      TimeoutInMinutes: 5
 
   LockoutInfraStack:
     Type: AWS::CloudFormation::Stack
@@ -209,13 +261,11 @@ Resources:
       Parameters:
         MainStackId: !Ref AWS::StackId
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lockout_infra.template.yaml'
-      TimeoutInMinutes: 5
 
   ServiceCatalogPortfolioStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/service_catalog_portfolio.template.yaml'
-      TimeoutInMinutes: 10
       Parameters:
         GroupAssociationPrincipalArn: !GetAtt PlayerStack.Outputs.PlayerGroupArn
 
@@ -225,13 +275,11 @@ Resources:
       Parameters:
         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/player.template.yaml'
-      TimeoutInMinutes: 10
 
   KeyPairStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/ec2keypair/ec2keypair.template.yaml'
-      TimeoutInMinutes: 10
 
 #  Day2Resources:
 #    Type: AWS::CloudFormation::Stack
@@ -241,22 +289,18 @@ Resources:
 #        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}'
 #      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/templates/day2_main.template.yaml'
 
-Conditions:
-  BuildEks:
-    !Equals [true, !Ref BuildEks]
-
 Outputs:
   PrivateSubnet2AID:
     Value: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
     Description: PrivateSubnet2A ID
 
-  DSMURL:
-    Value: !GetAtt DSMStack.Outputs.DSMURL
-    Description: DSM Public URL
+  # DSMURL:
+  #   Value: !GetAtt DSMStack.Outputs.DSMURL
+  #   Description: DSM Public URL
 
-  DSMFQDN:
-    Value: !GetAtt DSMStack.Outputs.DSMFQDN
-    Description: DSM public FQDN
+  # DSMFQDN:
+  #   Value: !GetAtt DSMStack.Outputs.DSMFQDN
+  #   Description: DSM public FQDN
     
   ScoreCheckerArn:
     Value: !GetAtt ScoreChecker.Outputs.MissionControlNotifierFunctionName

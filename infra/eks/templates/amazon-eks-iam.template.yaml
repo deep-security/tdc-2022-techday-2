@@ -34,6 +34,12 @@ Mappings:
 Resources:
   KubernetesAdminRole:
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource: resources are created after stack is created by k8s/helm/eks resource types, and as such are unkown at role cretion time
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -49,8 +55,39 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - cloudformation:*
-                  - eks:*
+                  - "eks:DescribeFargateProfile"
+                  - "eks:ListTagsForResource"
+                  - "eks:ListUpdates"
+                  - "eks:DisassociateIdentityProviderConfig"
+                  - "eks:DescribeCluster"
+                  - "eks:CreateAddon"
+                  - "eks:DeleteAddon"
+                  - "eks:UntagResource"
+                  - "eks:ListClusters"
+                  - "eks:UpdateClusterVersion"
+                  - "eks:AssociateEncryptionConfig"
+                  - "eks:UpdateNodegroupConfig"
+                  - "eks:DeleteCluster"
+                  - "eks:DeleteFargateProfile"
+                  - "eks:UpdateClusterConfig"
+                  - "eks:DescribeAddonVersions"
+                  - "eks:DescribeUpdate"
+                  - "eks:CreateCluster"
+                  - "eks:DescribeIdentityProviderConfig"
+                  - "eks:ListAddons"
+                  - "eks:DescribeAddon"
+                  - "eks:UpdateNodegroupVersion"
+                  - "eks:AccessKubernetesApi"
+                  - "eks:AssociateIdentityProviderConfig"
+                  - "eks:DeleteNodegroup"
+                  - "eks:CreateFargateProfile"
+                  - "eks:UpdateAddon"
+                  - "eks:TagResource"
+                  - "eks:ListNodegroups"
+                  - "eks:ListIdentityProviderConfigs"
+                  - "eks:CreateNodegroup"
+                  - "eks:ListFargateProfiles"
+                  - "eks:DescribeNodegroup"
                   - ec2:DescribeSecurityGroups
                   - ec2:DescribeSubnets
                   - ec2:DescribeVpcs
@@ -82,6 +119,12 @@ Resources:
   BastionRole:
     Condition: EnableBastionRole
     Type: "AWS::IAM::Role"
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource]
+          ignore_reasons:
+            EIAMPolicyWildcardResource: "resource does not exist at time of policy creation, so it's address is unkown"
     Properties:
       AssumeRolePolicyDocument:
         Version: 2012-10-17

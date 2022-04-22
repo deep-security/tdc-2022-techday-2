@@ -234,8 +234,8 @@ Parameters:
     Description: "(Optional) If an AMI ID is specified, it is used instead of the AMI from your OS/Region."
   KubernetesVersion:
     Type: String
-    AllowedValues: [ "1.15", "1.16", "1.17", "1.18" ]
-    Default: "1.18"
+    AllowedValues: [ "1.17", "1.18", "1.19", "1.20", "1.21" ]
+    Default: "1.21"
     Description: Kubernetes control plane version.
   IamOidcProvider:
     Type: String
@@ -415,6 +415,19 @@ Parameters:
     AllowedValues: ['2004', '2019']
     Default: '2004'
     Description: 'The version of windows to use for Windows Nodegroups.'
+  EC2MetadataPutResponseHopLimit:
+    Type: String
+    Default: "1"
+    Description: The desired HTTP PUT response hop limit for instance metadata requests from nodes. The larger the number, the further instance metadata requests can travel.
+  EC2MetadataHttpTokens:
+    Type: String
+    AllowedValues: [optional, required]
+    Default: optional
+    Description: >
+      If set to "optional" pods will be able to use the node's IAM instance profile.
+      If set to "required" amd "EC2MetadataPutResponseHopLimit" is set to 1, pods will not be able to access the nodes IAM role.
+      If set to "required" amd "EC2MetadataPutResponseHopLimit" is set greater than 1 pods must send a signed token header with any instance metadata retrieval requests.
+      NOTE: This will default to "required" in the next major release.
 Mappings:
   Config:
     ParameterPrefix: { Value: '/quickstart/amazon-eks' }
@@ -687,3 +700,15 @@ Resources:
       Type: String
       Value: !Sub '{ "Value": "${WindowsNodeVersion}" }'
       Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/windows-nodegroup/WindowsNodeVersion", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  EC2MetadataPutResponseHopLimitParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${EC2MetadataPutResponseHopLimit}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/default-nodegroup/EC2MetadataPutResponseHopLimit", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
+  EC2MetadataHttpTokensParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: !Sub '{ "Value": "${EC2MetadataHttpTokens}" }'
+      Name: !Sub ["${ParameterPrefix}/${ConfigSetName}/default-nodegroup/EC2MetadataHttpTokens", {ParameterPrefix: !FindInMap [Config, ParameterPrefix, Value]}]
