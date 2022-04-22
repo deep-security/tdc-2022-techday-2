@@ -32,7 +32,7 @@ Parameters:
 
 Resources:
   # Service Catalog Entry
-  C1CommonsTask1ServiceCatalogProduct:
+  C1onboardingTask1ServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
       Description: Cloud One Onboarding - This is one of the first steps for Tech Day 2022-1
@@ -40,24 +40,24 @@ Resources:
       Owner: Trend Micro            
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}cloud_one_commons/templates/c1-common-service-catalog.template.yaml'
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onboarding/templates/c1-onboarding-service-catalog.template.yaml'
   
   # Service Catalog Associations
-  C1CommonsTask1ServiceCatalogProductAssociation:
+  C1onboardingTask1ServiceCatalogProductAssociation:
     Type: AWS::ServiceCatalog::PortfolioProductAssociation
     Properties:
       PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref C1CommonsTask1ServiceCatalogProduct
+      ProductId: !Ref C1onboardingTask1ServiceCatalogProduct
 
-  C1CommonsTask1LaunchRoleConstraint:
-    DependsOn: C1CommonsTask1ServiceCatalogProductAssociation
+  C1onboardingTask1LaunchRoleConstraint:
+    DependsOn: C1onboardingTask1ServiceCatalogProductAssociation
     Type: AWS::ServiceCatalog::LaunchRoleConstraint
     Properties:
       PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref C1CommonsTask1ServiceCatalogProduct
+      ProductId: !Ref C1onboardingTask1ServiceCatalogProduct
       RoleArn: !Ref ServiceCatalogLaunchRoleArn
 
-  V1CommonsTask1ServiceCatalogProduct:
+  V1onboardingTask1ServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
       Description: Vision One Onboarding - This is one of the first steps for Tech Day 2022-1
@@ -65,18 +65,18 @@ Resources:
       Owner: Trend Micro            
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}cloud_one_commons/templates/v1-common-service-catalog.template.yaml'
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onboarding/templates/v1-onboarding-service-catalog.template.yaml'
   
-  V1CommonsTask1ServiceCatalogProductAssociation:
+  V1onboardingTask1ServiceCatalogProductAssociation:
     Type: AWS::ServiceCatalog::PortfolioProductAssociation
     Properties:
       PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref V1CommonsTask1ServiceCatalogProduct
+      ProductId: !Ref V1onboardingTask1ServiceCatalogProduct
 
-  V1CommonsTask1LaunchRoleConstraint:
-    DependsOn: V1CommonsTask1ServiceCatalogProductAssociation
+  V1onboardingTask1LaunchRoleConstraint:
+    DependsOn: V1onboardingTask1ServiceCatalogProductAssociation
     Type: AWS::ServiceCatalog::LaunchRoleConstraint
     Properties:
       PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref V1CommonsTask1ServiceCatalogProduct
+      ProductId: !Ref V1onboardingTask1ServiceCatalogProduct
       RoleArn: !Ref ServiceCatalogLaunchRoleArn

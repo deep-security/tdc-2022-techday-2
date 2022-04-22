@@ -114,7 +114,7 @@ Parameters:
 
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
-  TechDayC1CommonsLambdaRole:
+  TechDayC1onboardingLambdaRole:
     Type: "AWS::IAM::Role"
     Properties:
       ManagedPolicyArns:
@@ -131,7 +131,7 @@ Resources:
       Policies:
         - PolicyName: !Join
             - "-"
-            - - techday-cloudone-common
+            - - techday-cloudone-onboarding
               - prod
               - lambda
               - ssm
@@ -170,7 +170,7 @@ Resources:
       Path: /
       Tags:
         - Key: BusinessCase
-          Value: C1Common-TechDay
+          Value: C1onboarding-TechDay
   
   # Creates an AWS Lambda function with the Cloud One Onboarding module.
   C1OnboardingLambdaFunction:
@@ -408,17 +408,17 @@ Resources:
       Runtime: python3.8
       MemorySize: 256
       Timeout: !Ref LambdaFunctionTimeout
-      Description: Cloud One module for C1Common-TechDay
+      Description: Cloud One module for C1onboarding-TechDay
       Tags:
         - Key: BusinessCase
-          Value: C1Common-TechDay
+          Value: C1onboarding-TechDay
       Environment:
         Variables:
           awsRegion: !Ref AWS::Region
           c1ApiKey: !Ref c1ApiKey
           c1UsersList: !Ref c1UsersList
           c1LicenseValidationDayCount: 3         
-      Role: !GetAtt TechDayC1CommonsLambdaRole.Arn
+      Role: !GetAtt TechDayC1onboardingLambdaRole.Arn
   
   # Task 1 - Creates an AWS Lambda function with the Cloud One Onboarding verification module.
   VerifyC1OnboardingLambdaFunction:
@@ -470,23 +470,23 @@ Resources:
                   return True
       Handler: index.handler
       Runtime: python3.8
-      FunctionName: techday-cloudone-common-prod-verifyC1Onboarding
+      FunctionName: techday-cloudone-onboarding-prod-verifyC1Onboarding
       MemorySize: 256
       Timeout: 30
-      Description: Task 1 - Cloud One Onboarding verification module for C1Common-TechDay
+      Description: Task 1 - Cloud One Onboarding verification module for C1onboarding-TechDay
       Tags:
         - Key: BusinessCase
-          Value: C1Common-TechDay
+          Value: C1onboarding-TechDay
       Environment:
         Variables:
           awsRegion: !Ref AWS::Region
           ssmParametersList: !Join [ ",", [ !Ref c1OnboardingStatusSSMKey ] ]
           ssmParameterValue: !Ref ssmParameterValue
-      Role: !GetAtt TechDayC1CommonsLambdaRole.Arn
+      Role: !GetAtt TechDayC1onboardingLambdaRole.Arn
 
   # Triggers an AWS Lambda function when the stack is created to check credentials passed from the AWS Service Catalog product.
   C1OnboardingLambdaCustomResource:
-    Type: 'Custom::TechDay-C1Commons-SvcCatalog'
+    Type: 'Custom::TechDay-C1onboarding-SvcCatalog'
     Properties:
       ServiceToken: !GetAtt C1OnboardingLambdaFunction.Arn
 

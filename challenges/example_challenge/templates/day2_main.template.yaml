@@ -50,8 +50,8 @@ Resources:
         - Info:
             LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/day1/forServiceCatalog.yaml
   # The Service Catalog Association is locked behind the Onboarding Challenge Service Catalog. This forces players to play onboarding challenge first.
-  # Create your association like below, and add a Service Catalog association in challenges/cloud_one_commons/templates/c1-common-service-catalog.child-template.yaml for C1
-  # Or challenges/cloud_one_commons/templates/v1-common-service-catalog.child-template.yaml for V1. There are examples in those templates.
+  # Create your association like below, and add a Service Catalog association in challenges/onboarding/templates/c1-onboarding-service-catalog.child-template.yaml for C1
+  # Or challenges/onboarding/templates/v1-onboarding-service-catalog.child-template.yaml for V1. There are examples in those templates.
   ExampleServiceCatalogProductID:
     Type: AWS::SSM::Parameter
     Properties:
