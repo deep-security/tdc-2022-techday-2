@@ -11,7 +11,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: cfn-lint
+    - name: Setup Linter cfn-lint
       uses: scottbrenner/cfn-lint-action@v2
-      with:
-        args: "--ignore-checks W E3012 E3005 -- challenge/[!eks]*/templates/*.template.yaml challenge/templates/*.yaml"
+
+    - name: Run Linter
+      run: |
+        cfn-lint --version
+        cfn-lint -t ./challenges/[!eks]*/templates/*.template.yaml templates/*.yaml -i W E3012 E3005
+
+    - name: Check for Symbolic Links
+      shell: bash
+      run: |
+        if [[ $(ls -lR . | grep ^l) ]]; then
+            echo "There are symbolic links:"
+            ls -lR . | grep ^l
+            exit 1
+        else
+            echo "No links found"
+            exit 0
+        fi
