@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloud One Onboarding tasks - Tech Day. This template invokes a child template to trigger the onboarding workflow, achieving config abstraction with layered templates
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      -
+        Label:
+          default: "Cloud One Configuration"
+        Parameters:
+          - c1ApiKey
+          - c1UsersList
+      -
+        Label:
+          default: "DO NOT MODIFY. Game Configuration"
+        Parameters:
+          - QSS3BucketNameSSMValue
+          - QSS3KeyPrefixSSMValue
+    ParameterLabels:
+      c1ApiKey:
+        default: "Cloud One API Key"
+      c1UsersList:
+        default: "Cloud One User comma-separated list of email addresses"
+      QSS3BucketNameSSMValue:
+        default: "DO NOT MODIFY. Game Engine S3 Bucket Name"
+      QSS3KeyPrefixSSMValue:
+        default: "DO NOT MODIFY. Game Engine S3 Key Prefix."
+
+Parameters:
+  c1ApiKey:    
+    AllowedPattern: ([a-zA-Z0-9]+):([a-zA-Z0-9]+)
+    ConstraintDescription: Must contain only alphanumeric characters separated by a colon (:)
+    Description: Cloud One API Key
+    Type: String
+    NoEcho: true
+  c1UsersList:
+    Description: Comma-separated email addresses that are part of the Cloud One account
+    Type: String
+  QSS3BucketNameSSMValue:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3BucketName
+    Description: DO NOT CHANGE THIS VALUE
+  QSS3KeyPrefixSSMValue:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3KeyPrefix
+    Description: DO NOT CHANGE THIS VALUE
+
+Conditions:
+  IsQSS3KeyPrefixSSMValueNone: !Equals 
+    - !Ref QSS3KeyPrefixSSMValue
+    - 'None'
+
+Resources:
+  # Stack abstraction so config parameters such as LogRetentionPeriod, LambdaFunctionTimeout are not exposed to the Player when the Service Catalog product is provisioned.
+  C1OnboardingStackResources:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        c1ApiKey: !Ref c1ApiKey
+        c1UsersList: !Ref c1UsersList
+      TemplateURL: !Join
+        - ''      
+        - - 'https://'
+          - !Ref QSS3BucketNameSSMValue
+          - '.s3.amazonaws.com/'
+          - !If [ IsQSS3KeyPrefixSSMValueNone, !Ref 'AWS::NoValue', !Ref QSS3KeyPrefixSSMValue ]
+          - 'challenges/cloud_one_commons/templates/c1-common-service-catalog.child-template.yaml'
+
+Outputs:
+  # Returns the AWS Lambda Function ARN of the Cloud One Onboarding module.
+  C1OnboardingLambdaFunctionArn:
+    Description: Cloud One Onboarding Lambda function ARN
+    Value: !GetAtt C1OnboardingStackResources.Outputs.C1OnboardingLambdaFunctionArn

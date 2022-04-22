@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This template defines a stack that can be created by the player using Service Catalog.
+  It doesn't require anything special or unique about it. 
+
+Parameters:
+  # Service Catalog related
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+    Default: techday-2022-1
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String  
+
+Resources:
+  # Service Catalog Entry
+  C1CommonsTask1ServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: Cloud One Onboarding - This is one of the first steps for Tech Day 2022-1
+      Name: Cloud One Day 1 Onboarding Task
+      Owner: Trend Micro            
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}cloud_one_commons/templates/c1-common-service-catalog.template.yaml'
+  
+  # Service Catalog Associations
+  C1CommonsTask1ServiceCatalogProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref C1CommonsTask1ServiceCatalogProduct
+
+  C1CommonsTask1LaunchRoleConstraint:
+    DependsOn: C1CommonsTask1ServiceCatalogProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref C1CommonsTask1ServiceCatalogProduct
+      RoleArn: !Ref ServiceCatalogLaunchRoleArn
+
+  V1CommonsTask1ServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: Vision One Onboarding - This is one of the first steps for Tech Day 2022-1
+      Name: Vision One Day 1 Onboarding Task
+      Owner: Trend Micro            
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}cloud_one_commons/templates/v1-common-service-catalog.template.yaml'
+  
+  V1CommonsTask1ServiceCatalogProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref V1CommonsTask1ServiceCatalogProduct
+
+  V1CommonsTask1LaunchRoleConstraint:
+    DependsOn: V1CommonsTask1ServiceCatalogProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref V1CommonsTask1ServiceCatalogProduct
+      RoleArn: !Ref ServiceCatalogLaunchRoleArn
