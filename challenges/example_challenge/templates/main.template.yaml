@@ -31,10 +31,10 @@ Parameters:
 
 Resources:
   # Everything that needs to be created even before player starts playing.
-  CoolTopic:
+  ExampleTopic:
     Type: AWS::SNS::Topic
   
-  CoolBucket:
+  ExampleBucket:
     Type: AWS::S3::Bucket
 
   # IF your challenge requires you to have the player "deploy a cloudformation template",
@@ -60,6 +60,6 @@ Resources:
       Type: String
 
 Outputs:
-  CoolBucketName:
+  ExampleBucketName:
     Description: An output example.
-    Value:  !Ref CoolBucket
+    Value:  !Ref ExampleBucket
