@@ -289,6 +289,16 @@ Resources:
 #        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}'
 #      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/templates/day2_main.template.yaml'
 
+  OnboardingStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+      TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/cloud_one_commons/templates/main.template.yaml'
+
 Outputs:
   PrivateSubnet2AID:
     Value: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
