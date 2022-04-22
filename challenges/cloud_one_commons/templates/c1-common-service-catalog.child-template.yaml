@@ -492,6 +492,8 @@ Resources:
 
   # Tech Day Game Resources
 
+  # Service Catalog associations
+
   # ExampleChallengePortfolioProductAssociation:
   #   Type: AWS::ServiceCatalog::PortfolioProductAssociation
   #   Properties:
