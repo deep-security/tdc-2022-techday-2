@@ -1,5 +1,9 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: Checks for Shared resources required by all Amazon EKS Quick Start stacks. (qs-1r0qgtna3)
+Metadata:
+  cfn-lint:
+    config:
+      ignore_checks: [W9002, W9003, W9004, W9006]
 Parameters:
   RegionalTemplateUri:
     Type: String
@@ -13,6 +17,12 @@ Mappings:
 Resources:
   PreReqsRole:
     Type: AWS::IAM::Role
+    Metadata:
+      cfn-lint:
+        config:
+          ignore_checks: [EIAMPolicyWildcardResource, EIAMPolicyActionWildcard]
+          ignore_reasons:
+            EIAMPolicyWildcardResource: 'this role is used to launch cfn stacks containing iam roles and lambda functions. At this time it is unclear which permissions these resource types require'
     Properties:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
@@ -24,25 +34,20 @@ Resources:
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
       Policies:
-        # - PolicyName: 'deploy-prereqs'
-        #   PolicyDocument:
-        #     Version: '2012-10-17'
-        #     Statement:
-        #       - Effect: Allow
-        #         Action:
-        #         - 'lambda:*'
-        #         - 'iam:*'
-        #         - 's3:*'
-        #         - 'cloudformation:*'
-        #         - 'ec2:DescribeRegions'
-        #         Resource: '*'
         - PolicyName: 'deploy-prereqs'
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
-                - '*'
+                - 'lambda:*'
+                - 'iam:*'
+                - 's3:*'
+                - 'cloudformation:DescribeStacks'
+                - 'cloudformation:ListStacks'
+                - 'cloudformation:CreateStack'
+                - 'cloudformation:UpdateStack'
+                - 'ec2:DescribeRegions'
                 Resource: '*'
   PreReqsFunction:
     Type: AWS::Lambda::Function

@@ -301,7 +301,8 @@ Parameters:
   KeyPairName:
     Description: Name of an existing key pair, which allows you
       to securely connect to your instance after it launches.
-    Type: AWS::EC2::KeyPair::KeyName
+    Type: String
+    Default: ""
   PrivateSubnet1CIDR:
     AllowedPattern: ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\/(1[6-9]|2[0-8]))$
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16–28
@@ -384,10 +385,12 @@ Parameters:
     Type: String
   AdditionalEKSAdminUserArn:
     Default: ""
+    AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov):iam::[0-9]{12}:.*|^$'
     Description: "(Optional) IAM user ARN to be granted administrative access to the EKS cluster."
     Type: String
   AdditionalEKSAdminRoleArn:
     Default: ""
+    AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov):iam::[0-9]{12}:.*|^$'
     Description: "(Optional) IAM role ARN to be granted administrative access to the EKS cluster."
     Type: String
   NodeInstanceType:
@@ -398,10 +401,14 @@ Parameters:
     Type: String
   NumberOfNodes:
     Default: 3
+    MinValue: 0
+    MaxValue: 450
     Description: Number of Amazon EKS node instances. The default is one for each of the three Availability Zones.
     Type: Number
   MaxNumberOfNodes:
     Default: 3
+    MinValue: 0
+    MaxValue: 450
     Description: Maximum number of Amazon EKS node instances. The default is three.
     Type: Number
   ClusterAutoScaler:
@@ -591,6 +598,7 @@ Parameters:
       ARN of the load balancer's ACM SSL certificate. If you don't provide values for "Domain name" and
       "Hosted zone id", provide a value for "ACM SSL certificate ARN".
     Type: String
+    AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov):acm:.*:[0-9]{12}:certificate.*|^$'
     Default: ""
   ConsulIntegration:
     Type: String
@@ -615,6 +623,7 @@ Parameters:
       ARN of the load balancer's ACM SSL certificate. If you don't provide values for "Domain name" and
       "Hosted zone id", provide a value for "ACM SSL certificate ARN".
     Type: String
+    AllowedPattern: '^arn:(aws|aws-cn|aws-us-gov):acm:.*:[0-9]{12}:certificate.*|^$'
     Default: ""
   RancherIntegration:
     Type: String
@@ -661,7 +670,9 @@ Resources:
       Parameters:
         ConfigSetName: !Ref AWS::StackName
         NodeVolumeSize: !If [WindowsNodes, 50, !Ref 'AWS::NoValue']
-        KubernetesVersion: !If [VaultEnabled, '1.17', !Ref 'AWS::NoValue']
+        # As of 08/03/2021 there are no eks optimized ami's for eks 1.21
+        # TODO: remove forcing windows clusters to 1.20 once ami's are available https://github.com/aws/containers-roadmap/issues/1461
+        KubernetesVersion: !If [VaultEnabled, '1.17', !If [WindowsNodes, '1.20', !Ref 'AWS::NoValue']]
         ConsulUIAccessCIDR: !Ref RemoteAccessCIDR
         VaultUIAccessCIDR: !Ref RemoteAccessCIDR
   AutoDetectSharedResources:
@@ -822,6 +833,8 @@ Outputs:
     Value: !GetAtt EKSStack.Outputs.BastionSecurityGroup
   NodeGroupSecurityGroup:
     Value: !GetAtt EKSStack.Outputs.NodeGroupSecurityGroup
+  OIDCIssuerURL:
+    Value: !GetAtt EKSStack.Outputs.OIDCIssuerURL
 Rules:
   AutoDetectSharedParams:
     RuleCondition: !Or

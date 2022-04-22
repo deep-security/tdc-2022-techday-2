@@ -10,8 +10,8 @@ Parameters:
     Type: String
   KubernetesVersion:
     Type: String
-    AllowedValues: [ "1.18", "1.17", "1.16", "1.15" ]
-    Default: "1.18"
+    AllowedValues: [ "1.21", "1.20", "1.19", "1.18", "1.17" ]
+    Default: "1.21"
 # NOTE: The cluster autoscaler version number is dependant on the K8S version it is being
 #       deployed into. See...
 #       https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler#releases
@@ -26,15 +26,18 @@ Conditions:
 Mappings:
   Config:
     Prefix: { Value: 'eks-quickstart' }
+  # From : https://github.com/kubernetes/autoscaler/releases/tag/ 
   K8sVersionMap:
-    "1.15":
-      ImageTag: v1.15.5
-    "1.16":
-      ImageTag: v1.16.6
     "1.17":
       ImageTag: v1.17.3
     "1.18":
-      ImageTag: v1.18.2
+      ImageTag: v1.18.3
+    "1.19":
+      ImageTag: v1.19.1
+    "1.20":
+      ImageTag: v1.20.0
+    "1.21":
+      ImageTag: v1.21.0
 Resources:
   # Policy to apply to NodeInstanceRole
   ClusterAutoScalerPolicy:

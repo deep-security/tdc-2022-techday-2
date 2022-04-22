@@ -17,7 +17,7 @@ jobs:
     - name: Run Linter
       run: |
         cfn-lint --version
-        cfn-lint -t ./challenges/[!eks]*/templates/*.template.yaml templates/*.yaml -i W E3012 E3005
+        cfn-lint -t ./challenges/*/templates/*.template.yaml templates/*.yaml -i W E3012 E3005
 
     - name: Check for Symbolic Links
       shell: bash
