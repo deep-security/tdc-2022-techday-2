@@ -595,48 +595,19 @@ Resources:
       ServiceToken: !GetAtt V1OnboardingLambdaFunction.Arn
 
   # Service Catalog associations
-  XDRPortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:XDRProductID:1}}'
+  # XDRPortfolioProductAssociation:
+  #   Type: AWS::ServiceCatalog::PortfolioProductAssociation
+  #   Properties:
+  #     PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+  #     ProductId: '{{resolve:ssm:XDRProductID:1}}'
 
-  XDRLaunchRoleConstraint:
-    DependsOn: XDRPortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:XDRProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
-
-  SASEPortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:SASEProductID:1}}'
-
-  SASELaunchRoleConstraint:
-    DependsOn: SASEPortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:SASEProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
-
-  ZTRIPortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:ZTRIProductID:1}}'
-
-  ZTRILaunchRoleConstraint:
-    DependsOn: ZTRIPortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:ZTRIProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
-
+  # XDRLaunchRoleConstraint:
+  #   DependsOn: XDRPortfolioProductAssociation
+  #   Type: AWS::ServiceCatalog::LaunchRoleConstraint
+  #   Properties:
+  #     PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+  #     ProductId: '{{resolve:ssm:XDRProductID:1}}'
+  #     RoleArn: '{{resolve:ssm:RoleArn:1}}'
 
   
 Outputs:
