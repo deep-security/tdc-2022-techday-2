@@ -79,15 +79,34 @@ Last but not least, this is the core folder for the entire challenge. There are 
 This repo is following the [Github Flow](https://guides.github.com/introduction/flow/). This means that:
 * A build from the main branch should always work
 * The main branch is blocked for commits other than via a Pull Request
-* PRs will require at least one approval in order to be accepted
+* PRs will require at least two approvals in order to be accepted
 * A new challenge requires a new folder inside of `challenge` folder
 * Every challenge folder needs to have at least 2 folders: `templates` and `scripts`
 * Main branch is synced automatically with the proper S3 bucket.
 
-## Testing
+## **Testing and Code Review**
 
-There will be some minor automatic testing in PRs. Those tests need to pass in order to a merge to main branch happen. Also, soon a PR will automatically generate an environment in Vending Machine so you can test with a TechDay-like environment.
+**Testing your own contribution is mandatory**.
 
+### **Create a new environment from your last commit**
+
+Cool. You believe you have some code ready to be merged into main. Want to make sure it works in our environment first? You can create an environment using Vending Machine trough an Actions workflow. To do so, go to the `Actions` tab, select `Build Dev Environment` in the left side, click the `Run workflow` dropdown button, leave the branch as it is and enter your commit id in the textbox. Click `Run workflow` to start the creation of a new environment.
+
+![Creating a new Dev Environment](pics/build-dev-environment.png)
+
+Not sure how to find your commit id? Go to your branch in github(below) and click the hash next to how long ago that code was commited. 
+
+![Commit header 1](pics/commit-header-1.png)
+
+This will bring you to a new screen, with the entire hash, as below. That is the hash that you need to create your own environment.
+
+![Commit header 2](pics/commit-header-2.png)
+
+There will be some minor automatic testing in PRs, such as a CloudFormation linter. It is required that your code pass these tests in order to have your code merged into main branch. Also, soon a PR will automatically generate an environment in Vending Machine so you can test with a TechDay-like environment.
+
+### Pull Request
+
+Ready to PR? Awesome. Go ahead and do so. This will automatically create a new environment using vending machine that both you and code reviewers are going to be able to use. The next step will be **code review**. During this process, other Tech Day staff and builders will meticulously go over your code, ask (tons of) questions and make recommendations for improvement. Be ready to act and discuss on those. If at least 2 members approve your change, it will be merged to main and officially be part of Tech Day's code. Well done!
 
 ## Licensing
 
