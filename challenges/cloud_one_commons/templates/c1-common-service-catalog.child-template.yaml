@@ -496,14 +496,14 @@ Resources:
   #   Type: AWS::ServiceCatalog::PortfolioProductAssociation
   #   Properties:
   #     PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-  #     ProductId: '{{resolve:ssm:ExampleChallengeID:1}}'
+  #     ProductId: '{{resolve:ssm:ExampleProductID:1}}'
 
   # ExampleChallengeLaunchRoleConstraint:
   #   DependsOn: ExampleChallengePortfolioProductAssociation
   #   Type: AWS::ServiceCatalog::LaunchRoleConstraint
   #   Properties:
   #     PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-  #     ProductId: '{{resolve:ssm:ExampleChallengeID:1}}'
+  #     ProductId: '{{resolve:ssm:ExampleProductID:1}}'
   #     RoleArn: '{{resolve:ssm:RoleArn:1}}'
   
 Outputs:
