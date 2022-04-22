@@ -492,103 +492,19 @@ Resources:
 
   # Tech Day Game Resources
 
-  FSSallinonePortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:FSSallinoneProductID:1}}'
+  # ExampleChallengePortfolioProductAssociation:
+  #   Type: AWS::ServiceCatalog::PortfolioProductAssociation
+  #   Properties:
+  #     PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+  #     ProductId: '{{resolve:ssm:C1WSProductID:1}}'
 
-  FSSallinoneLaunchRoleConstraint:
-    DependsOn: FSSallinonePortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:FSSallinoneProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
-
-  FSSstoragestackPortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:FSSstoragestackProductID:1}}'
-
-  FSSstoragestackLaunchRoleConstraint:
-    DependsOn: FSSstoragestackPortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:FSSstoragestackProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
-
-  FSSsechubPortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:FSSsechubProductID:1}}'
-
-  FSSsechubLaunchRoleConstraint:
-    DependsOn: FSSsechubPortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:FSSsechubProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
-
-  ConformityDeployPortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:ConformityDeployProductID:1}}'
-
-  ConformityDeployLaunchRoleConstraint:
-    DependsOn: ConformityDeployPortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:ConformityDeployProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
-
-  ConformityPipelinePortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:ConformityPipelineProductID:1}}'
-
-  ConformityPipelineLaunchRoleConstraint:
-    DependsOn: ConformityPipelinePortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:ConformityPipelineProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
-
-  ContainerPortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:ContainerProductID:1}}'
-
-  ContainerLaunchRoleConstraint:
-    DependsOn: ContainerPortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:ContainerProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
-
-  C1WSPortfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:C1WSProductID:1}}'
-
-  C1WSLaunchRoleConstraint:
-    DependsOn: C1WSPortfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:C1WSProductID:1}}'
-      RoleArn: '{{resolve:ssm:RoleArn:1}}'
+  # ExampleChallengeLaunchRoleConstraint:
+  #   DependsOn: C1WSPortfolioProductAssociation
+  #   Type: AWS::ServiceCatalog::LaunchRoleConstraint
+  #   Properties:
+  #     PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+  #     ProductId: '{{resolve:ssm:C1WSProductID:1}}'
+  #     RoleArn: '{{resolve:ssm:RoleArn:1}}'
   
 Outputs:
   # Returns the AWS Lambda Function ARN of the Cloud One Onboarding module.
