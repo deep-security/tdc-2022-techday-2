@@ -341,6 +341,10 @@ Outputs:
   AWSAccountId:
     Value: !Ref "AWS::AccountId"
 
+  AWSConsoleUrl:
+    Value: !Sub 'https://${AWS::AccountId}.signin.aws.amazon.com/console?region=${AWS::Region}'
+    Description: URL to access this AWS Account dashboard
+
 # #Sample Challenge Outputs
 #   SampleChallengeBucket:
 #     Value: !GetAtt Sample.Outputs.CoolBucketName
