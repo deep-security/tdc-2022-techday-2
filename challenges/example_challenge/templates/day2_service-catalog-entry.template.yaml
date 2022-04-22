@@ -26,5 +26,5 @@ Description: >
 
 Resources:
 # Sample Resource that will be created via Service Catalog
-  AnotherCoolTopic:
+  ExampleDay2SNSTopic:
     Type: AWS::SNS::Topic

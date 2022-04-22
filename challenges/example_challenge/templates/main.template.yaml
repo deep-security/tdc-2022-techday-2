@@ -29,42 +29,64 @@ Parameters:
       forward slash (/).
     Type: String
 
+#######################
+# You can retrieve parameters from SSM, in Parameter of CloudFormation:
+# QSS3BucketName and QSS3KeyPrefix are stored as SSM parameters in main.template
+####
+# C1 Onboarding Service Catalog takes the C1 API Key from the player, and stores multiple useful SSM parameters:
+# /player/C1/c1ApiKey, /player/C1/c1AccountId, /player/C1/c1Region, /player/C1/c1AccountsApiBaseUrl, /player/C1/c1ServicesApiBaseUrl"
+#######################
+  C1AccountIDSSMParameter:
+    Default: "/player/C1/c1AccountId"
+    Description: Retrieve the C1 Account ID from SSM Parameter Store
+    Type: String
+
 Resources:
   # Everything that needs to be created even before player starts playing.
-  CoolTopic:
+  ExampleTopic:
     Type: AWS::SNS::Topic
   
-  CoolBucket:
+  ExampleBucket:
     Type: AWS::S3::Bucket
 
+#######################
+# You can Create an SSM Parameter to store information for later. This can be useful for checking if something is completed, or retrieving a piece of information.
+# Should only be used if needed. If can provide needed data via CloudFormation Parameters, obviously that is best.
+#######################
+  ExampleSSMParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "Example-Challenge-S3-Bucket-Name"
+      Value: !Ref ExampleBucket
+      Type: String
+  
+  ######################
   # IF your challenge requires you to have the player "deploy a cloudformation template",
   # you need to use Service Catalog instead. This sample would create an entry in Service
   # catalog for the player:
-  NewServiceCatalogProduct:
+  ######################
+  ExampleServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
-      Description: This is a really cool Service Catalog entry that you should check out
-      Name: Cool Service Catalog Entry
+      Description: This is a really cool C1WS Challenge Service Catalog that you should check out. Run This product and get Intrusion prevention rules can be created in DSM for use in Challenge.
+      Name: DSM IP Rule Creation
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/example/templates/service-catalog-entry.template.yaml'
-
-  NewServicePorfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/day1/forServiceCatalog.yaml
+  ######################
+  # The Service Catalog Association is locked behind the Onboarding Challenge Service Catalog. This forces players to play onboarding challenge first.
+  # Create your association like below, and add a Service Catalog association in challenges/cloud_one_commons/templates/c1-common-service-catalog.child-template.yaml for C1
+  # Or challenges/cloud_one_commons/templates/v1-common-service-catalog.child-template.yaml for V1. There are examples in those templates.
+  ######################
+  ExampleServiceCatalogProductID:
+    Type: AWS::SSM::Parameter
     Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref NewServiceCatalogProduct
-
-  NewServiceLaunchRoleConstraint:
-    DependsOn: NewServicePorfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref NewServiceCatalogProduct
-      RoleArn: !Ref ServiceCatalogLaunchRoleArn  
+      Name: "ExampleProductID"
+      Value: !Ref ExampleServiceCatalogProduct
+      Type: String
 
 Outputs:
-  CoolBucketName:
+  ExampleBucketName:
     Description: An output example.
-    Value:  !Ref CoolBucket
+    Value:  !Ref ExampleBucket
