@@ -154,6 +154,14 @@ Resources:
   #       VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
   #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/infra/dsm/templates/ds_clients.template.yaml'
 
+  FSSStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/entrypoint.template.yaml'
+
   # ☠️ DON'T TOUCH - Or Webster might have a tak with you... or worse, Amanda! ☠️
   QSS3BucketNameSsm:
     Type: AWS::SSM::Parameter
