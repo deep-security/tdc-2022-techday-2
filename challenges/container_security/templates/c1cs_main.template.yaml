@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: tdc-2022-techday-1 Cloud One Container Security
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: none
+    Description: Update to where you hold the scripts. S3 bucket name for the SecJam assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Default: ""
+    Description: Update to where you hold the scripts. S3 bucket name for the SecJam assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
+      forward slash (/).
+    Type: String
+  GroupAssociationPrincipalArn:
+    Type: String
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+
+Resources:
+  c1csssmparameters:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_ssm_parameters.template.yaml'
+  c1csdeploy:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_deploy.template.yaml'
+    DependsOn: c1csssmparameters
+
+  PlayerC1csServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: "Cloud One Container Security Deployment"
+      Name: "Cloud One Container Security Deployment"
+      Owner: "Trend Micro"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_service_catalog.template.yaml'
+
+  ContainerProductID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "ContainerProductID"
+      Value: !Ref PlayerC1csServiceCatalogProduct
+      Type: String
+    
+# Scoring
+  ContainerSecurityScoreLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      Policies: 
+        - PolicyName: ContainerSecurityScoreLambdaPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "ssm:GetParameter"
+                Resource: 
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1Region
+                  - arn:aws:ssm:*:*:parameter/player/C1CS/clusterID
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ContainerSecurityScoreLambdaRoleSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "ContainerSecurityScoreLambdaRole"
+      Value: !GetAtt ContainerSecurityScoreLambdaRole.Arn
+      Type: String

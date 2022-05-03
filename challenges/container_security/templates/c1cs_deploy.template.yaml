@@ -1,0 +1,927 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: tdc-2022-techday-1 Cloud One Container Security - Deployment
+
+Resources:
+
+# SSM Parameters
+  C1CSStateMachineArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/C1CS/StateMachineArn
+      Type: String
+      Value: !Ref DeployC1CSStateMachine
+      Description: ARN for DeployC1CSStateMachine 
+
+# Create iAM Roles
+  c1csLambdaFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: c1csLambdaFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - ssm:PutParameter
+              - ssm:GetParameter
+              - ssm:SendCommand
+            Resource:
+              - arn:aws:ssm:*:*:document/EKSCalicoInstall
+              - arn:aws:ssm:*:*:document/c1csHelmUninstall
+              - arn:aws:ssm:*:*:document/c1csCreateOverridesFile
+              - arn:aws:ssm:*:*:document/c1csHelmInstall
+              - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+              - arn:aws:ssm:*:*:parameter/player/C1/c1Region
+              - arn:aws:ssm:*:*:parameter/player/C1CS/clusterApiKey
+              - arn:aws:ssm:*:*:parameter/player/C1CS/clusterID
+              - arn:aws:ssm:*:*:parameter/player/C1CS/clusterRegion
+              - arn:aws:ssm:*:*:parameter/player/C1CS/policyID
+              - arn:aws:ssm:*:*:parameter/player/C1CS/ruleSetID
+          - Effect: Allow
+            Action:
+              - ssm:SendCommand
+            Resource:
+              - arn:aws:ec2:*:*:instance/*
+            Condition:
+              StringLike:
+                ssm:resourceTag/Name:
+                  - EKSBastion
+
+  stateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - states.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/service-role/"
+      Policies:
+      - PolicyName: StateMachinePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt lambdaFunctionQueryPlayerApiKey.Arn
+              - !GetAtt lambdaFunctionCreateRuleset.Arn
+              - !GetAtt lambdaFunctionCreatePolicy.Arn
+              - !GetAtt lambdaFunctionCreateCluster.Arn
+              - !GetAtt lambdaFunctionRunSSMCommandCreateOverridesFile.Arn
+              - !GetAtt lambdaFunctionRunSSMCommandHelmInstallC1CS.Arn
+              - !GetAtt lambdaFunctionRunSSMCommandHelmUninstallC1CS.Arn
+
+
+# Create SSM Documents
+  EKSCalicoInstall: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Clean up loadbalancer service'
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "sudo /usr/local/bin/kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/master/calico-operator.yaml && sleep 10 && sudo /usr/local/bin/kubectl apply -f https://raw.githubusercontent.com/aws/amazon-vpc-cni-k8s/master/config/master/calico-crs.yaml"
+      DocumentType: Command
+      Name: 'EKSCalicoInstall'
+  HelmUninstallC1CS: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Command Document will uninstall the trendmicro helm chart from an EKS cluster'
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "sudo /usr/local/bin/helm uninstall trendmicro -n trendmicro-system"
+      DocumentType: Command
+      Name: 'c1csHelmUninstall'
+  CreateOverridesC1CS: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Command Document will create an overrides file for C1CS'
+        parameters:
+          clusterApiKey:
+            type: String
+            default: '{{ssm:/player/C1CS/clusterApiKey}}'
+          c1Region:
+            type: String
+            default: '{{ssm:/player/C1/c1Region}}'
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "echo 'cloudOne:' > /tmp/overrides_cs.yaml"
+            - "echo -e '    apiKey: {{clusterApiKey}}' >> /tmp/overrides_cs.yaml"
+            - "echo -e '    endpoint: https://container.{{c1Region}}.cloudone.trendmicro.com' >> /tmp/overrides_cs.yaml"
+            - "echo -e '    oversight:' >> /tmp/overrides_cs.yaml"
+            - "echo -e '        enabled: true' >> /tmp/overrides_cs.yaml"
+            - "echo -e '        syncPeriod: 600s' >> /tmp/overrides_cs.yaml"
+            - "echo -e '    runtimeSecurity:' >> /tmp/overrides_cs.yaml"
+            - "echo -e '        enabled: true' >> /tmp/overrides_cs.yaml"
+            - "echo -e '    exclusion:' >> /tmp/overrides_cs.yaml"
+            - "echo -e '        namespaces: [ kube-system, calico-system ]' >> /tmp/overrides_cs.yaml"
+      DocumentType: Command
+      Name: 'c1csCreateOverridesFile'
+  HelmInstallC1CS: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Command Document will Install the trendmicro helm chart from an EKS cluster'
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "sudo /usr/local/bin/helm install trendmicro --namespace trendmicro-system --create-namespace --values /tmp/overrides_cs.yaml https://github.com/trendmicro/cloudone-container-security-helm/archive/master.tar.gz"
+      DocumentType: Command
+      Name: 'c1csHelmInstall'
+
+# Create Lambda Functions
+  lambdaFunctionQueryPlayerApiKey:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Timeout: 20
+      Handler: index.lambda_handler
+      Role: !GetAtt c1csLambdaFunctionRole.Arn
+      Code:
+        ZipFile:
+          !Sub
+            - |-
+              import json
+              import urllib3
+              import boto3
+              from urllib.parse import urlparse
+
+              client = boto3.client('ssm')
+
+              def lambda_handler(event, context):
+                
+                parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
+                playerApiKey = parameter ['Parameter']['Value']
+
+                url = "https://accounts.cloudone.trendmicro.com/api/apikeys?limit=1"
+
+                payload = json.dumps({
+                })
+                headers = {
+                  'api-version': 'v1',
+                  'Authorization': 'ApiKey '+playerApiKey+'',
+                  'Content-Type': 'application/json'
+                }
+
+                http = urllib3.PoolManager()
+                encoded_payload = payload.encode("utf-8")
+
+                # Send API call to list API a single API key
+                apiKeyListResponse = http.request("GET", url=url, headers=headers, body=encoded_payload)
+                #print(apiKeyListResponse.data)
+
+                apiKeyList = json.loads(apiKeyListResponse.data.decode("utf-8"))
+                
+                apiKeyListResponseJson = json.loads(apiKeyListResponse.data)
+                apiKeyUrn = apiKeyListResponseJson["apikeys"][0]["urn"]
+                
+                # Split up urn so that we can store c1Region and C1AccountID.
+                urn, cloudone, identity, c1Region, c1AccountId, apiKeyUrnData = apiKeyUrn.split(":")
+                
+                # Update SSM Parameters
+                #client.put_parameter(Name='/player/C1/c1Region', Value=c1Region, Type='String', Overwrite=True)
+                #client.put_parameter(Name='/player/C1/c1AccountId', Value=c1AccountId, Type='String', Overwrite=True)              
+            -
+              lambda_function_role_arn: !Ref c1csLambdaFunctionRole
+  lambdaFunctionCreateRuleset:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import urllib3
+                import boto3
+
+                client = boto3.client('ssm')
+
+                def lambda_handler(event, context):
+                  
+                  parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
+                  #print(parameter)
+                  #return parameter ['Parameter']['Value']
+                  playerApiKey = parameter ['Parameter']['Value']
+                  #return playerApiKey
+                  
+                  parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
+                  playerC1Region = parameter ['Parameter']['Value']
+
+                  
+                  url = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/rulesets'
+
+                  payload = json.dumps({
+                    "name": "ProductionRuleset",
+                    "description": "ruleSet Created for secJam via API",
+                    "labels": [],
+                    "rules": [
+                      {
+                        "ruleID": "TM-00000001",
+                        "enabled": True,
+                        "mitigation": "log"
+                      }
+                    ]
+                  })
+                  headers = {
+                    'api-version': 'v1',
+                    'Authorization': 'ApiKey '+playerApiKey+'',
+                    'Content-Type': 'application/json'
+                  }
+
+                  http = urllib3.PoolManager()
+                  encoded_payload = payload.encode("utf-8")
+                  #print(headers)
+                  response = http.request("POST", url=url, headers=headers, body=encoded_payload)
+                  #print(response.data)
+
+                  #print(response.text)
+
+                  ruleSetID = json.loads(response.data.decode("utf-8"))
+                  print(ruleSetID["id"])
+                  
+                  updateRuleSetIdResponse = client.put_parameter(Name='/player/C1CS/ruleSetID', Value=ruleSetID["id"], Type='String', Overwrite=True)
+              -
+                lambda_function_role_arn: !Ref c1csLambdaFunctionRole
+  lambdaFunctionCreatePolicy:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import urllib3
+                import boto3
+
+                client = boto3.client('ssm')
+
+                def lambda_handler(event, context):
+                  
+                  parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
+                  playerApiKey = parameter ['Parameter']['Value']
+                  
+                  parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
+                  playerC1Region = parameter ['Parameter']['Value']
+                  
+                  parameter = client.get_parameter(Name='/player/C1CS/ruleSetID', WithDecryption=True)
+                  playerC1csRuleSetId = parameter ['Parameter']['Value']
+
+                  url = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/policies'
+
+                  payload = json.dumps({
+                    "name": "ProductionPolicy",
+                    "default": {
+                      "rules": [
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "podSecurityContext",
+                          "enabled": True,
+                          "statement": {
+                            "key": "runAsNonRoot",
+                            "value": "false"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "podSecurityContext",
+                          "enabled": True,
+                          "statement": {
+                            "key": "hostNetwork",
+                            "value": "true"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "podSecurityContext",
+                          "enabled": True,
+                          "statement": {
+                            "key": "hostIPC",
+                            "value": "true"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "podSecurityContext",
+                          "enabled": True,
+                          "statement": {
+                            "key": "hostPID",
+                            "value": "true"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "containerSecurityContext",
+                          "enabled": True,
+                          "statement": {
+                            "key": "runAsNonRoot",
+                            "value": "false"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "containerSecurityContext",
+                          "enabled": True,
+                          "statement": {
+                            "key": "privileged",
+                            "value": "true"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "containerSecurityContext",
+                          "enabled": True,
+                          "statement": {
+                            "key": "allowPrivilegeEscalation",
+                            "value": "true"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "containerSecurityContext",
+                          "enabled": True,
+                          "statement": {
+                            "key": "readOnlyRootFilesystem",
+                            "value": "false"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "unscannedImage",
+                          "enabled": False
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "malware",
+                          "enabled": False,
+                          "statement": {
+                            "key": "count",
+                            "value": "0"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "vulnerabilities",
+                          "enabled": False,
+                          "statement": {
+                            "key": "max-severity",
+                            "value": "high"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "contents",
+                          "enabled": False,
+                          "statement": {
+                            "key": "max-severity",
+                            "value": "high"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "checklists",
+                          "enabled": False,
+                          "statement": {
+                            "key": "max-severity",
+                            "value": "high"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "image",
+                          "enabled": True,
+                          "statement": {
+                              "key": "equals",
+                              "value": "nginx"
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "cvssAttackVector",
+                          "enabled": False,
+                          "statement": {
+                            "properties": [
+                              {
+                                "key": "cvss-attack-vector",
+                                "value": "network"
+                              },
+                              {
+                                "key": "max-severity",
+                                "value": "high"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "cvssAttackComplexity",
+                          "enabled": False,
+                          "statement": {
+                            "properties": [
+                              {
+                                "key": "cvss-attack-complexity",
+                                "value": "high"
+                              },
+                              {
+                                "key": "max-severity",
+                                "value": "high"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "cvssAvailability",
+                          "enabled": False,
+                          "statement": {
+                            "properties": [
+                              {
+                                "key": "cvss-availability",
+                                "value": "high"
+                              },
+                              {
+                                "key": "max-severity",
+                                "value": "high"
+                              }
+                            ]
+                          }
+                        },
+                        {
+                          "action": "log",
+                          "mitigation": "log",
+                          "type": "checklistProfile",
+                          "enabled": False,
+                          "statement": {
+                            "properties": [
+                              {
+                                "key": "checklist-profile",
+                                "value": "hipaa"
+                              },
+                              {
+                                "key": "max-severity",
+                                "value": "high"
+                              }
+                            ]
+                          }
+                        }
+                      ]
+                    }
+                  })
+                  headers = {
+                    'api-version': 'v1',
+                    'Authorization': 'ApiKey '+playerApiKey+'',
+                    'Content-Type': 'application/json'
+                  }
+
+                  http = urllib3.PoolManager()
+                  encoded_payload = payload.encode("utf-8")
+                  #print(headers)
+                  response = http.request("POST", url=url, headers=headers, body=encoded_payload)
+                  #print(response.data)
+
+                  #print(response.text)
+
+                  policyID = json.loads(response.data.decode("utf-8"))
+                  print(policyID["id"])
+                  
+                  response = client.put_parameter(Name='/player/C1CS/policyID', Value=policyID["id"], Type='String', Overwrite=True)
+                  return ("true")
+              -
+                lambda_function_role_arn: !Ref c1csLambdaFunctionRole
+  lambdaFunctionCreateCluster:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import urllib3
+                import boto3
+
+                client = boto3.client('ssm')
+
+                def lambda_handler(event, context):
+                  
+                  parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
+                  playerApiKey = parameter ['Parameter']['Value']
+                  
+                  parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
+                  playerC1Region = parameter ['Parameter']['Value']
+
+                  parameter = client.get_parameter(Name='/player/C1CS/policyID', WithDecryption=True)
+                  playerC1csPolicyID = parameter ['Parameter']['Value']
+
+                  url = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/clusters'
+
+                  payload = json.dumps({
+                    'name': 'ProductionCluster',
+                    'description': 'Production Cluster',
+                    'policyID': ''+playerC1csPolicyID+''
+                  })
+                  headers = {
+                    'Authorization': 'ApiKey '+playerApiKey+'',
+                    'Content-Type': 'application/json'
+                  }
+
+                  http = urllib3.PoolManager()
+                  encoded_payload = payload.encode("utf-8")
+                  response = http.request("POST", url=url, headers=headers, body=encoded_payload)
+
+                  clusterCreateResponse = json.loads(response.data.decode("utf-8"))
+                  print(clusterCreateResponse["id"])
+                  print(clusterCreateResponse["apiKey"])
+                  
+                  
+                  #$clusterCreateResponseDecoded = json.loads(clusterCreateResponse.data.decode("utf-8"))
+                  
+                  response = client.put_parameter(Name='/player/C1CS/clusterID', Value=clusterCreateResponse["id"], Type='String', Overwrite=True)
+                  response = client.put_parameter(Name='/player/C1CS/clusterApiKey', Value=clusterCreateResponse["apiKey"], Type='String', Overwrite=True)
+              -
+                lambda_function_role_arn: !Ref c1csLambdaFunctionRole
+  EKSCalicoInstallLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt c1csLambdaFunctionRole.Arn
+          Code:
+            ZipFile:
+              !Sub
+                - |-
+                  import json
+                  import boto3
+
+                  ssm = boto3.client('ssm')
+                  region = 'us-east-1'
+
+                  def lambda_handler(event, context):
+                      response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                          DocumentName='C1CSRemoveLB',
+                          DocumentVersion='$DEFAULT',
+                          TimeoutSeconds=123,
+                          Comment='string'
+                      )
+                -
+                  lambda_function_role_arn: !Ref c1csLambdaFunctionRole
+  lambdaFunctionRunSSMCommandCreateOverridesFile:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import boto3
+
+                ssm = boto3.client('ssm')
+                region = 'us-east-1'
+
+                def lambda_handler(event, context):
+                    response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                        DocumentName='c1csCreateOverridesFile',
+                        DocumentVersion='$DEFAULT',
+                        TimeoutSeconds=123,
+                        Comment='string'
+                    )
+              -
+                lambda_function_role_arn: !Ref c1csLambdaFunctionRole
+  lambdaFunctionRunSSMCommandHelmUninstallC1CS:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import boto3
+
+                ssm = boto3.client('ssm')
+                region = 'us-east-1'
+
+                def lambda_handler(event, context):
+                    response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                        DocumentName='c1csHelmUninstall',
+                        DocumentVersion='$DEFAULT',
+                        TimeoutSeconds=123,
+                        Comment='string'
+                    )
+              -
+                lambda_function_role_arn: !Ref c1csLambdaFunctionRole
+  lambdaFunctionRunSSMCommandHelmInstallC1CS:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import boto3
+
+                ssm = boto3.client('ssm')
+                region = 'us-east-1'
+
+                def lambda_handler(event, context):
+                    response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                        DocumentName='c1csHelmInstall',
+                        DocumentVersion='$DEFAULT',
+
+                        TimeoutSeconds=123,
+                        Comment='string'
+                    )
+              -
+                lambda_function_role_arn: !Ref c1csLambdaFunctionRole
+
+
+# Create State Machine
+  DeployC1CSStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: DeployC1CSStateMachine
+      DefinitionString: !Sub |
+        {
+          "Comment": "This state machine inspects a players api key then creates resources in the players C1CS account.  Then Deploys C1CS in EKS",
+          "StartAt": "EKSCalicoInstallLambda",
+          "States": {
+            "EKSCalicoInstallLambda": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${EKSCalicoInstallLambda.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "lambdaFunctionRunSSMCommandHelmUninstallC1CS"
+            },
+            "lambdaFunctionRunSSMCommandHelmUninstallC1CS": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionRunSSMCommandHelmUninstallC1CS.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "lambdaFunctionQueryPlayerApiKey"
+            },
+            "lambdaFunctionQueryPlayerApiKey": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionQueryPlayerApiKey.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "lambdaFunctionCreatePolicy"
+            },
+            "lambdaFunctionCreatePolicy": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionCreatePolicy.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "lambdaFunctionCreateCluster"
+            },
+            "lambdaFunctionCreateCluster": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionCreateCluster.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "lambdaFunctionRunSSMCommandCreateOverridesFile"
+            },
+            "lambdaFunctionRunSSMCommandCreateOverridesFile": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionRunSSMCommandCreateOverridesFile.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "lambdaFunctionRunSSMCommandHelmInstallC1CS"
+            },
+            "lambdaFunctionRunSSMCommandHelmInstallC1CS": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionRunSSMCommandHelmInstallC1CS.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      RoleArn: !GetAtt [ stateMachineRole, Arn ]
+
+Outputs:
+  lambdaFunctionQueryPlayerApiKey:
+    Description: Query Api Key role ARN
+    Value: !GetAtt lambdaFunctionQueryPlayerApiKey.Arn
+  lambdaFunctionCreateRuleset:
+    Description: Create C1CS Ruleset in player C1CS Account
+    Value: !GetAtt lambdaFunctionCreateRuleset.Arn
+  lambdaFunctionCreatePolicy:
+    Description: Create C1CS Policy in player C1CS Account
+    Value: !GetAtt lambdaFunctionCreatePolicy.Arn
+  lambdaFunctionCreateCluster:
+    Description: Create C1CS Cluster in player C1CS Account
+    Value: !GetAtt lambdaFunctionCreateCluster.Arn
+  lambdaFunctionRunSSMCommandCreateOverridesFile:
+    Description: Run SSM command to Create Overrides file
+    Value: !GetAtt lambdaFunctionRunSSMCommandCreateOverridesFile.Arn
+  lambdaFunctionRunSSMCommandHelmInstallC1CS:
+    Description: Run SSM command to install C1CS
+    Value: !GetAtt lambdaFunctionRunSSMCommandHelmInstallC1CS.Arn
+  lambdaFunctionRunSSMCommandHelmUninstallC1CS:
+    Description: Run SSM Command to uninstall C1CS
+    Value: !GetAtt lambdaFunctionRunSSMCommandHelmUninstallC1CS.Arn
+  DeployC1CSStateMachine:
+    Description: Step function that deploys C1CS in EKS
+    Value: !GetAtt DeployC1CSStateMachine.Arn
+#  lambdaFunctionInvokeDeployC1CSStateMachine:
+#    Description: update description
+#    Value: !GetAtt lambdaFunctionInvokeDeployC1CSStateMachine.Arn
