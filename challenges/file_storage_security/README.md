@@ -1,6 +1,22 @@
+# Structure of this folder
+
+```plain
+file_storage_security/
+├── templates/ => Templates for this challenge
+├── lambda/ => Lambdas for this challenge
+├── scripts/ => Development scripts
+├── flake.nix => Internal tooling file
+└── flake.lock => Internal tooling lockfile
+```
+
+# Scripts
+All under `scripts/`:
+- `package-lambda.sh`: package the code in a lambda folder into a `.zip`, ready for consumption by Lambda. Run inside the directory of the function you wish to package, calling `../../scripts/package-lambda.sh`.
+- `vend.sh`: deploy the latest upstream commit hash for the current branch to Vending Machine. Can run anywhere.
+
 # How to add a new lambda function
 
-I swear this is going to make the CloudFormation easier to reason about, but can be a PITA when you make a new function. Tradeoffs, man.
+I swear this is going to make the CloudFormation easier to reason about, but can be a PITA when you make a new function. Tradeoffs.
 
 > TODO: Automate this.
 
