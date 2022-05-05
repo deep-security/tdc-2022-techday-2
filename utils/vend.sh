@@ -30,6 +30,7 @@ CURRENTBRANCHNAME=$(git rev-parse --abbrev-ref HEAD)
 read -p "Are you sure? " -n 1 -r
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
+    echo ""
     gh workflow run "$DEPLOYWORKFLOWNAME" \
         --ref "$CURRENTBRANCHNAME" \
         -f name="$(git rev-parse '@{u}')"
@@ -56,7 +57,7 @@ function watch-action {
 # Handle the watch options
 while true; do
   case "$1" in
-    -w | --watch ) watch-action; exit ;;
+    -w | --watch ) sleep 3 && watch-action; exit ;;
     * ) exit ;;
   esac
 done
