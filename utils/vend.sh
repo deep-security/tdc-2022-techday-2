@@ -30,6 +30,7 @@ CURRENTBRANCHNAME=$(git rev-parse --abbrev-ref HEAD)
 read -p "Are you sure? " -n 1 -r
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
+    echo ""
     gh workflow run "$DEPLOYWORKFLOWNAME" \
         --ref "$CURRENTBRANCHNAME" \
         -f name="$(git rev-parse '@{u}')"
@@ -45,7 +46,7 @@ function watch-action {
         --branch "$CURRENTBRANCHNAME" \
         --json headSha,databaseId \
         -q ".[] | select(.headSha == \"$LATESTUPSTREAMHASH\")")
-    RUNID=$(echo "$RUNJSON" | jq '.databaseId')
+    RUNID=$(echo "$RUNJSON" | head -n1 | jq '.databaseId')
     JOBID=$(gh run view "$RUNID" | grep "gh run view" | awk '{print $11}' | tail -c 11)
 
     # Get the json from the logs of the vending job
@@ -56,7 +57,7 @@ function watch-action {
 # Handle the watch options
 while true; do
   case "$1" in
-    -w | --watch ) watch-action; exit ;;
+    -w | --watch ) sleep 3 && watch-action; exit ;;
     * ) exit ;;
   esac
 done
