@@ -46,7 +46,7 @@ function watch-action {
         --branch "$CURRENTBRANCHNAME" \
         --json headSha,databaseId \
         -q ".[] | select(.headSha == \"$LATESTUPSTREAMHASH\")")
-    RUNID=$(echo "$RUNJSON" | jq '.databaseId')
+    RUNID=$(echo "$RUNJSON" | head -n1 | jq '.databaseId')
     JOBID=$(gh run view "$RUNID" | grep "gh run view" | awk '{print $11}' | tail -c 11)
 
     # Get the json from the logs of the vending job
