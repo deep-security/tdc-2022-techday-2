@@ -631,7 +631,7 @@ Resources:
                                 'Values': ['EKSBastion'] 
                             } 
                         ],
-                          DocumentName='C1CSRemoveLB',
+                          DocumentName='EKSCalicoInstall',
                           DocumentVersion='$DEFAULT',
                           TimeoutSeconds=123,
                           Comment='string'
