@@ -80,6 +80,7 @@ Resources:
             Action:
               - lambda:InvokeFunction
             Resource:
+              - !GetAtt EKSCalicoInstallLambda.Arn
               - !GetAtt lambdaFunctionQueryPlayerApiKey.Arn
               - !GetAtt lambdaFunctionCreateRuleset.Arn
               - !GetAtt lambdaFunctionCreatePolicy.Arn
