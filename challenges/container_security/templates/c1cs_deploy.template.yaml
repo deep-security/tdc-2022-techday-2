@@ -255,7 +255,7 @@ Resources:
 
                   payload = json.dumps({
                     "name": "ProductionRuleset",
-                    "description": "ruleSet Created for secJam via API",
+                    "description": "ProductionRunTimeRuleset",
                     "labels": [],
                     "rules": [
                       {
