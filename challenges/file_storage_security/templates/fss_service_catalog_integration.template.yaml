@@ -1,0 +1,50 @@
+
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This template defines a the main stack for a challenge.
+
+
+Parameters:
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+  ChallengeBucket:
+    Type: String
+  ChallengeRoot:
+    Type: String
+
+Resources:
+  FSSAllInOneServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: This template create the All in One FSS stack deployment for the service catalog.
+      Name: File Storage Security All in One Template
+      Owner: Trend Micro
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://raw.githubusercontent.com/trendmicro/cloudone-filestorage-deployment-templates/master/aws/FSS-All-In-One.template"
+
+  FSSAllInOneProductID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "FSSAllInOneProductID"
+      Value: !Ref FSSAllInOneServiceCatalogProduct
+      Type: String
+
+  FSSStorageServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: This template create the FSS Storage stack deployment for the service catalog.
+      Name: File Storage Security Storage Stack Template
+      Owner: Trend Micro
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_storage_service_catalog.template.yaml'
+
+  FSSStorageStackProductID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "FSSstoragestackProductID"
+      Value: !Ref FSSStorageServiceCatalogProduct
+      Type: String
