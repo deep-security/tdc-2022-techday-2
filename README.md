@@ -37,7 +37,7 @@ You are recommended to **NOT** change files in this folder. There you'll find re
 
 ### **utils**
 
-You are recommended to **NOT** change files in this folder. There you'll find useful ready-to-use templates, such as `copyzips`, `MissionControlChecker` and `RandomString`. Each one of them includes its own README.md.
+You are recommended to **NOT** change files in this folder. There you'll find useful ready-to-use templates, such as `copyzips`, `MissionControlChecker` and `RandomString`, and scripts, such as `vend.sh`. Each template folder includes its own README.md.
 
 * `copyzips` - A Custom Resource that copy Zips (or any files, really) between buckets. Useful to copy Zips with Lambda function code across regions.
 
@@ -45,9 +45,11 @@ You are recommended to **NOT** change files in this folder. There you'll find us
 
 * `RandomString` - Generates random strings. Useful to generate unique passwords.
 
+* `vend.sh` - This script will [create an environment using Vending Machine](#create-a-new-environment-from-your-last-commit), based on the code in the latest upstream commit for your locally checked-out branch. You can pass in the `--watch` flag to watch the output in your terminal and return your Vending Machine credentials.
+
 ### **challenges**
 
-This is the folder where you should add your own challenges. You'll find the `example` folder inside of it as an example of what your estructure should look like. Inside the `example` folder you'll finde the required structure approach, as below:
+This is the folder where you should add your own challenges. You'll find the `example` folder inside of it as an example of what your structure should look like. Inside the `example` folder you'll finde the required structure approach, as below:
 
 * `lambda` - Any Lambda function that belongs to this challenge, should live in its own folder inside of the `lambda` folder. 
 
@@ -90,7 +92,9 @@ This repo is following the [Github Flow](https://guides.github.com/introduction/
 
 ### **Create a new environment from your last commit**
 
-Cool. You believe you have some code ready to be merged into main. Want to make sure it works in our environment first? You can create an environment using Vending Machine trough an Actions workflow. To do so, go to the `Actions` tab, select `Build Dev Environment` in the left side, click the `Run workflow` dropdown button, leave the branch as it is and enter your commit id in the textbox. Click `Run workflow` to start the creation of a new environment.
+Cool. You believe you have some code ready to be merged into main. Want to make sure it works in our environment first? You can create an environment using Vending Machine trough an Actions workflow. You can do this via the [`vend.sh` script](#utils), or through the Github interface:
+
+To test using the Github interface, go to the `Actions` tab, select `Build Dev Environment` in the left side, click the `Run workflow` dropdown button, leave the branch as it is and enter your commit id in the textbox. Click `Run workflow` to start the creation of a new environment.
 
 ![Creating a new Dev Environment](pics/build-dev-environment.png)
 
