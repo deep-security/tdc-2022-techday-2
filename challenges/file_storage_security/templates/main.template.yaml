@@ -21,18 +21,9 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, hyphens (-), and
       forward slash (/).
     Type: String
-  PlayerServiceCatalogPortfolio:
-    Type: String
-  ServiceCatalogLaunchRoleArn:
-    Type: String
 
 Resources:
   FssServiceCatalogIntegration:
     Type: AWS::CloudFormation::Stack
     Properties:
-      Parameters: 
-        ChallengeBucket: !Ref QSS3BucketName 
-        ChallengeRoot: !Sub '${QSS3KeyPrefix}challenges/file_storage_security/'
-        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
-        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/challenges/file_storage_security/templates/fss_service_catalog_integration.template.yaml'
