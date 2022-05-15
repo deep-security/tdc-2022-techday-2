@@ -26,21 +26,13 @@ Parameters:
   ServiceCatalogLaunchRoleArn:
     Type: String
 
-Mappings:
-  # Define mappings to avoid recreating confusing !Sub strings. Set and forget.
-  Variables:
-    ChallengeBucket: !Ref QSS3BucketName 
-    ChallengeRoot: !Sub '${QSS3KeyPrefix}challenges/file_storage_security/'
-  Templates:
-    FssServiceCatalogIntegration: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/challenges/file_storage_security/templates/fss_service_catalog_integration.template.yaml'
-
 Resources:
   FssServiceCatalogIntegration:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters: 
-        ChallengeBucket: !FindInMap ["Variables", "ChallengeBucket"]
-        ChallengeRoot: !FindInMap ["Variables", "ChallengeRoot"]
+        ChallengeBucket: !Ref QSS3BucketName 
+        ChallengeRoot: !Sub '${QSS3KeyPrefix}challenges/file_storage_security/'
         PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
-      TemplateURL: !FindInMap ["Templates", "FssServiceCatalogIntegration"]
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/challenges/file_storage_security/templates/fss_service_catalog_integration.template.yaml'
