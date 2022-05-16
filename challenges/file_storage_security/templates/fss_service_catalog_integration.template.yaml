@@ -1,7 +1,7 @@
 
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
-  This template defines a the main stack for a challenge.
+  Adds FSS CloudFormation templates to the Player's Service Catalog.
 
 Resources:
   FSSAllInOneServiceCatalogProduct:
