@@ -8,7 +8,7 @@ Parameters:
       letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
       (-).
     Default: none
-    Description: Update to where you hold the scripts. S3 bucket name for the SecJam assets. Quick Start bucket name
+    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start bucket name
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
     Type: String
@@ -17,7 +17,7 @@ Parameters:
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slash (/).
     Default: ""
-    Description: Update to where you hold the scripts. S3 bucket name for the SecJam assets. Quick Start key prefix
+    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), and
       forward slash (/).
     Type: String
