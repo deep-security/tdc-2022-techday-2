@@ -12,9 +12,8 @@ file_storage_security/
 # Scripts
 All under `scripts/`:
 - `package-lambda.sh`: package the code in a lambda folder into a `.zip`, ready for consumption by Lambda. Run inside the directory of the function you wish to package, calling `../../scripts/package-lambda.sh`.
-- `vend.sh`: deploy the latest upstream commit hash for the current branch to Vending Machine. Can run anywhere.
 
-# How to add a new lambda function
+<!-- # How to add a new lambda function
 
 I swear this is going to make the CloudFormation easier to reason about, but can be a PITA when you make a new function. Tradeoffs.
 
@@ -31,4 +30,4 @@ I swear this is going to make the CloudFormation easier to reason about, but can
 6. Edit `templates/main.template.yaml`:
     1. Add a parameter under `Parameters` that has the same name as you defined in step 5. Set `Default: ""` and `Type: String`.
     2. Add the function to the template, following the form of other functions currently in the template.
-7. Commit/sync/move on with your life. You did it!
+7. Commit/sync/move on with your life. You did it! -->
