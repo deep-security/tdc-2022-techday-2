@@ -23,7 +23,7 @@ const setupRequest = (method, path, data) => {
       'Content-Type': 'application/json'
     },
     responseType: 'json',
-    ...data && {data : data}
+    ...data && { data: data }
   };
 };
 
@@ -32,23 +32,23 @@ const state = async (id) => {
     const resp = await axios(setupRequest('GET', `${id}/state`));
     return resp.data;
   }
-  catch(err) {
+  catch (err) {
     throw err;
   }
 };
 
 const deploy = async (cfnUrl, hoursAfterRightNow) => {
   const data = {
-      'template': cfnUrl,
-      'numberOfAccounts': '1',
-      'startTime': expireTime(hoursAfterRightNow).toString,
-      'endTime': Date.now().toString
+    'template': cfnUrl,
+    'numberOfAccounts': '1',
+    'startTime': expireTime(hoursAfterRightNow).toString,
+    'endTime': Date.now().toString
   };
   try {
     const resp = await axios(setupRequest('POST', 'create', data));
     return resp.data;
   }
-  catch(err) {
+  catch (err) {
     throw err;
   }
 };
@@ -58,7 +58,7 @@ const accounts = async (id) => {
     const resp = await axios(setupRequest('GET', `${id}/accounts`));
     return resp.data;
   }
-  catch(err) {
+  catch (err) {
     throw err;
   }
 };
@@ -68,7 +68,7 @@ const clean = async (id) => {
     const resp = await axios(setupRequest('DELETE', `${id}/clean`));
     return resp.data;
   }
-  catch(err) {
+  catch (err) {
     throw err;
   }
 };
@@ -95,16 +95,16 @@ exports.handler = async () => {
     const id = (await deploy(CFN_URL, 1)).Id;
     console.info(`Deploy requested. Id is ${id}`);
     let waitedTimeInMinutes = 0;
-    while ( (await state(id)).status != 'completed' ){
+    while ((await state(id)).status != 'completed') {
       console.info(`
 Account not ready... waiting 1 minute and trying again.
 For troubleshooting purposes, the deployment id is: ${id}
       `);
       await sleep(60000);
-      waitedTimeInMinutes =+ 1;
+      waitedTimeInMinutes = + 1;
       if (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES) {
         // Account hasn't finished building in time.
-        throw(new Error(`
+        throw (new Error(`
 It looks like something went wrong...
 Here's the info that we have:
 ${JSON.stringify((await accounts(id)), null, 2)}`));
@@ -115,7 +115,7 @@ ${JSON.stringify((await accounts(id)), null, 2)}`));
     console.info('The outputs are:');
     return JSON.stringify(parseOutputs((await accounts(id))[0].stackoutput), null, 2);
   }
-  catch(err) {
+  catch (err) {
     throw err;
   }
 
