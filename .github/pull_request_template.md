@@ -1,9 +1,9 @@
 # Pillar
-[ ] **Cloud One**
+- [ ] **Cloud One**
 
-[ ] **Vision One**
+- [ ] **Vision One**
 
-[ ] **Platform**
+- [ ] **Platform**
 
 ## Service
 
