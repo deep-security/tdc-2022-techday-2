@@ -2,6 +2,13 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >
   Adds FSS CloudFormation templates to the Player's Service Catalog.
 
+Parameters:
+  # Service Catalog related
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+
 Resources:
   FSSAllInOneServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct

@@ -26,8 +26,17 @@ Parameters:
       forward slash (/).
     Type: String
 
+  # Service Catalog related
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+
 Resources:
   FssServiceCatalogIntegration:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/challenges/file_storage_security/templates/fss_service_catalog_integration.template.yaml"
