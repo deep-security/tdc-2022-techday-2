@@ -516,7 +516,7 @@ Resources:
     Type: AWS::ServiceCatalog::LaunchRoleConstraint
     Properties:
       PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
-      ProductId: '{{resolve:ssm:FSSallinoneProductID:1}}'
+      ProductId: '{{resolve:ssm:FSSAllInOneProductID:1}}'
       RoleArn: '{{resolve:ssm:RoleArn:1}}'
 
 Outputs:
