@@ -7,18 +7,18 @@ Parameters:
     ConstraintDescription: Quick Start bucket name can include numbers, lowercase
       letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
       (-).
-    Default: none
-    Description: Update to where you hold the scripts. S3 bucket name for the SecJam assets. Quick Start bucket name
+    Default: techday-2022-2
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
     Type: String
   QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/]*$
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
-      uppercase letters, hyphens (-), and forward slash (/).
-    Default: ""
-    Description: Update to where you hold the scripts. S3 bucket name for the SecJam assets. Quick Start key prefix
-      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: "latest/"
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
     Type: String
   GroupAssociationPrincipalArn:
@@ -32,11 +32,11 @@ Resources:
   c1csssmparameters:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_ssm_parameters.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_ssm_parameters.template.yaml'
   c1csdeploy:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_deploy.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_deploy.template.yaml'
     DependsOn: c1csssmparameters
 
   PlayerC1csServiceCatalogProduct:
@@ -47,7 +47,7 @@ Resources:
       Owner: "Trend Micro"
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_service_catalog.template.yaml'
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_service_catalog.template.yaml'
 
   ContainerProductID:
     Type: AWS::SSM::Parameter
