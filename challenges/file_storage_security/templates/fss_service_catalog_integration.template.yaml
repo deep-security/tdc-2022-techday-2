@@ -3,6 +3,19 @@ Description: >
   Adds FSS CloudFormation templates to the Player's Service Catalog.
 
 Parameters:
+  ChallengeBucket:
+    Description: Bucket for this challenge.
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Can include numbers, lowercase letters, uppercase letters, and hyphens (-).  It cannot start or end with a hyphen (-).
+    Type: String
+    Default: tdc-challenges
+  ChallengeRoot:
+    Description: Root folder for this challenge.
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription: Can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Type: String
   # Service Catalog related
   PlayerServiceCatalogPortfolio:
     Type: String
@@ -18,7 +31,7 @@ Resources:
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: "https://raw.githubusercontent.com/trendmicro/cloudone-filestorage-deployment-templates/master/aws/FSS-All-In-One.template"
+            LoadTemplateFromURL: !Sub 'https://${ChallengeBucket}.s3.amazonaws.com/${ChallengeRoot}templates/fss_allinone_service_catalog.template.yaml'
 
   FSSAllInOneProductID:
     Type: AWS::SSM::Parameter

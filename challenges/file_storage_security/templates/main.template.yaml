@@ -33,10 +33,28 @@ Parameters:
     Type: String
 
 Resources:
+  FssS3Bucket:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_s3bucket.template.yaml'
+
   FssServiceCatalogIntegration:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
+        ChallengeBucket: !Ref QSS3BucketName
+        ChallengeRoot: !Sub "${QSS3KeyPrefix}challenges/file_storage_security"
         PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/fss_service_catalog_integration.template.yaml"
+
+Outputs:
+  S3ObjectURL:
+    Value: !Sub 'https://${FssS3Bucket.Outputs.FSSS3BucketObjLambdaName}.s3.amazonaws.com/'
+    Description: S3 Object URL for player to Trigger Scan on Read
+  S3BucketToScan:
+    Value: !GetAtt FssS3Bucket.Outputs.FSSS3BucketObjLambdaName
+    Description: S3 Bucket used in the challenge
+  S3BucketToScanURL:
+    Value: !Sub 'https://s3.console.aws.amazon.com/s3/buckets/${FssS3Bucket.Outputs.FSSS3BucketObjLambdaName}?region=${AWS::Region}'
+    Description: URL of S3 bucket to be use in the challenge
