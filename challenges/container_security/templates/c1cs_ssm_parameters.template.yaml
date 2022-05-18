@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: tdc-2022-techday-1 Cloud One Container Security SSM Parameters
+
+Resources:
+
+# SSM Parameters
+  PlayerC1CSClusterApiKeyParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/C1CS/clusterApiKey
+      Type: String
+      Value: startingValue
+      Description: Player C1CS Cluster Api Key
+  PlayerC1CSClusterIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/C1CS/clusterID
+      Type: String
+      Value: startingValue
+      Description: Player C1CS ClusterID
+  PlayerC1CSClusterRegionParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/C1CS/clusterRegion
+      Type: String
+      Value: startingValue
+      Description: Player C1CS Cluster Region
+  PlayerC1CSPolicyIDParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/C1CS/policyID
+      Type: String
+      Value: startingValue
+      Description: Player C1CS Policy ID
+  PlayerC1CSRuleSetIDParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/C1CS/ruleSetID
+      Type: String
+      Value: startingValue
+      Description: Player C1CS Ruleset ID
