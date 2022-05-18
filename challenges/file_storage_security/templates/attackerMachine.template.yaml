@@ -1,0 +1,26 @@
+Resources:
+  c1csAttackRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: c1csAttackRolePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - ssm:SendCommand
+            Resource:
+              - arn:aws:ssm:*:*:document/C1CSRuntimeAttack01
+              - arn:aws:ssm:*:*:document/C1CSContinuousAttack01
+              - arn:aws:ssm:*:*:document/C1CSContinuousAttack03

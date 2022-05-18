@@ -23,6 +23,7 @@ Parameters:
     Type: String
 
 Resources:
+  # TODO I don't think we really need to do this .........
   FSSAllInOneServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
