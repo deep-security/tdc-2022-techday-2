@@ -106,8 +106,8 @@ exports.handler = async () => {
     let waitedTimeInMinutes = 0;
     while ((await state(id)).status != 'completed') {
       console.info(`
-        Account not ready... waiting 1 minute and trying again.
-        For troubleshooting purposes, the deployment id is: ${id}
+Account not ready... waiting 1 minute and trying again.
+For troubleshooting purposes, the deployment id is: ${id}
       `);
       await sleep(60000);
       waitedTimeInMinutes = + 1;
