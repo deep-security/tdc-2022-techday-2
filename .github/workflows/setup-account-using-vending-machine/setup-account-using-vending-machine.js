@@ -116,7 +116,7 @@ For troubleshooting purposes, the deployment id is: ${id}
         const accountNotReadyErr = new Error(`
 It looks like something went wrong...
 Here's the info that we have:
-${JSON.stringify((await accounts(id)), null, 2)}`));
+${JSON.stringify((await accounts(id)), null, 2)}`);
         core.setFailed(accountNotReadyErr.message);
         throw accountNotReadyErr;
       }
