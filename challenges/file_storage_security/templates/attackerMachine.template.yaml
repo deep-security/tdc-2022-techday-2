@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: tdc-2022-techday-1 Cloud One Container Security - Attacks template
+
+Parameters:
+  QSS3BucketName:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3BucketName
+    Description: DO NOT CHANGE THIS VALUE
+  QSS3KeyPrefix:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3KeyPrefix
+    Description: DO NOT CHANGE THIS VALUE
+
+Resources:
+  # IAM
+  AttackerMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: AttackerMachineRolePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - ssm:SendCommand
+            Resource:
+              - arn:aws:ssm:*:*:document/DeployAttackerMachineDocument
+  # Scripts
+  DeployAttackerMachineDocument: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: "2.2"
+        description: "DeployAttackerMachineDocument - Attack Story"
+        mainSteps: 
+            - 
+                action: "aws:runShellScript"
+                name: "runShellScript"
+                inputs: 
+                    workingDirectory: "{{.}}"
+                    runCommand:
+                    - !Sub "sudo /usr/local/bin/kubectl apply -f https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/k8s/attackerMachine.yaml"
+      DocumentType: Command
+      Name: 'DeployAttackerMachineDocument'
+  # Lambda functions to run scripts
+  LambdaFunctionRunDeployAttackerMachineDocument:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt AttackerMachineRole.Arn
+          Code:
+            ZipFile: |
+                  import json
+                  import boto3
+
+                  ssm = boto3.client('ssm')
+                  region = 'us-east-1'
+
+                  def lambda_handler(event, context):
+                      response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                          DocumentName='DeployAttackerMachineDocument',
+                          DocumentVersion='$DEFAULT',
+                          TimeoutSeconds=123,
+                          Comment='string'
+                      )
