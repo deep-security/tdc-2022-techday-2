@@ -40,3 +40,7 @@ Resources:
         PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/fss_service_catalog_integration.template.yaml"
+  AttackerMachine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
