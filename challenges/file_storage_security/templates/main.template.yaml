@@ -46,7 +46,7 @@ Resources:
   FssS3Bucket:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/fss_s3bucket.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_s3bucket.template.yaml'
 
   FssServiceCatalogIntegration:
     Type: AWS::CloudFormation::Stack

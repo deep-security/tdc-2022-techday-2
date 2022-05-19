@@ -146,6 +146,8 @@ Parameters:
     Default: QSS3BucketName
     Description: DO NOT CHANGE THIS VALUE
   QSS3KeyPrefix:
+    # REFERENCE (tdc-2022-2): Value in this file ↓
+    # latest/
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: QSS3KeyPrefix
     Description: DO NOT CHANGE THIS VALUE

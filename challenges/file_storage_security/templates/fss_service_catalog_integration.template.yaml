@@ -52,7 +52,7 @@ Resources:
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub 'https://${ChallengeBucket}.s3.amazonaws.com/${ChallengeRoot}templates/fss_allinone_service_catalog.template.yaml'
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}fss_allinone_service_catalog.template.yaml'
 
   FSSAllInOneProductID:
     Type: AWS::SSM::Parameter
