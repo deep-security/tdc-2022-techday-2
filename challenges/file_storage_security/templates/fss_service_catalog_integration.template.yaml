@@ -44,7 +44,9 @@ Resources:
   FSSAllInOneServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
-      Description: This template create the All in One FSS stack deployment for the service catalog.
+      Description:
+        This template create the All in One FSS stack deployment for the service
+        catalog.
       Name: File Storage Security All in One Template
       Owner: Trend Micro
       ProvisioningArtifactParameters:
@@ -70,4 +72,4 @@ Resources:
     Properties:
       PortfolioId: !Ref PlayerServiceCatalogPortfolio
       ProductId: !Ref FSSAllInOneServiceCatalogProduct
-      RoleArn: !Ref ServiceCatalogLaunchRoleArn  
+      RoleArn: !Ref ServiceCatalogLaunchRoleArn
