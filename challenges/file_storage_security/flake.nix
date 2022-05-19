@@ -4,12 +4,15 @@
 
   inputs.flake-utils.url = "github:numtide/flake-utils";
 
+  inputs.rain.url = "path:/home/alex/.dotfiles/pkgs/rain";
+  inputs.rain.inputs.nixpkgs.follows = "nixpkgs";
+
   inputs.flake-compat = {
     url = "github:edolstra/flake-compat";
     flake = false;
   };
 
-  outputs = { self, nixpkgs, flake-utils, ... }:
+  outputs = { self, nixpkgs, flake-utils, rain, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -25,6 +28,7 @@
 
             # cloudformation development
             python39Packages.cfn-lint
+            rain.packages.${system}.default
 
             # shell development
             shellcheck
