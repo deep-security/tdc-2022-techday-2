@@ -2,6 +2,13 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >
   Adds FSS CloudFormation templates to the Player's Service Catalog.
 
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
 Parameters:
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
