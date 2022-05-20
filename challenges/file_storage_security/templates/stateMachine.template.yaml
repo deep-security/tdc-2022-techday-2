@@ -1,0 +1,628 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: tdc-2022-techday-1 Cloud One Container Security - Runs state machine to deploy nginx to EKS
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase letters, uppercase
+      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Default: none
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start bucket name can include numbers, lowercase letters,
+      uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), and forward slash (/).
+    # REFERENCE (tdc-2022-2): Value in this file ↓
+    Default: "latest/challenges/file_storage_security/templates"
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Type: String
+
+Resources:
+# Create iAM Roles
+  FSSEKSOperationsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: FSSEKSOperationsRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - ssm:SendCommand
+              - ssm:PutParameter
+            Resource:
+              - arn:aws:ssm:*:*:document/AWS-RunShellScript
+              - arn:aws:ssm:*:*:document/DeleteAttackerLBService
+              - arn:aws:ssm:*:*:document/DeleteAttackerMachineDeployment
+              - arn:aws:ssm:*:*:document/CreateAttackerMachineDeployment
+              - arn:aws:ssm:*:*:document/CreateAttackerLBService
+              - arn:aws:ssm:*:*:document/InstallTools
+              - arn:aws:ssm:*:*:document/UserModsLambda
+              - arn:aws:ssm:*:*:parameter/player/FSS/AttackerLBHostname
+          - Effect: Allow
+            Action:
+              - ssm:SendCommand
+            Resource:
+              - arn:aws:ec2:*:*:instance/*
+            Condition:
+              StringLike:
+                ssm:resourceTag/Name:
+                  - EKSBastion
+          - Effect: Allow
+            Action:
+              - ssm:GetCommandInvocation
+            Resource:
+              - arn:aws:ssm:*:*:*
+
+  DeployAttackerEnvRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - states.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/service-role/"
+      Policies:
+      - PolicyName: StateMachinePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+            Resource:
+              - !GetAtt DeleteAttackerLBServiceLambda.Arn
+              - !GetAtt DeleteAttackerMachineDeploymentLambda.Arn
+              - !GetAtt CreateAttackerMachineDeploymentLambda.Arn
+              - !GetAtt CreateAttackerLBServiceLambda.Arn
+              - !GetAtt InstallToolsLambda.Arn
+              - !GetAtt UserModsLambda.Arn
+              - !GetAtt GetAttackerLBHostnameLambda.Arn
+
+# SSM Parameters
+  DeployAttackerEnvArn:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/C1CS/DeployAttackerEnvArn
+      Type: String
+      Value: !Ref DeployAttackerEnv
+      Description: ARN for DeployAttackerEnv state machine
+  AttackerLBHostname:
+    Type: AWS::SSM::Parameter
+    Properties:   
+      Name: /player/FSS/AttackerLBHostname
+      Type: String
+      Value: startingValue
+      Description: Load Balancer Hostname for nginx web server
+
+# SSM Documents
+  DeleteAttackerLBService: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Clean up loadbalancer service'
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "sudo touch /tmp/loadbalancer.yaml && sudo /usr/local/bin/kubectl delete -f /tmp/loadbalancer.yaml --ignore-not-found=true"
+      DocumentType: Command
+      Name: 'DeleteAttackerLBService'
+  DeleteAttackerMachineDeployment: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Clean up nginx deployment'
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "sudo touch /tmp/nginx-deployment.yaml && sudo /usr/local/bin/kubectl delete -f /tmp/nginx-deployment.yaml --ignore-not-found=true"
+      DocumentType: Command
+      Name: 'DeleteAttackerMachineDeployment'
+  CreateAttackerMachineDeployment: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: "2.2"
+        description: "Deploy Nginx pod - Run time attack 02"
+        mainSteps: 
+            - 
+                action: "aws:runShellScript"
+                name: "runShellScript"
+                inputs: 
+                    workingDirectory: "{{.}}"
+                    runCommand:
+                    - "echo 'apiVersion: apps/v1' > /tmp/nginx-deployment.yaml"
+                    - "echo 'kind: Deployment' >> /tmp/nginx-deployment.yaml"
+                    - "echo 'metadata:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '  name: nginx-deployment' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '  labels:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '    app: nginx' >> /tmp/nginx-deployment.yaml"
+                    - "echo 'spec:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '  replicas: 1' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '  selector:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '    matchLabels:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '      app: nginx' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '  template:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '    metadata:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '      labels:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '        app: nginx' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '    spec:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '      containers:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '      - name: nginx' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '        image: nginx:1.14.2' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '        ports:' >> /tmp/nginx-deployment.yaml"
+                    - "echo -e '        - containerPort: 80' >> /tmp/nginx-deployment.yaml"
+                    - "sudo /usr/local/bin/kubectl apply -f /tmp/nginx-deployment.yaml"
+      DocumentType: Command
+      Name: 'CreateAttackerMachineDeployment'
+  CreateAttackerLBService: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: "2.2"
+        description: "Create loadbalancer service - Run time attack 02"
+        mainSteps: 
+            - 
+                action: "aws:runShellScript"
+                name: "runShellScript"
+                inputs: 
+                    workingDirectory: "{{.}}"
+                    runCommand:
+                    - "echo 'apiVersion: v1' > /tmp/loadbalancer.yaml"
+                    - "echo 'kind: Service' >> /tmp/loadbalancer.yaml"
+                    - "echo 'metadata:' >> /tmp/loadbalancer.yaml"
+                    - "echo -e '  name: nginx-service-loadbalancer' >> /tmp/loadbalancer.yaml"
+                    - "echo 'spec:' >> /tmp/loadbalancer.yaml"
+                    - "echo -e '  type: LoadBalancer' >> /tmp/loadbalancer.yaml"
+                    - "echo -e '  selector:' >> /tmp/loadbalancer.yaml"
+                    - "echo -e '    app: nginx' >> /tmp/loadbalancer.yaml"
+                    - "echo -e '  ports:' >> /tmp/loadbalancer.yaml"
+                    - "echo -e '      - protocol: TCP' >> /tmp/loadbalancer.yaml"
+                    - "echo -e '        port: 80' >> /tmp/loadbalancer.yaml"
+                    - "echo -e '        targetPort: 80' >> /tmp/loadbalancer.yaml"
+                    - "sudo /usr/local/bin/kubectl apply -f /tmp/loadbalancer.yaml"
+      DocumentType: Command
+      Name: 'CreateAttackerLBService'
+
+# Lambda functions
+  DeleteAttackerLBServiceLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt FSSEKSOperationsRole.Arn
+          Code:
+            ZipFile: |
+                  import json
+                  import boto3
+
+                  ssm = boto3.client('ssm')
+                  region = 'us-east-1'
+
+                  def lambda_handler(event, context):
+                      response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                          DocumentName='DeleteAttackerLBService',
+                          DocumentVersion='$DEFAULT',
+                          TimeoutSeconds=123,
+                          Comment='string'
+                      )
+  DeleteAttackerMachineDeploymentLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt FSSEKSOperationsRole.Arn
+          Code:
+            ZipFile: |
+                  import json
+                  import boto3
+
+                  ssm = boto3.client('ssm')
+                  region = 'us-east-1'
+
+                  def lambda_handler(event, context):
+                      response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                          DocumentName='DeleteAttackerMachineDeployment',
+                          DocumentVersion='$DEFAULT',
+                          TimeoutSeconds=123,
+                          Comment='string'
+                      )
+  CreateAttackerMachineDeploymentLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt FSSEKSOperationsRole.Arn
+          Code:
+            ZipFile: |
+                  import json
+                  import boto3
+
+                  ssm = boto3.client('ssm')
+                  region = 'us-east-1'
+
+                  def lambda_handler(event, context):
+                      response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                          DocumentName='CreateAttackerMachineDeployment',
+                          DocumentVersion='$DEFAULT',
+                          TimeoutSeconds=123,
+                          Comment='string'
+                      )
+  CreateAttackerLBServiceLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt FSSEKSOperationsRole.Arn
+          Code:
+            ZipFile: |
+                  import json
+                  import boto3
+
+                  ssm = boto3.client('ssm')
+                  region = 'us-east-1'
+
+                  def lambda_handler(event, context):
+                      response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                          DocumentName='CreateAttackerLBService',
+                          DocumentVersion='$DEFAULT',
+                          TimeoutSeconds=123,
+                          Comment='string'
+                      )
+  GetAttackerLBHostnameLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt FSSEKSOperationsRole.Arn
+          Code:
+            ZipFile: |
+                  import json
+                  import boto3
+                  import botocore
+                  import time
+
+
+                  def lambda_handler(event=None, context=None):
+                      client = boto3.client('ssm')
+
+                      instance_id = 'i-025e49c3623e0e22f' # hard-code for example
+                      response = client.send_command(
+                          Targets = [
+                              {
+                                  'Key': 'tag:Name',
+                                  'Values': ['EKSBastion']
+                              }
+                          ],
+                          DocumentName='AWS-RunShellScript',
+                          Parameters={
+                              'commands': [
+                                  "sudo /usr/local/bin/kubectl get services --namespace default nginx-service-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                              ]
+                          }
+                      )
+                      command_id = response['Command']['CommandId']
+                      tries = 0
+                      output = 'False'
+                      while tries < 10:
+                          tries = tries + 1
+                          try:
+                              time.sleep(0.5)  # some delay always required...
+                              result = client.get_command_invocation(
+                                  CommandId=command_id,
+                                  InstanceId=instance_id,
+                              )
+                              if result['Status'] == 'InProgress':
+                                  continue
+                              output = result['StandardOutputContent']
+                              #output = result
+                              break
+                          except client.exceptions.InvocationDoesNotExist:
+                              continue
+
+                      client.put_parameter(Name='/player/FSS/AttackerLBHostname', Value=output, Type='String', Overwrite=True)
+                      #return output #== 'True'
+  InstallToolsLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt FSSEKSOperationsRole.Arn
+          Code:
+            ZipFile: |
+                  import json
+                  import boto3
+                  import botocore
+                  import time
+
+
+                  def lambda_handler(event=None, context=None):
+                      client = boto3.client('ssm')
+                      response = client.send_command(
+                          Targets = [
+                              {
+                                  'Key': 'tag:Name',
+                                  'Values': ['EKSBastion']
+                              }
+                          ],
+                          DocumentName='AWS-RunShellScript',
+                          Parameters={
+                              'commands': [
+                                  "POD=$(sudo /usr/local/bin/kubectl get pod -l app=nginx -o jsonpath='{.items[0].metadata.name}') && sudo /usr/local/bin/kubectl exec -ti $POD -- bash -c 'apt update && apt-get update && apt-get -y install masscan && history -c && echo 'test' && masscan > /var/log/kern.log'"
+                              ]
+                          }
+                      )
+  UserModsLambda:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt FSSEKSOperationsRole.Arn
+          Code:
+            ZipFile: |
+                  import json
+                  import boto3
+                  import botocore
+                  import time
+
+
+                  def lambda_handler(event=None, context=None):
+                      client = boto3.client('ssm')
+                      response = client.send_command(
+                          Targets = [
+                              {
+                                  'Key': 'tag:Name',
+                                  'Values': ['EKSBastion']
+                              }
+                          ],
+                          DocumentName='AWS-RunShellScript',
+                          Parameters={
+                              'commands': [
+                                  "POD=$(sudo /usr/local/bin/kubectl get pod -l app=nginx -o jsonpath='{.items[0].metadata.name}') && sudo /usr/local/bin/kubectl exec -ti $POD -- bash -c 'apt update && apt-get update && apt-get -y install masscan && history -c && echo 'test' && masscan > /var/log/kern.log'"
+                              ]
+                          }
+                      )
+
+# State Machine
+  DeployAttackerEnv:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: DeployAttackerEnv
+      DefinitionString: !Sub |
+        {
+          "StartAt": "DeleteAttackerLBServiceLambda",
+          "States": {
+            "DeleteAttackerLBServiceLambda": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${DeleteAttackerLBServiceLambda.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "DeleteAttackerMachineDeploymentLambda"
+            },
+            "DeleteAttackerMachineDeploymentLambda": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${DeleteAttackerMachineDeploymentLambda.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "CreateAttackerMachineDeploymentLambda"
+            },
+            "CreateAttackerMachineDeploymentLambda": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${CreateAttackerMachineDeploymentLambda.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "CreateAttackerLBServiceLambda"
+            },
+            "CreateAttackerLBServiceLambda": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${CreateAttackerLBServiceLambda.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "Wait"
+            },
+            "Wait": {
+              "Type": "Wait",
+              "Seconds": 10,
+              "Next": "InstallToolsLambda"
+            },
+            "InstallToolsLambda": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${InstallToolsLambda.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "GetAttackerLBHostnameLambda"
+            },
+            "GetAttackerLBHostnameLambda": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${GetAttackerLBHostnameLambda.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "End": true
+            }
+          },
+          "Comment": "Idempotent state machine that deploys an attacker environment to EKS through an EKS bastion.\nNOTE: The EKS bastion(s) in question must have be tagged: \"Name:EKSBastion\"."
+        }
+
+      RoleArn: !GetAtt [ DeployAttackerEnvRole, Arn ]
+
+Outputs:
+  DeleteAttackerLBServiceLambda:
+    Description: Query Api Key role ARN
+    Value: !GetAtt DeleteAttackerLBServiceLambda.Arn
+  DeleteAttackerMachineDeploymentLambda:
+    Description: Query Api Key role ARN
+    Value: !GetAtt DeleteAttackerMachineDeploymentLambda.Arn
+  CreateAttackerMachineDeploymentLambda:
+    Description: Query Api Key role ARN
+    Value: !GetAtt CreateAttackerMachineDeploymentLambda.Arn
+  CreateAttackerLBServiceLambda:
+    Description: Query Api Key role ARN
+    Value: !GetAtt CreateAttackerLBServiceLambda.Arn
+  InstallToolsLambda:
+    Description: InstallToolsLambda Arn
+    Value: !GetAtt InstallToolsLambda.Arn   
+  UserModsLambda:
+    Description: UserModsLambda Arn
+    Value: !GetAtt UserModsLambda.Arn   
+  GetAttackerLBHostnameLambda:
+    Description: GetAttackerLBHostnameLambda Arn
+    Value: !GetAtt GetAttackerLBHostnameLambda.Arn
+  DeployAttackerEnv:
+    Description: Step function that deploys C1CS in EKS
+    Value: !GetAtt DeployAttackerEnv.Arn
