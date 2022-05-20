@@ -346,52 +346,51 @@ Resources:
           Handler: index.lambda_handler
           Role: !GetAtt FSSEKSOperationsRole.Arn
           Code:
-            ZipFile: |
-                  import json
-                  import boto3
-                  import botocore
-                  import time
+            ZipFile: !Sub |
+              import json
+              import boto3
+              import botocore
+              import time
 
 
-                  def lambda_handler(event=None, context=None):
-                      client = boto3.client('ssm')
-
-                      instance_id = 'i-025e49c3623e0e22f' # hard-code for example
-                      response = client.send_command(
-                          Targets = [
-                              {
-                                  'Key': 'tag:Name',
-                                  'Values': ['EKSBastion']
-                              }
-                          ],
-                          DocumentName='AWS-RunShellScript',
-                          Parameters={
-                              'commands': [
-                                  "sudo /usr/local/bin/kubectl get services --namespace default nginx-service-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
-                              ]
-                          }
-                      )
-                      command_id = response['Command']['CommandId']
-                      tries = 0
-                      output = 'False'
-                      while tries < 10:
-                          tries = tries + 1
-                          try:
-                              time.sleep(0.5)  # some delay always required...
-                              result = client.get_command_invocation(
-                                  CommandId=command_id,
-                                  InstanceId=instance_id,
-                              )
-                              if result['Status'] == 'InProgress':
-                                  continue
-                              output = result['StandardOutputContent']
-                              #output = result
-                              break
-                          except client.exceptions.InvocationDoesNotExist:
+              def lambda_handler(event=None, context=None):
+                  client = boto3.client("ssm")
+                  response = client.send_command(
+                      Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                      DocumentName="AWS-RunShellScript",
+                      Parameters={
+                          "commands": [
+                              "sudo /usr/local/bin/kubectl get services --namespace ${AWS::StackName} attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                          ]
+                      },
+                  )
+                  command_id = response["Command"]["CommandId"]
+                  tries = 0
+                  output = "False"
+                  while tries < 10:
+                      tries = tries + 1
+                      try:
+                          time.sleep(0.5)  # some delay always required...
+                          invocations_list = client.list_command_invocations(
+                              CommandId=command_id,
+                          ).CommandInvocations
+                          result = sorted(
+                              invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
+                          )[0]
+                          if result["Status"] == "InProgress":
                               continue
+                          output = result["StandardOutputContent"]
+                          break
+                      except client.exceptions.InvocationDoesNotExist:
+                          continue
 
-                      client.put_parameter(Name='/player/FSS/AttackerLBHostname', Value=output, Type='String', Overwrite=True)
-                      #return output #== 'True'
+                  client.put_parameter(
+                      Name="/player/FSS/AttackerLBHostname",
+                      Value=output,
+                      Type="String",
+                      Overwrite=True,
+                  )
+
   InstallToolsLambda:
         Type: AWS::Lambda::Function
         Properties:
@@ -400,29 +399,25 @@ Resources:
           Handler: index.lambda_handler
           Role: !GetAtt FSSEKSOperationsRole.Arn
           Code:
-            ZipFile: |
-                  import json
-                  import boto3
-                  import botocore
-                  import time
+            ZipFile: !Sub |
+              import json
+              import boto3
+              import botocore
+              import time
 
 
-                  def lambda_handler(event=None, context=None):
-                      client = boto3.client('ssm')
-                      response = client.send_command(
-                          Targets = [
-                              {
-                                  'Key': 'tag:Name',
-                                  'Values': ['EKSBastion']
-                              }
-                          ],
-                          DocumentName='AWS-RunShellScript',
-                          Parameters={
-                              'commands': [
-                                  "POD=$(sudo /usr/local/bin/kubectl get pod -l app=nginx -o jsonpath='{.items[0].metadata.name}') && sudo /usr/local/bin/kubectl exec -ti $POD -- bash -c 'apt update && apt-get update && apt-get -y install masscan && history -c && echo 'test' && masscan > /var/log/kern.log'"
-                              ]
-                          }
-                      )
+              def lambda_handler(event=None, context=None):
+                  client = boto3.client("ssm")
+                  client.send_command(
+                      Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                      DocumentName="AWS-RunShellScript",
+                      Parameters={
+                          "commands": [
+                              "sudo /usr/local/bin/kubectl kubectl get pods --namespace ${AWS::StackName} app=attacker-machine -o jsonpath='{range .items[*]}{.status.containerStatuses[*].ready.true}{.metadata.name}{\"\\n\"}{end}' | xargs -I{} kubectl exec {} -- /bin/bash -c \"echo 'abc:abc' | chpasswd; usermod -l Player abc\""
+                          ]
+                      },
+                  )
+
   UserModsLambda:
         Type: AWS::Lambda::Function
         Properties:
