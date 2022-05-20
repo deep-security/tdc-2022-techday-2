@@ -30,18 +30,3 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
         # Still need a liveness probe
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: attacker-machine-service-loadbalancer
-  labels:
-    app: attacker-machine
-spec:
-  type: LoadBalancer
-  selector:
-    app: attacker-machine
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 3000
