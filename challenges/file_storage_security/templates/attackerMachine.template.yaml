@@ -53,7 +53,7 @@ Parameters:
 
 Resources:
   # Create iAM Roles
-  KubeCtlOperationsRole:
+  K8sAdminRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -67,7 +67,7 @@ Resources:
               - sts:AssumeRole
       Path: "/"
       Policies:
-        - PolicyName: KubeCtlOperationsRole
+        - PolicyName: K8sAdminRole
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -77,6 +77,7 @@ Resources:
                   - ssm:PutParameter
                 Resource:
                   - arn:aws:ssm:*:*:document/AWS-RunShellScript
+                  - arn:aws:ssm:*:*:document/LaunchK8sManifests
                   - arn:aws:ssm:*:*:parameter/player/FSS/AttackerLBHostname
               - Effect: Allow
                 Action:
@@ -125,6 +126,26 @@ Resources:
                   - !GetAtt UserModsLambda.Arn
                   - !GetAtt GetAttackerLBHostnameLambda.Arn
 
+# Create SSM Documents
+  LaunchK8sManifests: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Document that launches arbitrary k8s manifest files.'
+        mainSteps:
+        # TODO: does this behave like &&?
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '120'
+            runCommand:
+            - !Sub "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-loadbalancer-service.yaml | sudo /usr/local/bin/kubectl delete --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true -f -"
+            - !Sub "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-machine-deployment.yaml | sudo /usr/local/bin/kubectl delete --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true -f -"
+      DocumentType: Command
+      Name: 'LaunchK8sManifests'
+
+
   # SSM Parameters
   StateMachineDeployArn:
     Type: AWS::SSM::Parameter
@@ -142,53 +163,28 @@ Resources:
       Description: Load Balancer Hostname for nginx web server
 
   # Lambda functions
-  DeleteAttackerLBServiceLambda:
+  lambdaFunctionRunSSMCommandLaunchK8sManifests:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
       Timeout: 20
       Handler: index.lambda_handler
-      Role: !GetAtt KubeCtlOperationsRole.Arn
+      Role: !GetAtt K8sAdminRole.Arn
       Code:
-        ZipFile: !Sub |
+        ZipFile: |
           import boto3
+
+          ssm = boto3.client("ssm")
+          region = "us-east-1"
 
 
           def lambda_handler(event=None, context=None):
-              client = boto3.client("ssm")
-              client.send_command(
+              ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="AWS-RunShellScript",
-                  Parameters={
-                      "commands": [
-                          # curls QSS3Bucket for manifest and deletes it
-                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-loadbalancer-service.yaml | sudo /usr/local/bin/kubectl delete --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true -f -"
-                      ]
-                  },
-                  )
-  DeleteAttackerMachineDeploymentLambda:
-    Type: AWS::Lambda::Function
-    Properties:
-      Runtime: python3.8
-      Timeout: 20
-      Handler: index.lambda_handler
-      Role: !GetAtt KubeCtlOperationsRole.Arn
-      Code:
-        ZipFile: !Sub |
-          import boto3
-
-
-          def lambda_handler(event=None, context=None):
-              client = boto3.client("ssm")
-              client.send_command(
-                  Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="AWS-RunShellScript",
-                  Parameters={
-                      "commands": [
-                          # curls QSS3Bucket for manifest and deletes it
-                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-machine-deployment.yaml | sudo /usr/local/bin/kubectl delete --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true -f -"
-                      ]
-                  },
+                  DocumentName="LaunchK8sManifests",
+                  DocumentVersion="$DEFAULT",
+                  TimeoutSeconds=123,
+                  Comment="string",
               )
   DeleteAttackerNamespaceLambda:
     Type: AWS::Lambda::Function
@@ -196,7 +192,7 @@ Resources:
       Runtime: python3.8
       Timeout: 20
       Handler: index.lambda_handler
-      Role: !GetAtt KubeCtlOperationsRole.Arn
+      Role: !GetAtt K8sAdminRole.Arn
       Code:
         ZipFile: !Sub |
           import boto3
@@ -209,7 +205,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true"
+                          "sudo /usr/local/bin/kubectl delete namespace attacker-machine-$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true"
                       ]
                   },
               )
@@ -219,7 +215,7 @@ Resources:
       Runtime: python3.8
       Timeout: 20
       Handler: index.lambda_handler
-      Role: !GetAtt KubeCtlOperationsRole.Arn
+      Role: !GetAtt K8sAdminRole.Arn
       Code:
         ZipFile: !Sub |
           import boto3
@@ -232,7 +228,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl create namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]')"
+                          "sudo /usr/local/bin/kubectl create namespace attacker-machine-$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]')"
                       ]
                   },
               )
@@ -242,7 +238,7 @@ Resources:
       Runtime: python3.8
       Timeout: 20
       Handler: index.lambda_handler
-      Role: !GetAtt KubeCtlOperationsRole.Arn
+      Role: !GetAtt K8sAdminRole.Arn
       Code:
         ZipFile: !Sub |
           import boto3
@@ -266,7 +262,7 @@ Resources:
       Runtime: python3.8
       Timeout: 20
       Handler: index.lambda_handler
-      Role: !GetAtt KubeCtlOperationsRole.Arn
+      Role: !GetAtt K8sAdminRole.Arn
       Code:
         ZipFile: !Sub |
           import boto3
@@ -290,7 +286,7 @@ Resources:
       Runtime: python3.8
       Timeout: 20
       Handler: index.lambda_handler
-      Role: !GetAtt KubeCtlOperationsRole.Arn
+      Role: !GetAtt K8sAdminRole.Arn
       Code:
         ZipFile: !Sub |
           import boto3
@@ -322,7 +318,7 @@ Resources:
       Runtime: python3.8
       Timeout: 20
       Handler: index.lambda_handler
-      Role: !GetAtt KubeCtlOperationsRole.Arn
+      Role: !GetAtt K8sAdminRole.Arn
       Code:
         ZipFile: !Sub |
           import boto3
@@ -350,7 +346,7 @@ Resources:
       Runtime: python3.8
       Timeout: 20
       Handler: index.lambda_handler
-      Role: !GetAtt KubeCtlOperationsRole.Arn
+      Role: !GetAtt K8sAdminRole.Arn
       Code:
         ZipFile: !Sub |
           import json
