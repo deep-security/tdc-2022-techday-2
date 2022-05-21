@@ -162,7 +162,7 @@ Resources:
                   Parameters={
                       "commands": [
                           # curls QSS3Bucket for manifest and deletes it
-                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-loadbalancer-service.yaml | sudo /usr/local/bin/kubectl delete --namespace ${AWS::StackName} --ignore-not-found=true -f -"
+                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-loadbalancer-service.yaml | sudo /usr/local/bin/kubectl delete --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true -f -"
                       ]
                   },
                   )
@@ -186,7 +186,7 @@ Resources:
                   Parameters={
                       "commands": [
                           # curls QSS3Bucket for manifest and deletes it
-                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-machine-deployment.yaml | sudo /usr/local/bin/kubectl delete --namespace ${AWS::StackName} --ignore-not-found=true -f -"
+                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-machine-deployment.yaml | sudo /usr/local/bin/kubectl delete --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true -f -"
                       ]
                   },
               )
@@ -209,7 +209,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl delete namespace ${AWS::StackName} --ignore-not-found=true"
+                          "sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true"
                       ]
                   },
               )
@@ -232,7 +232,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl create namespace ${AWS::StackName}"
+                          "sudo /usr/local/bin/kubectl create namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]')"
                       ]
                   },
               )
@@ -256,7 +256,7 @@ Resources:
                   Parameters={
                       "commands": [
                           # curls QSS3Bucket for manifest and applies it
-                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-machine-deployment.yaml | sudo /usr/local/bin/kubectl apply --namespace ${AWS::StackName} -f -"
+                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-machine-deployment.yaml | sudo /usr/local/bin/kubectl apply --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') -f -"
                       ]
                   },
               )
@@ -280,7 +280,7 @@ Resources:
                   Parameters={
                       "commands": [
                           # curls QSS3Bucket for manifest and applies it
-                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-loadbalancer-service.yaml | sudo /usr/local/bin/kubectl apply --namespace ${AWS::StackName} -f -"
+                          "curl https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-loadbalancer-service.yaml | sudo /usr/local/bin/kubectl apply --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') -f -"
                       ]
                   },
               )
@@ -304,10 +304,10 @@ Resources:
                   Parameters={
                       "commands": [
                           """sudo /usr/local/bin/kubectl get pods \\
-                          --namespace ${AWS::StackName} \\
-                          app=attacker-machine \\
+                          --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') \\
+                          -l app=attacker-machine \\
                           -o jsonpath=\'{range .items[*]}{.status.containerStatuses[*].ready.true}{.metadata.name}{"\\n"}{end}\' | \\
-                          xargs -I{} sudo /usr/bin/kubectl exec {} -- /bin/bash -c \\
+                          xargs -I{} sudo /usr/local/bin/kubectl exec --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') {} -- /bin/bash -c \\
                           \"sudo apt-get update && \\\\
                           sudo apt-get install -y vim openjdk-8-jdk curl unzip && \\\\
                           curl https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix}JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \\\\
@@ -336,10 +336,10 @@ Resources:
                   Parameters={
                       "commands": [
                           """sudo /usr/local/bin/kubectl get pods \\
-                          --namespace ${AWS::StackName} \\
-                          app=attacker-machine \\
+                          --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') \\
+                          -l app=attacker-machine \\
                           -o jsonpath=\'{range .items[*]}{.status.containerStatuses[*].ready.true}{.metadata.name}{"\\n"}{end}\' | \\
-                          xargs -I{} sudo /usr/bin/kubectl exec {} -- /bin/bash -c \\
+                          xargs -I{} sudo /usr/local/bin/kubectl exec --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') {} -- /bin/bash -c \\
                           \"echo 'abc:${PlayerPassword}' | chpasswd && usermod -l Player abc\""""
                       ]
                   },
@@ -366,7 +366,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl get services --namespace ${AWS::StackName} attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                          "sudo /usr/local/bin/kubectl get services --namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
                       ]
                   },
               )
