@@ -311,7 +311,7 @@ Resources:
                           \"sudo apt-get update && \\\\
                           sudo apt-get install -y vim openjdk-8-jdk curl unzip && \\\\
                           curl https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix}JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \\\\
-                          unzip -p novirus /tmp/JNDIExploit-v1.2.zip && \\\\
+                          sudo unzip -P novirus /tmp/JNDIExploit-v1.2.zip && \\\\
                           rm /tmp/JNDIExploit-v1.2.zip\""""
                       ]
                   },
