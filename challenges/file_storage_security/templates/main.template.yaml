@@ -36,6 +36,10 @@ Parameters:
       uppercase letters, hyphens (-), and forward slash (/).
     Type: String
 
+  PlayerPassword:
+    Description: The Player's password
+    Type: String
+
   # Service Catalog related
   PlayerServiceCatalogPortfolio:
     Type: String
@@ -55,4 +59,9 @@ Resources:
   AttackerMachine:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+          ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
+          PlayerPassword: !Ref PlayerPassword
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/attackerMachine.template.yaml"
