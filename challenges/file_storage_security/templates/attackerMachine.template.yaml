@@ -91,6 +91,7 @@ Resources:
                       - EKSBastion
               - Effect: Allow
                 Action:
+                  - ssm:GetCommandInvocations
                   - ssm:ListCommandInvocations
                 Resource:
                   - arn:aws:ssm:*:*:*
@@ -306,12 +307,10 @@ Resources:
       Role: !GetAtt K8sAdminRole.Arn
       Code:
         ZipFile: !Sub |
-          import json
           import boto3
-          import botocore
           import time
-
-
+          
+          
           def lambda_handler(event=None, context=None):
               client = boto3.client("ssm")
               response = client.send_command(
@@ -332,17 +331,23 @@ Resources:
                       time.sleep(0.5)  # some delay always required...
                       invocations_list = client.list_command_invocations(
                           CommandId=command_id,
-                      ).CommandInvocations
-                      result = sorted(
+                      )["CommandInvocations"]
+                      instance_id = sorted(
                           invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
-                      )[0]
+                      )[0]["InstanceId"]
+                      print(instance_id)
+                      result = client.get_command_invocation(
+                          CommandId=command_id,
+                          InstanceId=instance_id,
+                      )
+                      print(result)
                       if result["Status"] == "InProgress":
                           continue
                       output = result["StandardOutputContent"]
                       break
                   except client.exceptions.InvocationDoesNotExist:
                       continue
-
+          
               client.put_parameter(
                   Name="/player/FSS/AttackerLBHostname",
                   Value=output,
