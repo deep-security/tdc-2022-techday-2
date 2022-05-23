@@ -131,25 +131,15 @@ Resources:
         description: 'Document that launches arbitrary k8s manifest files found in the QSS3Bucket.'
         mainSteps:
         - action: aws:runShellScript
-          name: CreateNamespace
+          name: CreateNamespaceIndempotent
           inputs:
             timeoutSeconds: '60'
             runCommand:
               - !Sub | 
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
               - |
+                  sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE --dry-run=client -o yaml | sudo /usr/local/bin/kubectl apply -f -
-        - action: aws:runShellScript
-          name: RestartExistingDeployments
-          inputs:
-            timeoutSeconds: '60'
-            runCommand:
-              - !Sub | 
-                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
-              - |
-                  for deploy in $(/usr/local/bin/kubectl get deployments -o=name --namespace=$NAMESPACE | tail -n1 | cut -d ' ' -f 1); do \
-                    /usr/local/bin/kubectl rollout restart $deploy --namespace=$NAMESPACE \
-                  done
         - action: aws:runShellScript
           name: DeployManifests
           inputs:
@@ -197,7 +187,7 @@ Resources:
               - !Sub |
                   sudo /usr/local/bin/kubectl exec --namespace=$NAMESPACE $POD -- /bin/bash -c \
                   "sudo apt-get update && \
-                  sudo apt-get install -y vi vim nano openjdk-8-jdk curl unzip && \
+                  sudo apt-get install -y vim nano openjdk-8-jdk curl unzip && \
                   sudo mkdir -p /config/Desktop/hacker && \
                   curl https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix}JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \
                   sudo unzip -P novirus /tmp/JNDIExploit-v1.2.zip -d /config/Desktop/hacker && \
