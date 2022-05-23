@@ -76,8 +76,8 @@ Resources:
                   - ssm:SendCommand
                   - ssm:PutParameter
                 Resource:
-                  - !Sub "arn:aws:ssm:*:*:document/${LaunchK8sManifests}"
-                  - !Sub "arn:aws:ssm:*:*:document/${PrepareAttackerMachine}"
+                  - !Sub "arn:aws:ssm:*:*:document/${LaunchK8sManifests7}"
+                  - !Sub "arn:aws:ssm:*:*:document/${PrepareAttackerMachine7}"
                   - arn:aws:ssm:*:*:document/AWS-RunShellScript
                   - arn:aws:ssm:*:*:parameter/player/FSS/AttackerLBHostname
               - Effect: Allow
@@ -118,37 +118,45 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !GetAtt DeleteAttackerNamespaceLambda.Arn
-                  - !GetAtt CreateAttackerNamespaceLambda.Arn
-                  - !GetAtt LaunchK8sManifestsLambda.Arn
-                  - !GetAtt PrepareAttackerMachineLambda.Arn
+                  - !GetAtt LaunchK8sManifests7Lambda.Arn
+                  - !GetAtt PrepareAttackerMachine7Lambda.Arn
                   - !GetAtt GetAttackerLBHostnameLambda.Arn
 
 # Create SSM Documents
-  LaunchK8sManifests: 
+  LaunchK8sManifests7: 
     Type: AWS::SSM::Document
     Properties:
       Content:
         schemaVersion: '2.2'
-        description: 'Document that launches arbitrary k8s manifest files.'
+        description: 'Document that launches arbitrary k8s manifest files found in the QSS3Bucket.'
         mainSteps:
         - action: aws:runShellScript
-          name: AttackerMachineDeployment
+          name: CreateNamespace
           inputs:
             timeoutSeconds: '60'
             runCommand:
               - !Sub |
-                curl -s https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-machine-deployment.yaml > /tmp/attacker-machine-deployment.yaml && \
-                sudo /usr/local/bin/kubectl apply --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') -f /tmp/attacker-machine-deployment.yaml
+                  sudo /usr/local/bin/kubectl create namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) --dry-run=client -o yaml | sudo /usr/local/bin/kubectl apply -f -
         - action: aws:runShellScript
-          name: AttackerLoadbalancerService
+          name: RestartExistingDeployments
           inputs:
             timeoutSeconds: '60'
             runCommand:
               - !Sub |
-                curl -s https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}k8s/attacker-loadbalancer-service.yaml > /tmp/attacker-loadbalancer-service.yaml && \
-                sudo /usr/local/bin/kubectl apply --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') -f /tmp/attacker-loadbalancer-service.yaml
+                  for deploy in $(/usr/local/bin/kubectl get deployments -o=name --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) | tail -n1 | cut -d ' ' -f 1); do \
+                    /usr/local/bin/kubectl rollout restart $deploy --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
+                  done
+        - action: aws:runShellScript
+          name: DeployManifests
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+              - !Sub |
+                  mkdir -p /tmp/manifests-${AWS::StackName} && \
+                  aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-${AWS::StackName} && \
+                  sudo /usr/local/bin/kubectl apply --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) -f /tmp/manifests-${AWS::StackName}
       DocumentType: Command
-  PrepareAttackerMachine: 
+  PrepareAttackerMachine7: 
     Type: AWS::SSM::Document
     Properties:
       Content:
@@ -214,22 +222,24 @@ Resources:
       Handler: index.lambda_handler
       Role: !GetAtt K8sAdminRole.Arn
       Code:
-        ZipFile: !Sub |
-          import boto3
+        ZipFile: !Sub 
+        - |
+            import boto3
 
 
-          def lambda_handler(event=None, context=None):
-              client = boto3.client("ssm")
-              client.send_command(
-                  Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="AWS-RunShellScript",
-                  Parameters={
-                      "commands": [
-                          "sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true"
-                      ]
-                  },
-              )
-  CreateAttackerNamespaceLambda:
+            def lambda_handler(event=None, context=None):
+                client = boto3.client("ssm")
+                client.send_command(
+                    Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                    DocumentName="AWS-RunShellScript",
+                    Parameters={
+                        "commands": [
+                            "${commands}"
+                    },
+                )
+        - commands: !Sub | 
+            sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true
+  LaunchK8sManifests7Lambda:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
@@ -239,43 +249,17 @@ Resources:
       Code:
         ZipFile: !Sub |
           import boto3
-
-
-          def lambda_handler(event=None, context=None):
-              client = boto3.client("ssm")
-              client.send_command(
-                  Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="AWS-RunShellScript",
-                  Parameters={
-                      "commands": [
-                          "sudo /usr/local/bin/kubectl create namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62)"
-                      ]
-                  },
-              )
-  LaunchK8sManifestsLambda:
-    Type: AWS::Lambda::Function
-    Properties:
-      Runtime: python3.8
-      Timeout: 20
-      Handler: index.lambda_handler
-      Role: !GetAtt K8sAdminRole.Arn
-      Code:
-        ZipFile: !Sub |
-          import boto3
-
-          ssm = boto3.client("ssm")
-          region = "us-east-1"
 
 
           def lambda_handler(event=None, context=None):
               ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="${LaunchK8sManifests}",
+                  DocumentName="${LaunchK8sManifests7}",
                   DocumentVersion="$DEFAULT",
                   TimeoutSeconds=123,
                   Comment="string",
               )
-  PrepareAttackerMachineLambda:
+  PrepareAttackerMachine7Lambda:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
@@ -293,7 +277,7 @@ Resources:
           def lambda_handler(event=None, context=None):
               ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="${PrepareAttackerMachine}",
+                  DocumentName="${PrepareAttackerMachine7}",
                   DocumentVersion="$DEFAULT",
                   TimeoutSeconds=123,
                   Comment="string",
@@ -362,56 +346,14 @@ Resources:
       StateMachineName: StateMachineDeploy
       DefinitionString: !Sub |
         {
-          "StartAt": "DeleteAttackerNamespaceLambda",
+          "StartAt": "LaunchK8sManifests7Lambda",
           "States": {
-            "DeleteAttackerNamespaceLambda": {
+            "LaunchK8sManifests7Lambda": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "${DeleteAttackerNamespaceLambda.Arn}"
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException"
-                  ],
-                  "IntervalSeconds": 2,
-                  "MaxAttempts": 6,
-                  "BackoffRate": 2
-                }
-              ],
-              "Next": "CreateAttackerNamespaceLambda"
-            },
-            "CreateAttackerNamespaceLambda": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {
-                "Payload.$": "$",
-                "FunctionName": "${CreateAttackerNamespaceLambda.Arn}"
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException"
-                  ],
-                  "IntervalSeconds": 2,
-                  "MaxAttempts": 6,
-                  "BackoffRate": 2
-                }
-              ],
-              "Next": "LaunchK8sManifestsLambda"
-            },
-            "LaunchK8sManifestsLambda": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {
-                "Payload.$": "$",
-                "FunctionName": "${LaunchK8sManifestsLambda.Arn}"
+                "FunctionName": "${LaunchK8sManifests7Lambda.Arn}"
               },
               "Retry": [
                 {
@@ -430,14 +372,14 @@ Resources:
             "Wait": {
               "Type": "Wait",
               "Seconds": 60,
-              "Next": "PrepareAttackerMachineLambda"
+              "Next": "PrepareAttackerMachine7Lambda"
             },
-            "PrepareAttackerMachineLambda": {
+            "PrepareAttackerMachine7Lambda": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "${PrepareAttackerMachineLambda.Arn}"
+                "FunctionName": "${PrepareAttackerMachine7Lambda.Arn}"
               },
               "Retry": [
                 {
@@ -451,11 +393,6 @@ Resources:
                   "BackoffRate": 2
                 }
               ],
-              "Next": "Wait for ALB to Become Active"
-            },
-            "Wait for ALB to Become Active": {
-              "Type": "Wait",
-              "Seconds": 200,
               "Next": "GetAttackerLBHostnameLambda"
             },
             "GetAttackerLBHostnameLambda": {
