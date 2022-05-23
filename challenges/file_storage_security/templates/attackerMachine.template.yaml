@@ -169,7 +169,7 @@ Resources:
             timeoutSeconds: '120'
             runCommand:
               - !Sub | 
-                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') \
+                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
                   POD=$(sudo /usr/local/bin/kubectl get pods \
                   --namespace=$NAMESPACE \
                   -l app=attacker-machine \
@@ -178,12 +178,12 @@ Resources:
                   sudo /usr/local/bin/kubectl exec --namespace=$NAMESPACE $POD -- /bin/bash -c \
                   "echo 'abc:${PlayerPassword}' | chpasswd && usermod -l Player abc"
         - action: aws:runShellScript
-          name: InstallTools
+          name: InstallLog4ShellTools
           inputs:
             timeoutSeconds: '120'
             runCommand:
               - !Sub | 
-                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') \
+                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
                   POD=$(sudo /usr/local/bin/kubectl get pods \
                   --namespace=$NAMESPACE \
                   -l app=attacker-machine \
@@ -191,9 +191,10 @@ Resources:
               - !Sub |
                   sudo /usr/local/bin/kubectl exec --namespace=$NAMESPACE $POD -- /bin/bash -c \
                   "sudo apt-get update && \
-                  sudo apt-get install -y vim openjdk-8-jdk curl unzip && \
+                  sudo apt-get install -y vi vim nano openjdk-8-jdk curl unzip && \
+                  sudo mkdir -p /config/Desktop/hacker && \
                   curl https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix}JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \
-                  sudo unzip -P novirus /tmp/JNDIExploit-v1.2.zip && \
+                  sudo unzip -P novirus /tmp/JNDIExploit-v1.2.zip -d /config/Desktop/hacker && \
                   rm /tmp/JNDIExploit-v1.2.zip"
       DocumentType: Command
 
