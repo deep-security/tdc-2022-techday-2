@@ -246,19 +246,45 @@ Resources:
       Code:
         ZipFile: !Sub |
           import boto3
-
+          import time
+          
           ssm = boto3.client("ssm")
           region = "us-east-1"
-
-
+          
+          
           def lambda_handler(event=None, context=None):
-              ssm.send_command(
+              response = ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
                   DocumentName="${LaunchK8sManifests}",
                   DocumentVersion="$DEFAULT",
                   TimeoutSeconds=123,
                   Comment="string",
               )
+              command_id = response["Command"]["CommandId"]
+              tries = 0
+              while tries < 10:
+                  tries = tries + 1
+                  try:
+                      time.sleep(0.5)  # some delay always required...
+                      invocations_list = ssm.list_command_invocations(
+                          CommandId=command_id,
+                      )["CommandInvocations"]
+                      instance_id = sorted(
+                          invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
+                      )[0]["InstanceId"]
+                      print(instance_id)
+                      result = ssm.get_command_invocation(
+                          CommandId=command_id,
+                          InstanceId=instance_id,
+                      )
+                      print(result)
+                      if result["Status"] == "InProgress":
+                          continue
+                      if result["Status"] == "TimedOut" or result["Status"] == "Failed":
+                          raise Exception("Command failed/timed out.")
+                      break
+                  except ssm.exceptions.InvocationDoesNotExist:
+                      continue
   PrepareAttackerMachineLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -269,19 +295,45 @@ Resources:
       Code:
         ZipFile: !Sub |
           import boto3
-
+          import time
+          
           ssm = boto3.client("ssm")
           region = "us-east-1"
-
-
+          
+          
           def lambda_handler(event=None, context=None):
-              ssm.send_command(
+              response = ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
                   DocumentName="${PrepareAttackerMachine}",
                   DocumentVersion="$DEFAULT",
                   TimeoutSeconds=123,
                   Comment="string",
               )
+              command_id = response["Command"]["CommandId"]
+              tries = 0
+              while tries < 10:
+                  tries = tries + 1
+                  try:
+                      time.sleep(0.5)  # some delay always required...
+                      invocations_list = ssm.list_command_invocations(
+                          CommandId=command_id,
+                      )["CommandInvocations"]
+                      instance_id = sorted(
+                          invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
+                      )[0]["InstanceId"]
+                      print(instance_id)
+                      result = ssm.get_command_invocation(
+                          CommandId=command_id,
+                          InstanceId=instance_id,
+                      )
+                      print(result)
+                      if result["Status"] == "InProgress":
+                          continue
+                      if result["Status"] == "TimedOut" or result["Status"] == "Failed":
+                          raise Exception("Command failed/timed out.")
+                      break
+                  except ssm.exceptions.InvocationDoesNotExist:
+                      continue
   GetAttackerLBHostnameLambda:
     Type: AWS::Lambda::Function
     Properties:
