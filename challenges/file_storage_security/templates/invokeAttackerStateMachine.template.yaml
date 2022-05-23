@@ -1,0 +1,110 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Deploys the AttackerMachine state machine
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase letters, uppercase
+      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Default: none
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start bucket name can include numbers, lowercase letters,
+      uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), and forward slash (/).
+    # REFERENCE (tdc-2022-2): Value in this file ↓
+    Default: "latest/challenges/file_storage_security/templates/"
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Type: String
+  DeployAttackerEnvStateMachineArn:
+    Type: String
+
+Resources:
+  DeployAttackerEnvStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: LambdaFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - states:StartExecution
+            Resource:
+              - arn:aws:states:*:*:stateMachine:DeployAttackerEnvStateMachine
+
+# Lambda Functions
+  DeployAttackerEnvStateMachineLambda:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt DeployAttackerEnvStateMachineRole.Arn
+        Code:
+          ZipFile: !Sub |
+            import boto3
+            import random
+            import string
+            import cfnresponse
+            
+            client = boto3.client("stepfunctions")
+            
+            
+            def id_generator(size, chars=string.ascii_lowercase + string.digits):
+                return "".join(random.choice(chars) for _ in range(size))
+            
+            def lambda_handler(event, context):
+                stateMachineArn = "${DeployAttackerEnvStateMachineArn}"
+            
+                # Add Random number to the end of the name of the statemachine
+                randomString = "%s.%s" % (id_generator(6), id_generator(16))
+                stateMachineName = "DeployAttackerEnv" + randomString
+            
+                response = client.start_execution(
+                    stateMachineArn=stateMachineArn,
+                    name=stateMachineName,
+                )
+            
+                cfnresponse.send(
+                    event,
+                    context,
+                    cfnresponse.SUCCESS,
+                    {},
+                    "InvokeDeployAttackerEnvStateMachineLambda",
+                )
+
+# Custom Resources
+  InvokeDeployAttackerEnvStateMachineLambda:
+    Type: Custom::DeployAttackerEnvStateMachineLambda
+    Properties:
+      ServiceToken: !GetAtt DeployAttackerEnvStateMachineLambda.Arn
+      Timeout: 5

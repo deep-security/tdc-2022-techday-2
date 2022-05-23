@@ -1,7 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description:
-  tdc-2022-techday-1 Cloud One Container Security - Runs state machine to deploy
-  nginx to EKS
+  tdc-2022-2 FSS. Creates a state machine to deploy the attacker environment
 
 Metadata:
   # cfn_lint: Disable warning for unused parameters
@@ -95,7 +94,7 @@ Resources:
                   - ssm:ListCommandInvocations
                 Resource:
                   - arn:aws:ssm:*:*:*
-  StateMachineDeployRole:
+  DeployAttackerEnvStateMachineRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -122,69 +121,73 @@ Resources:
                   - !GetAtt PrepareAttackerMachineLambda.Arn
                   - !GetAtt GetAttackerLBHostnameLambda.Arn
 
-# Create SSM Documents
-  LaunchK8sManifests: 
+  # Create SSM Documents
+  LaunchK8sManifests:
     Type: AWS::SSM::Document
     Properties:
       Content:
-        schemaVersion: '2.2'
-        description: 'Document that launches arbitrary k8s manifest files found in the QSS3Bucket.'
+        schemaVersion: "2.2"
+        description:
+          "Document that launches arbitrary k8s manifest files found in the
+          QSS3Bucket."
         mainSteps:
-        - action: aws:runShellScript
-          name: CreateNamespaceIndempotent
-          inputs:
-            timeoutSeconds: '60'
-            runCommand:
-              - !Sub | 
+          - action: aws:runShellScript
+            name: CreateNamespaceIndempotent
+            inputs:
+              timeoutSeconds: "60"
+              runCommand:
+                - !Sub |
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
-              - |
+                - |
                   sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE --dry-run=client -o yaml | sudo /usr/local/bin/kubectl apply -f -
-        - action: aws:runShellScript
-          name: DeployManifests
-          inputs:
-            timeoutSeconds: '60'
-            runCommand:
-              - !Sub | 
+          - action: aws:runShellScript
+            name: DeployManifests
+            inputs:
+              timeoutSeconds: "60"
+              runCommand:
+                - !Sub |
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
-              - !Sub |
+                - !Sub |
                   mkdir -p /tmp/manifests-$NAMESPACE && \
                   aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-$NAMESPACE && \
                   sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f /tmp/manifests-$NAMESPACE
       DocumentType: Command
-  PrepareAttackerMachine: 
+  PrepareAttackerMachine:
     Type: AWS::SSM::Document
     Properties:
       Content:
-        schemaVersion: '2.2'
-        description: 'Document that changes the attacker machine to use Player credentials and installs log4shell tools.'
+        schemaVersion: "2.2"
+        description:
+          "Document that changes the attacker machine to use Player credentials
+          and installs log4shell tools."
         mainSteps:
-        - action: aws:runShellScript
-          name: SetupUser
-          inputs:
-            timeoutSeconds: '120'
-            runCommand:
-              - !Sub | 
+          - action: aws:runShellScript
+            name: SetupUser
+            inputs:
+              timeoutSeconds: "120"
+              runCommand:
+                - !Sub |
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
                   POD=$(sudo /usr/local/bin/kubectl get pods \
                   --namespace=$NAMESPACE \
                   -l app=attacker-machine \
                   -o jsonpath='{range .items[*]}{.status.containerStatuses[*].ready.true}{.metadata.name}{"\n"}{end}') \
-              - !Sub | 
+                - !Sub |
                   sudo /usr/local/bin/kubectl exec --namespace=$NAMESPACE $POD -- /bin/bash -c \
                   "echo 'abc:${PlayerPassword}' | chpasswd && usermod -l Player abc"
-        - action: aws:runShellScript
-          name: InstallLog4ShellTools
-          inputs:
-            timeoutSeconds: '120'
-            runCommand:
-              - !Sub | 
+          - action: aws:runShellScript
+            name: InstallLog4ShellTools
+            inputs:
+              timeoutSeconds: "120"
+              runCommand:
+                - !Sub |
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
                   POD=$(sudo /usr/local/bin/kubectl get pods \
                   --namespace=$NAMESPACE \
                   -l app=attacker-machine \
                   -o jsonpath='{range .items[*]}{.status.containerStatuses[*].ready.true}{.metadata.name}{"\n"}{end}') \
-              - !Sub |
+                - !Sub |
                   sudo /usr/local/bin/kubectl exec --namespace=$NAMESPACE $POD -- /bin/bash -c \
                   "sudo apt-get update && \
                   sudo apt-get install -y openjdk-8-jdk unzip curl vim nano net-tools iproute2 && \
@@ -195,13 +198,13 @@ Resources:
       DocumentType: Command
 
   # SSM Parameters
-  StateMachineDeployArn:
+  DeployAttackerEnvStateMachineArn:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /player/C1CS/StateMachineDeployArn
+      Name: /player/C1CS/DeployAttackerEnvStateMachineArn
       Type: String
-      Value: !Ref StateMachineDeploy
-      Description: ARN for StateMachineDeploy state machine
+      Value: !Ref DeployAttackerEnvStateMachine
+      Description: ARN for DeployAttackerEnvStateMachine state machine
   AttackerLBHostname:
     Type: AWS::SSM::Parameter
     Properties:
@@ -219,8 +222,8 @@ Resources:
       Handler: index.lambda_handler
       Role: !GetAtt K8sAdminRole.Arn
       Code:
-        ZipFile: !Sub 
-        - |
+        ZipFile: !Sub
+          - |
             import boto3
 
 
@@ -234,8 +237,8 @@ Resources:
                             "${commands}"
                     },
                 )
-        - commands: !Sub | 
-            sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true
+          - commands: !Sub |
+              sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true
   LaunchK8sManifestsLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -247,11 +250,11 @@ Resources:
         ZipFile: !Sub |
           import boto3
           import time
-          
+
           ssm = boto3.client("ssm")
           region = "us-east-1"
-          
-          
+
+
           def lambda_handler(event=None, context=None):
               response = ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
@@ -296,11 +299,11 @@ Resources:
         ZipFile: !Sub |
           import boto3
           import time
-          
+
           ssm = boto3.client("ssm")
           region = "us-east-1"
-          
-          
+
+
           def lambda_handler(event=None, context=None):
               response = ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
@@ -345,8 +348,8 @@ Resources:
         ZipFile: !Sub |
           import boto3
           import time
-          
-          
+
+
           def lambda_handler(event=None, context=None):
               client = boto3.client("ssm")
               response = client.send_command(
@@ -383,7 +386,7 @@ Resources:
                       break
                   except client.exceptions.InvocationDoesNotExist:
                       continue
-          
+
               client.put_parameter(
                   Name="/player/FSS/AttackerLBHostname",
                   Value=output,
@@ -392,10 +395,10 @@ Resources:
               )
 
   # State Machine
-  StateMachineDeploy:
+  DeployAttackerEnvStateMachine:
     Type: AWS::StepFunctions::StateMachine
     Properties:
-      StateMachineName: StateMachineDeploy
+      StateMachineName: DeployAttackerEnvStateMachine
       DefinitionString: !Sub |
         {
           "StartAt": "LaunchK8sManifestsLambda",
@@ -471,12 +474,21 @@ Resources:
           },
           "Comment": "Idempotent state machine that deploys an attacker environment to EKS through an EKS bastion.\nNOTE: The EKS bastion(s) in question must have be tagged: \"Name:EKSBastion\"."
         }
-      RoleArn: !GetAtt [StateMachineDeployRole, Arn]
+      RoleArn: !GetAtt [DeployAttackerEnvStateMachineRole, Arn]
 
+  # Custom resource invoker
+  InvokeDeployAttackerEnvStateMachineStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        DeployAttackerEnvStateMachineArn: !Ref DeployAttackerEnvStateMachine
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}invokeAttackerStateMachine.template.yaml"
 Outputs:
-  StateMachineDeploy:
+  DeployAttackerEnvStateMachine:
     Description: State Machine that deploys the attacker environment in EKS
-    Value: !GetAtt StateMachineDeploy.Arn
+    Value: !GetAtt DeployAttackerEnvStateMachine.Arn
   GetAttackerLBHostnameLambda:
     Description: GetAttackerLBHostnameLambda Arn
     Value: !GetAtt GetAttackerLBHostnameLambda.Arn
