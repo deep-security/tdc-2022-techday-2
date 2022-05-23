@@ -65,12 +65,3 @@ Resources:
           ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
           PlayerPassword: !Ref PlayerPassword
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/attackerMachine.template.yaml"
-  AttackerEnvServiceCatalogProduct:
-    Type: AWS::ServiceCatalog::CloudFormationProduct
-    Properties:
-      Description: "Environment for FSS Challenge"
-      Name: "FSS Environment"
-      Owner: "Trend Micro"
-      ProvisioningArtifactParameters:
-        - Info:
-            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/invokeAttackerStateMachine.template.yaml"
