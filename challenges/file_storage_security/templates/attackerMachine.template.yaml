@@ -76,8 +76,8 @@ Resources:
                   - ssm:SendCommand
                   - ssm:PutParameter
                 Resource:
-                  - !Sub "arn:aws:ssm:*:*:document/${LaunchK8sManifests7}"
-                  - !Sub "arn:aws:ssm:*:*:document/${PrepareAttackerMachine7}"
+                  - !Sub "arn:aws:ssm:*:*:document/${LaunchK8sManifests}"
+                  - !Sub "arn:aws:ssm:*:*:document/${PrepareAttackerMachine}"
                   - arn:aws:ssm:*:*:document/AWS-RunShellScript
                   - arn:aws:ssm:*:*:parameter/player/FSS/AttackerLBHostname
               - Effect: Allow
@@ -118,12 +118,12 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !GetAtt DeleteAttackerNamespaceLambda.Arn
-                  - !GetAtt LaunchK8sManifests7Lambda.Arn
-                  - !GetAtt PrepareAttackerMachine7Lambda.Arn
+                  - !GetAtt LaunchK8sManifestsLambda.Arn
+                  - !GetAtt PrepareAttackerMachineLambda.Arn
                   - !GetAtt GetAttackerLBHostnameLambda.Arn
 
 # Create SSM Documents
-  LaunchK8sManifests7: 
+  LaunchK8sManifests: 
     Type: AWS::SSM::Document
     Properties:
       Content:
@@ -135,28 +135,34 @@ Resources:
           inputs:
             timeoutSeconds: '60'
             runCommand:
-              - !Sub |
-                  sudo /usr/local/bin/kubectl create namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) --dry-run=client -o yaml | sudo /usr/local/bin/kubectl apply -f -
+              - !Sub | 
+                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
+              - |
+                  sudo /usr/local/bin/kubectl create namespace $NAMESPACE --dry-run=client -o yaml | sudo /usr/local/bin/kubectl apply -f -
         - action: aws:runShellScript
           name: RestartExistingDeployments
           inputs:
             timeoutSeconds: '60'
             runCommand:
-              - !Sub |
-                  for deploy in $(/usr/local/bin/kubectl get deployments -o=name --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) | tail -n1 | cut -d ' ' -f 1); do \
-                    /usr/local/bin/kubectl rollout restart $deploy --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
+              - !Sub | 
+                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
+              - |
+                  for deploy in $(/usr/local/bin/kubectl get deployments -o=name --namespace=$NAMESPACE | tail -n1 | cut -d ' ' -f 1); do \
+                    /usr/local/bin/kubectl rollout restart $deploy --namespace=$NAMESPACE \
                   done
         - action: aws:runShellScript
           name: DeployManifests
           inputs:
             timeoutSeconds: '60'
             runCommand:
+              - !Sub | 
+                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
               - !Sub |
-                  mkdir -p /tmp/manifests-${AWS::StackName} && \
-                  aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-${AWS::StackName} && \
-                  sudo /usr/local/bin/kubectl apply --namespace=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) -f /tmp/manifests-${AWS::StackName}
+                  mkdir -p /tmp/manifests-$NAMESPACE && \
+                  aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-$NAMESPACE && \
+                  sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f /tmp/manifests-$NAMESPACE
       DocumentType: Command
-  PrepareAttackerMachine7: 
+  PrepareAttackerMachine: 
     Type: AWS::SSM::Document
     Properties:
       Content:
@@ -240,7 +246,7 @@ Resources:
                 )
         - commands: !Sub | 
             sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true
-  LaunchK8sManifests7Lambda:
+  LaunchK8sManifestsLambda:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
@@ -258,12 +264,12 @@ Resources:
           def lambda_handler(event=None, context=None):
               ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="${LaunchK8sManifests7}",
+                  DocumentName="${LaunchK8sManifests}",
                   DocumentVersion="$DEFAULT",
                   TimeoutSeconds=123,
                   Comment="string",
               )
-  PrepareAttackerMachine7Lambda:
+  PrepareAttackerMachineLambda:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
@@ -281,7 +287,7 @@ Resources:
           def lambda_handler(event=None, context=None):
               ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="${PrepareAttackerMachine7}",
+                  DocumentName="${PrepareAttackerMachine}",
                   DocumentVersion="$DEFAULT",
                   TimeoutSeconds=123,
                   Comment="string",
@@ -350,14 +356,14 @@ Resources:
       StateMachineName: StateMachineDeploy
       DefinitionString: !Sub |
         {
-          "StartAt": "LaunchK8sManifests7Lambda",
+          "StartAt": "LaunchK8sManifestsLambda",
           "States": {
-            "LaunchK8sManifests7Lambda": {
+            "LaunchK8sManifestsLambda": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "${LaunchK8sManifests7Lambda.Arn}"
+                "FunctionName": "${LaunchK8sManifestsLambda.Arn}"
               },
               "Retry": [
                 {
@@ -376,14 +382,14 @@ Resources:
             "Wait": {
               "Type": "Wait",
               "Seconds": 60,
-              "Next": "PrepareAttackerMachine7Lambda"
+              "Next": "PrepareAttackerMachineLambda"
             },
-            "PrepareAttackerMachine7Lambda": {
+            "PrepareAttackerMachineLambda": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "${PrepareAttackerMachine7Lambda.Arn}"
+                "FunctionName": "${PrepareAttackerMachineLambda.Arn}"
               },
               "Retry": [
                 {
@@ -432,3 +438,6 @@ Outputs:
   GetAttackerLBHostnameLambda:
     Description: GetAttackerLBHostnameLambda Arn
     Value: !GetAtt GetAttackerLBHostnameLambda.Arn
+  DeleteAttackerNamespaceLambda:
+    Description: DeleteAttackerNamespaceLambda Arn
+    Value: !GetAtt DeleteAttackerNamespaceLambda.Arn
