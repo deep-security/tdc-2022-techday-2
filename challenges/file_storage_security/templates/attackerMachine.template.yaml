@@ -193,7 +193,7 @@ Resources:
   DeployAttackerEnvStateMachineArn:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /player/C1CS/DeployAttackerEnvStateMachineArn
+      Name: /player/FSS/DeployAttackerEnvStateMachineArn
       Type: String
       Value: !Ref DeployAttackerEnvStateMachine
       Description: ARN for DeployAttackerEnvStateMachine state machine
@@ -468,15 +468,6 @@ Resources:
         }
       RoleArn: !GetAtt [DeployAttackerEnvStateMachineRole, Arn]
 
-  # Custom resource invoker
-  InvokeDeployAttackerEnvStateMachineStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
-        DeployAttackerEnvStateMachineArn: !Ref DeployAttackerEnvStateMachine
-      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}invokeAttackerStateMachine.template.yaml"
 Outputs:
   DeployAttackerEnvStateMachine:
     Description: State Machine that deploys the attacker environment in EKS
