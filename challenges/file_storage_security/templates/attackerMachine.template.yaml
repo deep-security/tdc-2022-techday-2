@@ -91,7 +91,7 @@ Resources:
                       - EKSBastion
               - Effect: Allow
                 Action:
-                  - ssm:GetCommandInvocations
+                  - ssm:GetCommandInvocation
                   - ssm:ListCommandInvocations
                 Resource:
                   - arn:aws:ssm:*:*:*
