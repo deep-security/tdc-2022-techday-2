@@ -5,7 +5,7 @@ metadata:
   labels:
     app: log4shell
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: log4shell
