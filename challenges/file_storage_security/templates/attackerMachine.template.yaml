@@ -138,7 +138,7 @@ Resources:
               - !Sub | 
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
               - |
-                  sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true
+                  sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE --dry-run=client -o yaml | sudo /usr/local/bin/kubectl apply -f -
         - action: aws:runShellScript
           name: DeployManifests
@@ -187,7 +187,7 @@ Resources:
               - !Sub |
                   sudo /usr/local/bin/kubectl exec --namespace=$NAMESPACE $POD -- /bin/bash -c \
                   "sudo apt-get update && \
-                  sudo apt-get install -y vim nano openjdk-8-jdk curl unzip && \
+                  sudo apt-get install -y openjdk-8-jdk unzip curl vim nano net-tools iproute2 && \
                   sudo mkdir -p /config/Desktop/hacker && \
                   curl https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix}JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \
                   sudo unzip -P novirus /tmp/JNDIExploit-v1.2.zip -d /config/Desktop/hacker && \
