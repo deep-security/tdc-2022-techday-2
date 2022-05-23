@@ -138,17 +138,9 @@ Resources:
               runCommand:
                 - !Sub |
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
-                - |
+                - !Sub |
                   sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
-                  sudo /usr/local/bin/kubectl create namespace $NAMESPACE --dry-run=client -o yaml | sudo /usr/local/bin/kubectl apply -f -
-          - action: aws:runShellScript
-            name: DeployManifests
-            inputs:
-              timeoutSeconds: "60"
-              runCommand:
-                - !Sub |
-                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
-                - !Sub |
+                  sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
                   mkdir -p /tmp/manifests-$NAMESPACE && \
                   aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-$NAMESPACE && \
                   sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f /tmp/manifests-$NAMESPACE
@@ -417,8 +409,8 @@ Resources:
                     "Lambda.AWSLambdaException",
                     "Lambda.SdkClientException"
                   ],
-                  "IntervalSeconds": 2,
-                  "MaxAttempts": 6,
+                  "IntervalSeconds": 10,
+                  "MaxAttempts": 10,
                   "BackoffRate": 2
                 }
               ],
