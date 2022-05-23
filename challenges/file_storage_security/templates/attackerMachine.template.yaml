@@ -250,6 +250,9 @@ Resources:
         ZipFile: !Sub |
           import boto3
 
+          ssm = boto3.client("ssm")
+          region = "us-east-1"
+
 
           def lambda_handler(event=None, context=None):
               ssm.send_command(
