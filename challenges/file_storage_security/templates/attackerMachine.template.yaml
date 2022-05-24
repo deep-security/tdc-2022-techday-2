@@ -75,8 +75,7 @@ Resources:
                   - ssm:SendCommand
                   - ssm:PutParameter
                 Resource:
-                  - !Sub "arn:aws:ssm:*:*:document/${LaunchK8sManifests}"
-                  - !Sub "arn:aws:ssm:*:*:document/${PrepareAttackerMachine}"
+                  - !Sub "arn:aws:ssm:*:*:document/${LaunchK8sManifests1}"
                   - arn:aws:ssm:*:*:document/AWS-RunShellScript
                   - arn:aws:ssm:*:*:parameter/player/FSS/AttackerLBHostname
               - Effect: Allow
@@ -117,12 +116,11 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !GetAtt DeleteAttackerNamespaceLambda.Arn
-                  - !GetAtt LaunchK8sManifestsLambda.Arn
-                  - !GetAtt PrepareAttackerMachineLambda.Arn
+                  - !GetAtt LaunchK8sManifests1Lambda.Arn
                   - !GetAtt GetAttackerLBHostnameLambda.Arn
 
   # Create SSM Documents
-  LaunchK8sManifests:
+  LaunchK8sManifests1:
     Type: AWS::SSM::Document
     Properties:
       Content:
@@ -136,6 +134,9 @@ Resources:
             inputs:
               timeoutSeconds: "180"
               runCommand:
+                - |
+                  wget https://github.com/mikefarah/yq/releases/download/v4.25.1/yq_linux_amd64.tar.gz -O - | \
+                  tar xz && mv yq_linux_amd64 /usr/local/bin/yq && \
                 - !Sub |
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
                 - !Sub |
@@ -143,50 +144,10 @@ Resources:
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
                   mkdir -p /tmp/manifests-$NAMESPACE && \
                   aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-$NAMESPACE && \
+                  for file in $(grep -lR deployment /tmp/manifests-$NAMESPACE); do \
+                  /usr/local/bin/yq -i '.spec.template.spec.containers[].env += [{"name":"TOOLSURL", "value":"https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix}"}, {"name": "PLAYERPASSWORD", "value":"${PlayerPassword}"}]' $file; \
+                  done && \
                   sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f /tmp/manifests-$NAMESPACE
-      DocumentType: Command
-  PrepareAttackerMachine:
-    Type: AWS::SSM::Document
-    Properties:
-      Content:
-        schemaVersion: "2.2"
-        description:
-          "Document that changes the attacker machine to use Player credentials
-          and installs log4shell tools."
-        mainSteps:
-          - action: aws:runShellScript
-            name: SetupUser
-            inputs:
-              timeoutSeconds: "180"
-              runCommand:
-                - !Sub |
-                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
-                  POD=$(sudo /usr/local/bin/kubectl get pods \
-                  --namespace=$NAMESPACE \
-                  -l app=attacker-machine \
-                  -o jsonpath='{range .items[*]}{.status.containerStatuses[*].ready.true}{.metadata.name}{"\n"}{end}') \
-                - !Sub |
-                  sudo /usr/local/bin/kubectl exec --namespace=$NAMESPACE $POD -- /bin/bash -c \
-                  "echo 'abc:${PlayerPassword}' | chpasswd && usermod -l Player abc"
-          - action: aws:runShellScript
-            name: InstallLog4ShellTools
-            inputs:
-              timeoutSeconds: "180"
-              runCommand:
-                - !Sub |
-                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
-                  POD=$(sudo /usr/local/bin/kubectl get pods \
-                  --namespace=$NAMESPACE \
-                  -l app=attacker-machine \
-                  -o jsonpath='{range .items[*]}{.status.containerStatuses[*].ready.true}{.metadata.name}{"\n"}{end}') \
-                - !Sub |
-                  sudo /usr/local/bin/kubectl exec --namespace=$NAMESPACE $POD -- /bin/bash -c \
-                  "sudo apt-get update && \
-                  sudo apt-get install -y openjdk-8-jdk unzip curl vim nano net-tools iproute2 && \
-                  sudo mkdir -p /config/Desktop/hacker && \
-                  curl https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix}JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \
-                  sudo unzip -P novirus /tmp/JNDIExploit-v1.2.zip -d /config/Desktop/hacker && \
-                  rm /tmp/JNDIExploit-v1.2.zip"
       DocumentType: Command
 
   # SSM Parameters
@@ -231,7 +192,7 @@ Resources:
                 )
           - commands: !Sub |
               sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true
-  LaunchK8sManifestsLambda:
+  LaunchK8sManifests1Lambda:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
@@ -250,56 +211,7 @@ Resources:
           def lambda_handler(event=None, context=None):
               response = ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="${LaunchK8sManifests}",
-                  DocumentVersion="$DEFAULT",
-                  TimeoutSeconds=123,
-                  Comment="string",
-              )
-              command_id = response["Command"]["CommandId"]
-              tries = 0
-              while tries < 10:
-                  tries = tries + 1
-                  try:
-                      time.sleep(0.5)  # some delay always required...
-                      invocations_list = ssm.list_command_invocations(
-                          CommandId=command_id,
-                      )["CommandInvocations"]
-                      instance_id = sorted(
-                          invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
-                      )[0]["InstanceId"]
-                      print(instance_id)
-                      result = ssm.get_command_invocation(
-                          CommandId=command_id,
-                          InstanceId=instance_id,
-                      )
-                      print(result)
-                      if result["Status"] == "InProgress":
-                          continue
-                      if result["Status"] == "TimedOut" or result["Status"] == "Failed":
-                          raise Exception("Command failed/timed out.")
-                      break
-                  except ssm.exceptions.InvocationDoesNotExist:
-                      continue
-  PrepareAttackerMachineLambda:
-    Type: AWS::Lambda::Function
-    Properties:
-      Runtime: python3.8
-      Timeout: 60
-      Handler: index.lambda_handler
-      Role: !GetAtt K8sAdminRole.Arn
-      Code:
-        ZipFile: !Sub |
-          import boto3
-          import time
-
-          ssm = boto3.client("ssm")
-          region = "us-east-1"
-
-
-          def lambda_handler(event=None, context=None):
-              response = ssm.send_command(
-                  Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="${PrepareAttackerMachine}",
+                  DocumentName="${LaunchK8sManifests1}",
                   DocumentVersion="$DEFAULT",
                   TimeoutSeconds=123,
                   Comment="string",
@@ -393,14 +305,14 @@ Resources:
       StateMachineName: DeployAttackerEnvStateMachine
       DefinitionString: !Sub |
         {
-          "StartAt": "LaunchK8sManifestsLambda",
+          "StartAt": "LaunchK8sManifests1Lambda",
           "States": {
-            "LaunchK8sManifestsLambda": {
+            "LaunchK8sManifests1Lambda": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "${LaunchK8sManifestsLambda.Arn}"
+                "FunctionName": "${LaunchK8sManifests1Lambda.Arn}"
               },
               "Retry": [
                 {
@@ -419,27 +331,6 @@ Resources:
             "Wait": {
               "Type": "Wait",
               "Seconds": 60,
-              "Next": "PrepareAttackerMachineLambda"
-            },
-            "PrepareAttackerMachineLambda": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {
-                "Payload.$": "$",
-                "FunctionName": "${PrepareAttackerMachineLambda.Arn}"
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException"
-                  ],
-                  "IntervalSeconds": 2,
-                  "MaxAttempts": 6,
-                  "BackoffRate": 2
-                }
-              ],
               "Next": "GetAttackerLBHostnameLambda"
             },
             "GetAttackerLBHostnameLambda": {

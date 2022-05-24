@@ -15,24 +15,39 @@ spec:
         app: attacker-machine
     spec:
       containers:
-      - name: attacker-machine
-        image: lscr.io/linuxserver/webtop:ubuntu-xfce
-        env:
-          - name: AUTO_LOGIN
-            value: "false"
-        ports:
-          - containerPort: 3000
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 3000
-          failureThreshold: 3
-          periodSeconds: 3
-          initialDelaySeconds: 3
-        startupProbe:
-          httpGet:
-            path: /
-            port: 3000
-          failureThreshold: 20
-          periodSeconds: 10
-          initialDelaySeconds: 3
+        - name: attacker-machine
+          image: lscr.io/linuxserver/webtop:ubuntu-xfce
+          env:
+            - name: AUTO_LOGIN
+              value: 'false'
+          ports:
+            - containerPort: 3000
+          lifecycle:
+            postStart:
+              exec:
+                command:
+                  - /bin/sh
+                  - -c
+                  - |
+                    sleep 15 && \
+                    echo abc:$PLAYERPASSWORD | chpasswd && usermod -l Player abc && \
+                    sudo apt-get update && \
+                    sudo apt-get install -y openjdk-8-jdk unzip curl vim nano net-tools iproute2 && \
+                    sudo mkdir -p /config/Desktop/hacker && \
+                    curl "$TOOLSURL"JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \
+                    sudo unzip -P novirus /tmp/JNDIExploit-v1.2.zip -d /config/Desktop/hacker && \
+                    rm /tmp/JNDIExploit-v1.2.zip
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            failureThreshold: 3
+            periodSeconds: 3
+            initialDelaySeconds: 3
+          startupProbe:
+            httpGet:
+              path: /
+              port: 3000
+            failureThreshold: 20
+            periodSeconds: 10
+            initialDelaySeconds: 3
