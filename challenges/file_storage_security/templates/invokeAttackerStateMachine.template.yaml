@@ -71,22 +71,18 @@ Resources:
                         name=stateMachineName,
                     )
 
-                    cfnresponse.send(
-                        event,
-                        context,
-                        cfnresponse.SUCCESS,
-                        {},
-                        "InvokeDeployAttackerEnvStateMachineLambda",
-                    )
-                except:
-                    cfnresponse.send(
-                        event,
-                        context,
-                        cfnresponse.FAILED,
-                        {},
-                        "InvokeDeployAttackerEnvStateMachineLambda",
-                    )
-            
+                  cfn_status = cfnresponse.SUCCESS
+
+              except:
+                  cfn_status = cfnresponse.FAILED
+
+              cfnresponse.send(
+                  event,
+                  context,
+                  cfn_status,
+                  {},
+                  "InvokeDeployAttackerEnvStateMachineLambda",
+              )
 
 # Custom Resources
   InvokeDeployAttackerEnvStateMachineLambda:
