@@ -30,6 +30,9 @@
             python39Packages.cfn-lint
             rain.packages.${system}.default
 
+            # kubernetes development
+            kubectl
+
             # shell development
             shellcheck
 
