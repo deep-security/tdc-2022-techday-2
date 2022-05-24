@@ -35,12 +35,12 @@ Resources:
                 Resource:
                   - arn:aws:states:*:*:stateMachine:DeployAttackerEnvStateMachine
               # Uncomment for deubg logs
-              # - Effect: Allow
-              #   Action:
-              #     - logs:CreateLogGroup
-              #     - logs:CreateLogStream
-              #     - logs:PutLogEvents
-              #   Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
 
   # Lambda Functions
   DeployAttackerEnvStateMachineLambda:
@@ -56,7 +56,10 @@ Resources:
           import random
           import string
           import cfnresponse
+          import logging
 
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
           client = boto3.client("stepfunctions")
           clientssm = boto3.client('ssm')
 
@@ -65,6 +68,8 @@ Resources:
               return "".join(random.choice(chars) for _ in range(size))
 
           def lambda_handler(event, context):
+              logger.info("event: {}".format(event))
+
               try:
                   parameter = clientssm.get_parameter(Name="/player/FSS/DeployAttackerEnvStateMachineArn", WithDecryption=True)
                   stateMachineArn = parameter["Parameter"]["Value"]
@@ -80,7 +85,8 @@ Resources:
 
                   cfn_status = cfnresponse.SUCCESS
 
-              except:
+              except Exception as e:
+                  logger.info("Exception: {}".format(e))
                   cfn_status = cfnresponse.FAILED
 
               cfnresponse.send(
