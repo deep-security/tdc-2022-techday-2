@@ -132,9 +132,9 @@ Resources:
           QSS3Bucket."
         mainSteps:
           - action: aws:runShellScript
-            name: CreateNamespaceIndempotent
+            name: LaunchManifestsIndempotent
             inputs:
-              timeoutSeconds: "60"
+              timeoutSeconds: "180"
               runCommand:
                 - !Sub |
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
@@ -157,7 +157,7 @@ Resources:
           - action: aws:runShellScript
             name: SetupUser
             inputs:
-              timeoutSeconds: "120"
+              timeoutSeconds: "180"
               runCommand:
                 - !Sub |
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
@@ -171,7 +171,7 @@ Resources:
           - action: aws:runShellScript
             name: InstallLog4ShellTools
             inputs:
-              timeoutSeconds: "120"
+              timeoutSeconds: "180"
               runCommand:
                 - !Sub |
                   NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
