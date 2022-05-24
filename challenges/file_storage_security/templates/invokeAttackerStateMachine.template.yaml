@@ -66,7 +66,7 @@ Resources:
 
           def lambda_handler(event, context):
               try:
-                  parameter = clientssm.get_parameter(Name="/player/C1CS/StateMachineArn", WithDecryption=True)
+                  parameter = clientssm.get_parameter(Name="/player/FSS/DeployAttackerEnvStateMachineArn", WithDecryption=True)
                   stateMachineArn = parameter["Parameter"]["Value"]
               
                   # Add Random number to the end of the name of the statemachine
