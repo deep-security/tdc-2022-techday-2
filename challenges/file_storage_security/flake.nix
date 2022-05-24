@@ -32,6 +32,7 @@
 
             # kubernetes development
             kubectl
+            yq
 
             # shell development
             shellcheck
