@@ -34,6 +34,7 @@ Resources:
                   - states:StartExecution
                 Resource:
                   - arn:aws:states:*:*:stateMachine:DeployAttackerEnvStateMachine
+                  - arn:aws:ssm:*:*:parameter/player/FSS/DeployAttackerEnvStateMachineArn
               # Uncomment for deubg logs
               - Effect: Allow
                 Action:
