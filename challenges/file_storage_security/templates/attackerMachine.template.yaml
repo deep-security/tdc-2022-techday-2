@@ -27,8 +27,8 @@ Parameters:
     ConstraintDescription:
       Quick Start key prefix can include numbers, lowercase letters, uppercase
       letters, hyphens (-), and forward slash (/).
-    # REFERENCE (tdc-2022-2): Value in this file ↓
-    Default: "latest/challenges/file_storage_security/templates"
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates/
+    Default: ""
     Description:
       Update to where you hold the scripts. S3 bucket name for the Tech Day
       assets. Quick Start key prefix can include numbers, lowercase letters,
@@ -39,8 +39,8 @@ Parameters:
     ConstraintDescription:
       Quick Start key prefix can include numbers, lowercase letters, uppercase
       letters, hyphens (-), and forward slash (/).
-    # REFERENCE (tdc-2022-2): Value in this file ↓
-    Default: "latest/challenges/file_storage_security/tools"
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/tools/
+    Default: ""
     Description:
       Update to where you hold the tools for this challenge. Quick Start key
       prefix can include numbers, lowercase letters, uppercase letters, hyphens
