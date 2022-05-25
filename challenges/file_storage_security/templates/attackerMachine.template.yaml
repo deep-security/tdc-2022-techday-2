@@ -141,7 +141,7 @@ Resources:
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
                   mkdir -p /tmp/manifests-$NAMESPACE && \
                   aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-$NAMESPACE && \
-                  sudo /usr/local/bin/kubectl create secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix} --from-literal=PLAYERPASSWORD=${PlayerPassword} --dry-run=client -o yaml > /tmp/manifests-$NAMESPACE/secrets.yaml && \
+                  sudo /usr/local/bin/kubectl create secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix} --from-literal=PLAYERPASSWORD="${PlayerPassword}" --dry-run=client -o yaml > /tmp/manifests-$NAMESPACE/secrets.yaml && \
                   sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f /tmp/manifests-$NAMESPACE
       DocumentType: Command
 
