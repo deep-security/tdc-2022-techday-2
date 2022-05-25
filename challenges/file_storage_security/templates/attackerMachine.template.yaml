@@ -191,8 +191,8 @@ Resources:
                     },
                 )
           - commands: !Sub |
-              sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') --ignore-not-found=true
-  LaunchK8sManifests1Lambda:
+              sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) --ignore-not-found=true
+  LaunchK8sManifestsLambda:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
@@ -261,7 +261,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl get services --namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]') attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                          "sudo /usr/local/bin/kubectl get services --namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
                       ]
                   },
               )
