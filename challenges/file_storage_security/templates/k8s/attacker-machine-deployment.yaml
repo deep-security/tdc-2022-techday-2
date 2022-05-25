@@ -18,13 +18,25 @@ spec:
         - name: attacker-machine
           image: lscr.io/linuxserver/webtop:ubuntu-xfce
           env:
+            - name: PLAYERPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cfn-references
+                  key: PLAYERPASSWORD
+                  optional: false
+            - name: TOOLSURL
+              valueFrom:
+                secretKeyRef:
+                  name: cfn-references
+                  key: TOOLSURL
+                  optional: false
             - name: AUTO_LOGIN
               value: 'false'
           ports:
             - containerPort: 3000
           resources:
             limits:
-              cpu: "2"
+              cpu: "1"
               memory: "1Gi"
           lifecycle:
             postStart:
