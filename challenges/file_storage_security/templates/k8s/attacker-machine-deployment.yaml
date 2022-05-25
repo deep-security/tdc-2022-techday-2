@@ -22,6 +22,10 @@ spec:
               value: 'false'
           ports:
             - containerPort: 3000
+          resources:
+            limits:
+              cpu: "2"
+              memory: "1Gi"
           lifecycle:
             postStart:
               exec:
