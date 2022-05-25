@@ -143,11 +143,11 @@ Parameters:
     Type: String
   ChallengeBucket:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: player/FSS/ChallengeBucket
+    Default: /player/FSS/ChallengeBucket
     Description: DO NOT CHANGE THIS VALUE
   SCTemplatesPrefix:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: player/FSS/SCTemplatesPrefix
+    Default: /player/FSS/SCTemplatesPrefix
     Description: DO NOT CHANGE THIS VALUE
   IAMPolicyPrefix:
     AllowedPattern: ^$|^[a-zA-Z0-9+=,.@\-_]+-$
