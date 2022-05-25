@@ -181,8 +181,7 @@ Resources:
                     Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
                     DocumentName="AWS-RunShellScript",
                     Parameters={
-                        "commands": [
-                            "${commands}"
+                        "commands": ["""${commands}"""]
                     },
                 )
           - commands: !Sub |
