@@ -141,15 +141,13 @@ Parameters:
     Default: latest/
     Description: ""
     Type: String
-  QSS3BucketName:
+  ChallengeBucket:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: QSS3BucketName
+    Default: /player/FSS/ChallengeBucket
     Description: DO NOT CHANGE THIS VALUE
-  QSS3KeyPrefix:
-    # REFERENCE (tdc-2022-2): Value in this file ↓
-    # latest/
+  SCTemplatesPrefix:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: QSS3KeyPrefix
+    Default: /player/FSS/SCTemplatesPrefix
     Description: DO NOT CHANGE THIS VALUE
   IAMPolicyPrefix:
     AllowedPattern: ^$|^[a-zA-Z0-9+=,.@\-_]+-$
@@ -314,7 +312,7 @@ Resources:
         - Key: Name
           Value: FSS-Storage-Stack
       TemplateURL:
-        !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/fss_storage_stack.template.yaml'
+        !Sub 'https://${ChallengeBucket}.s3.amazonaws.com/${SCTemplatesPrefix}fss_storage_stack.template.yaml'
       TimeoutInMinutes: 30
 
   ScannerStack:

@@ -41,7 +41,23 @@ Parameters:
     Type: String
 
 Resources:
-  # TODO I don't think we really need to do this .........
+  # Service Catalog variables as SSM Parameters
+  ChallengeBucket:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/FSS/ChallengeBucket
+      Value: !Ref QSS3BucketName
+      Type: String
+      Description: Root bucket for FSS challenge
+  SCTemplatesPrefix:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/FSS/SCTemplatesPrefix
+      Value: !Ref QSS3KeyPrefix
+      Type: String
+      Description: Path for FSS Service catalog products
+
+  # Product Definitions
   FSSAllInOneServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
@@ -53,20 +69,37 @@ Resources:
       ProvisioningArtifactParameters:
         - Info:
             LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}fss_allinone_service_catalog.template.yaml'
+    DependsOn:
+    - ChallengeBucket
+    - SCTemplatesPrefix
+  FSSStorageServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: This template create the FSS Storage stack deployment for the service catalog.
+      Name: File Storage Security Storage Stack Template
+      Owner: Trend Micro
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}fss_storage_service_catalog.template.yaml'
+    DependsOn:
+    - ChallengeBucket
+    - SCTemplatesPrefix
 
+  # Product IDs
   FSSAllInOneProductID:
     Type: AWS::SSM::Parameter
     Properties:
       Name: "FSSAllInOneProductID"
       Value: !Ref FSSAllInOneServiceCatalogProduct
       Type: String
-
-  FSSAllInOneProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+  FSSStorageProductID:
+    Type: AWS::SSM::Parameter
     Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref FSSAllInOneServiceCatalogProduct
+      Name: "FSSstoragestackProductID"
+      Value: !Ref FSSStorageServiceCatalogProduct
+      Type: String
 
+  # Launch Role Constraints
   FSSAllInOneLaunchRoleConstraint:
     Type: AWS::ServiceCatalog::LaunchRoleConstraint
     DependsOn: FSSAllInOneProductAssociation
@@ -74,3 +107,22 @@ Resources:
       PortfolioId: !Ref PlayerServiceCatalogPortfolio
       ProductId: !Ref FSSAllInOneServiceCatalogProduct
       RoleArn: !Ref ServiceCatalogLaunchRoleArn
+  FSSStorageLaunchRoleConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    DependsOn: FSSStorageProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref FSSStorageServiceCatalogProduct
+      RoleArn: !Ref ServiceCatalogLaunchRoleArn
+
+  # Portfolio Associations
+  FSSAllInOneProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref FSSAllInOneServiceCatalogProduct
+  FSSStorageProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref FSSStorageServiceCatalogProduct
