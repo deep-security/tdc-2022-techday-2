@@ -75,7 +75,7 @@ Resources:
                   - ssm:SendCommand
                   - ssm:PutParameter
                 Resource:
-                  - !Sub "arn:aws:ssm:*:*:document/${LaunchK8sManifests1}"
+                  - !Sub "arn:aws:ssm:*:*:document/${LaunchK8sManifests}"
                   - arn:aws:ssm:*:*:document/AWS-RunShellScript
                   - arn:aws:ssm:*:*:parameter/player/FSS/AttackerLBHostname
               - Effect: Allow
@@ -116,11 +116,11 @@ Resources:
                   - lambda:InvokeFunction
                 Resource:
                   - !GetAtt DeleteAttackerNamespaceLambda.Arn
-                  - !GetAtt LaunchK8sManifests1Lambda.Arn
+                  - !GetAtt LaunchK8sManifestsLambda.Arn
                   - !GetAtt GetAttackerLBHostnameLambda.Arn
 
   # Create SSM Documents
-  LaunchK8sManifests1:
+  LaunchK8sManifests:
     Type: AWS::SSM::Document
     Properties:
       Content:
@@ -211,7 +211,7 @@ Resources:
           def lambda_handler(event=None, context=None):
               response = ssm.send_command(
                   Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                  DocumentName="${LaunchK8sManifests1}",
+                  DocumentName="${LaunchK8sManifests}",
                   DocumentVersion="$DEFAULT",
                   TimeoutSeconds=123,
                   Comment="string",
@@ -305,14 +305,14 @@ Resources:
       StateMachineName: DeployAttackerEnvStateMachine
       DefinitionString: !Sub |
         {
-          "StartAt": "LaunchK8sManifests1Lambda",
+          "StartAt": "LaunchK8sManifestsLambda",
           "States": {
-            "LaunchK8sManifests1Lambda": {
+            "LaunchK8sManifestsLambda": {
               "Type": "Task",
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "${LaunchK8sManifests1Lambda.Arn}"
+                "FunctionName": "${LaunchK8sManifestsLambda.Arn}"
               },
               "Retry": [
                 {
