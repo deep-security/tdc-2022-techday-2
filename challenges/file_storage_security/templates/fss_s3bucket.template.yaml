@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: tdc-2022-techday-1 Cloud One File Storage Security S3 Buckets
+Description: tdc-2022-techday-2 Cloud One File Storage Security S3 Buckets
 
 Resources:
   FSSS3BucketObjLambda:
@@ -9,7 +9,7 @@ Resources:
     Properties:
       Bucket: !Ref FSSS3BucketObjLambda
       PolicyDocument:
-        Version: 2012-10-17
+        Version: "2012-10-17"
         Statement:
           -
             Action:
