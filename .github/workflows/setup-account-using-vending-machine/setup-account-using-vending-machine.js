@@ -1,4 +1,5 @@
 const axios = require('axios').default;
+const core = require('@actions/core');
 
 const VM_ENDPOINT = process.env.VM_ENDPOINT || 'https://rmrs30pwai.execute-api.us-east-1.amazonaws.com/Dev/';
 const VM_API_KEY = process.env.VM_API_KEY;
@@ -33,6 +34,7 @@ const state = async (id) => {
     return resp.data;
   }
   catch(err) {
+    core.setFailed(err.message);
     throw err;
   }
 };
@@ -49,6 +51,7 @@ const deploy = async (cfnUrl, hoursAfterRightNow) => {
     return resp.data;
   }
   catch(err) {
+    core.setFailed(err.message);
     throw err;
   }
 };
@@ -59,6 +62,7 @@ const accounts = async (id) => {
     return resp.data;
   }
   catch(err) {
+    core.setFailed(err.message);
     throw err;
   }
 };
@@ -69,17 +73,22 @@ const clean = async (id) => {
     return resp.data;
   }
   catch(err) {
+    core.setFailed(err.message);
     throw err;
   }
 };
 
 const parseOutputs = (stackoutput) => {
-  return stackoutput.reduce((outputs, pair) => {
-    const key = pair.OutputKey;
-    const value = pair.OutputValue;
-    outputs[pair.OutputKey] = pair.OutputValue;
-    return outputs;
-  }, {});
+  try {
+    return stackoutput.reduce((outputs, pair) => {
+      const key = pair.OutputKey;
+      const value = pair.OutputValue;
+      outputs[pair.OutputKey] = pair.OutputValue;
+      return outputs;
+    }, {});
+  } catch (err) {
+    core.setFailed(err.message);
+  }
 }
 
 const sleep = async (ms) => {
@@ -104,10 +113,12 @@ For troubleshooting purposes, the deployment id is: ${id}
       waitedTimeInMinutes =+ 1;
       if (waitedTimeInMinutes >= MAX_WAIT_TIME_IN_MINUTES) {
         // Account hasn't finished building in time.
-        throw(new Error(`
+        const accountNotReadyErr = new Error(`
 It looks like something went wrong...
 Here's the info that we have:
-${JSON.stringify((await accounts(id)), null, 2)}`));
+${JSON.stringify((await accounts(id)), null, 2)}`);
+        core.setFailed(accountNotReadyErr.message);
+        throw accountNotReadyErr;
       }
     }
 
@@ -116,6 +127,7 @@ ${JSON.stringify((await accounts(id)), null, 2)}`));
     return JSON.stringify(parseOutputs((await accounts(id))[0].stackoutput), null, 2);
   }
   catch(err) {
+    core.setFailed(err.message);
     throw err;
   }
 
@@ -132,5 +144,6 @@ exports.handler()
   })
   .catch(err => {
     console.error(err);
+    core.setFailed(err.message);
     return -1;
   });
