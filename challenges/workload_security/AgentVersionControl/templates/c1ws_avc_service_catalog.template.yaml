@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This service catalog for the Agent Version Control challenge (N-2).
+
+Parameters:
+  # Bucket path related
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+    Default: tdc-challenges
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+#######################
+# You can retrieve parameters from SSM, in Parameter of CloudFormation:
+# QSS3BucketName and QSS3KeyPrefix are stored as SSM parameters in main.template
+####
+# C1 Onboarding Service Catalog takes the C1 API Key from the player, and stores multiple useful SSM parameters:
+# /player/C1/c1ApiKey, /player/C1/c1AccountId, /player/C1/c1Region, /player/C1/c1AccountsApiBaseUrl, /player/C1/c1ServicesApiBaseUrl"
+#######################
+#  C1AccountIDSSMParameter:
+#    Default: "/player/C1/c1AccountId"
+#    Description: Retrieve the C1 Account ID from SSM Parameter Store
+#    Type: String
+
+Resources:
+  # Everything that needs to be created even before player starts playing.
+  PublicSubnet1SSMParameter:
+    Default: "PublicSubnet1"
+    Description: Retrieve the PublicSubnet1 from SSM Parameter Store
+    Type: String
+
+  AVCWinInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: ami-04d183ec0fdc82311
+      InstanceType: t3.medium
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: "0"
+          SubnetId:
+            Ref: PublicSubnet1SSMParameter
+      Tags:
+      - Key: Name
+        Value: WinAVCClient
+#      UserData:
+        
+#Outputs:
