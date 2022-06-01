@@ -23,6 +23,10 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
     Type: String
+  PublicSubnet1SSMParameter:
+    Default: "PublicSubnet1"
+    Description: Retrieve the PublicSubnet1 from SSM Parameter Store
+    Type: String
 
 #######################
 # You can retrieve parameters from SSM, in Parameter of CloudFormation:
@@ -38,11 +42,6 @@ Parameters:
 
 Resources:
   # Everything that needs to be created even before player starts playing.
-  PublicSubnet1SSMParameter:
-    Default: "PublicSubnet1"
-    Description: Retrieve the PublicSubnet1 from SSM Parameter Store
-    Type: String
-
   AVCWinInstance:
     Type: AWS::EC2::Instance
     Properties:
