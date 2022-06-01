@@ -18,12 +18,12 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
     Type: String
-    Default: tdc-challenges
+    Default: techday-2022-2
   QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    AllowedPattern: ^[0-9a-zA-Z-/._]*
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
-    Default: ""
+    Default: "latest/"
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
