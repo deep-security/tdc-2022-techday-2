@@ -137,7 +137,6 @@ Resources:
           ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
           QSS3BucketName: !Ref QSS3BucketName
           QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/workload_security/AgentVersionControl/'
-          GroupAssociationPrincipalArn: !GetAtt PlayerStack.Outputs.PlayerGroupArn
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/AgentVersionControl/templates/c1ws_avc_main.template.yaml'
       DependsOn: 
         - PlayerStack
