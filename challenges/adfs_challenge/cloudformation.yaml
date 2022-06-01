@@ -1,0 +1,225 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation Template to deploy an EC2 instance and then install ADDS
+Parameters: 
+  Hostname: 
+    Type: String
+    Description: Hostname - maximum 15 characters
+    MaxLength: '15'
+    Default: techdayadfs    
+  OS: 
+    Type: String
+    Description: OS Version
+    Default: WindowsServer2019Base
+    AllowedValues: 
+      - "WindowsServer2019Base"
+  InstanceSize: 
+    Type: String
+    Description: Instance Size
+    Default: t2.medium
+  DomainDNSName:
+    Type: String
+    Description: Fully Qualified Domain Name
+    Default: techday.com
+  DomainNetBiosName:
+    Type: String
+    Description: NETBIOS Domain Name
+    Default: techday
+  SafeModeAdministratorPassword:
+    MinLength: '8'
+    NoEcho: 'true'
+    Type: String
+    Description: SafeModeAdministrator Password (may use later, just a place holder)
+    Default: testing123
+  Environment: 
+    Type: String
+    Description:  AD group creation & OU location for server objects
+    Default: Dev
+    AllowedValues:
+      - Dev 
+      - Test    
+  AvailabilityZone:
+    Type: String
+    Description: Default AZ
+    AllowedValues: 
+      - us-east-1a
+      - us-east-1b
+    Default: us-east-1a
+  KeyPair: 
+    Type: String
+    Description: KeyPair Name
+    Default: w10p
+  S3BucketName:
+    Default: c1as-demo-bucket
+    Description: S3 bucket for PS scripts
+    Type: String
+Mappings:
+  AMIMap:
+    WindowsServer2019Base:
+      "ImageId": "ami-033594f8862b03bb2"
+  SubnetMap: 
+    us-east-1a:
+      Dev: "subnet-02b06c3be07039439"
+    us-east-1c:
+      Dev: "subnet-09832fef26595c7bd"
+Resources:
+  ADFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: adfs-techday-sg
+      GroupDescription: "Allow HTTP/HTTPS and SSH inbound and outbound traffic"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0
+      VpcId: vpc-7bfdcf01
+  Profile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+        - !Ref HostRole
+      Path: /
+      InstanceProfileName: !Join
+        - ''
+        - - 'instance-profile-'
+          - !Ref S3BucketName
+  HostRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Join
+        - ''
+        - - 'role-s3-read-'
+          - !Ref S3BucketName
+      Policies:
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 's3:GetObject'
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - !Ref S3BucketName
+                    - '/*'
+                Effect: Allow
+          PolicyName: s3-policy-read
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Effect: Allow
+        Version: 2012-10-17    
+  Instance:
+    Type: 'AWS::EC2::Instance'
+    Metadata:
+      'AWS::CloudFormation::Authentication':
+        S3AccessCreds:
+          type: S3
+          buckets:
+            - !Ref S3BucketName
+          roleName: !Ref HostRole
+      'AWS::CloudFormation::Init':
+        configSets: 
+          config:
+            - get-files 
+            - configure-instance
+        get-files:
+          files:
+            'c:\s3-downloads\scripts\adds_install.ps1':
+              source: https://c1as-demo-bucket.s3.amazonaws.com/adds_install.ps1
+              authentication: S3AccessCreds
+            'c:\s3-downloads\scripts\adfs_install.ps1':
+              source: https://c1as-demo-bucket.s3.amazonaws.com/adfs_install.ps1
+              authentication: S3AccessCreds
+        configure-instance:
+          commands:
+            1-set-powershell-execution-policy:
+              command: >-
+                powershell.exe -Command "Set-ExecutionPolicy UnRestricted -Force"
+              waitAfterCompletion: '0'
+            2-rename-computer:
+              command: !Join
+                - ''
+                - - >-
+                  -  powershell.exe -Command "Rename-Computer -Restart -NewName "
+                  -  !Ref Hostname
+              waitAfterCompletion: forever  
+            3-install-windows-components:
+              command: >-
+                powershell.exe -Command "c:\s3-downloads\scripts\adds_install.ps1"
+              waitAfterCompletion: '0'
+            4-install-ADForest:
+              command: !Join
+                - ''
+                - - >-
+                  - powershell.exe -Command "c:\s3-downloads\scripts\adfs_install.ps1 -DomainName '
+                  - !Ref DomainDNSName
+                  - ''' -DomainNetBiosName '''
+                  - !Ref DomainNetBiosName
+                  - ''' -SafeModeAdministratorPassword ''' 
+                  - !Ref SafeModeAdministratorPassword
+                  - '''"'
+              waitAfterCompletion: forever
+    Properties:
+      DisableApiTermination: 'false'
+      AvailabilityZone: !Sub "${AvailabilityZone}"
+      InstanceInitiatedShutdownBehavior: stop
+      IamInstanceProfile: !Ref Profile
+      ImageId: !FindInMap [ AMIMap, !Ref OS, ImageId ]
+      InstanceType: !Sub "${InstanceSize}"
+      KeyName: !Sub "${KeyPair}"
+      UserData: !Base64
+        'Fn::Join': 
+          - ''
+          - - "<powershell>\n"
+            - "cfn-init.exe "
+            - " --stack "
+            - "Ref": "AWS::StackId"
+            - " --resource Instance"
+            - " --region "
+            - "Ref": "AWS::Region"
+            - " --configsets config"
+            - " -v \n"
+            - "cfn-signal.exe  "
+            - " ---exit-code 0"
+            - " --region "
+            - "Ref": "AWS::Region"
+            - " --resource Instance" 
+            - " --stack "
+            - "Ref": "AWS::StackName"
+            - "\n"           
+            - "</powershell>\n"
+      NetworkInterfaces:
+        - DeleteOnTermination: 'true'
+          Description: Primary network interface
+          DeviceIndex: 0
+          SubnetId: !FindInMap [SubnetMap, !Ref AvailabilityZone, !Ref Environment]
+          GroupSet:
+          - !Ref ADFSSecurityGroup
+Outputs:
+  InstanceId:
+    Description: 'InstanceId'
+    Value: !Ref Instance
+    Export:
+      Name: !Sub '${Hostname}-${Environment}-InstanceId'
+  InstancePublicIP:
+    Description: 'InstancePublicIp'
+    Value: !GetAtt Instance.PublicIp
+    Export:
+      Name: !Sub '${Hostname}-${Environment}-InstancePublicIp'
