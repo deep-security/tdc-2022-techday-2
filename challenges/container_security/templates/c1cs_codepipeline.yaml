@@ -134,7 +134,7 @@ Resources:
                 ],
                 "Condition":{
                     "ArnLike":{
-                      "aws:SourceArn":"arn:aws:codebuild:*:*:*"
+                      "aws:SourceArn":"arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/c1cs-ecr-prod"
                     },
                     "StringEquals":{
                       "aws:SourceAccount":"${AWS::AccountId}"
