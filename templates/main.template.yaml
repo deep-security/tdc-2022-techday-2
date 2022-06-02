@@ -131,7 +131,6 @@ Resources:
 
   FSSStack:
     Type: AWS::CloudFormation::Stack
-    Condition: BuildEks
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
