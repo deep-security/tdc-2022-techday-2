@@ -137,7 +137,7 @@ Resources:
                       "aws:SourceArn":"arn:aws:codebuild:*:*:*"
                     },
                     "StringEquals":{
-                      "aws:SourceAccount":"758454129343"
+                      "aws:SourceAccount":"${AWS::AccountId}"
                     }
                 }
               }
