@@ -30,8 +30,8 @@
   "scripts": {
     "start": "parcel serve",
     "poststart": "rm -rf dist .parcel-cache",
-    "build": "parcel build --no-cache",
+    "build": "parcel build",
     "prebuild": "rm -rf dist imageUpload.zip",
-    "postbuild": "zip imageUpload.zip dist index.js -jr && rm -rf dist"
+    "postbuild": "zip imageUpload.zip dist index.js -jr && rm -rf dist .parcel-cache"
   }
 }
