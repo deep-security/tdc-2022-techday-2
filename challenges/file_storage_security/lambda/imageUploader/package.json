@@ -29,8 +29,9 @@
   },
   "scripts": {
     "start": "parcel serve",
-    "build": "parcel build --no-cache-dir",
+    "poststart": "rm -rf dist .parcel-cache",
+    "build": "parcel build --no-cache",
     "prebuild": "rm -rf dist imageUpload.zip",
-    "postbuild": "zip imageUpload.zip dist index.js -jr"
+    "postbuild": "zip imageUpload.zip dist index.js -jr && rm -rf dist"
   }
 }
