@@ -129,6 +129,17 @@ Resources:
         - ServiceCatalogPortfolioStack
         - OnboardingStack #Added for throttling IAM role creation
 
+  FSSStack:
+    Type: AWS::CloudFormation::Stack
+    Condition: BuildEks
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+        PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
+
   # SAMPLE: Load Challenges and Infra for Challenges
   # Sample:
   #   Type: AWS::CloudFormation::Stack
@@ -169,7 +180,8 @@ Resources:
   #       VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
   #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/infra/dsm/templates/ds_clients.template.yaml'
 
-  # ☠️ DON'T TOUCH - Or Webster might have a tak with you... or worse, Amanda! ☠️
+
+  # ☠️ DON'T TOUCH - Or Webster might have a talk with you... or worse, Amanda! ☠️
   QSS3BucketNameSsm:
     Type: AWS::SSM::Parameter
     Properties:
