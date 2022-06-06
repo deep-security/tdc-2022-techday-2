@@ -129,6 +129,20 @@ Resources:
         - ServiceCatalogPortfolioStack
         - OnboardingStack #Added for throttling IAM role creation
 
+  c1wsAVCStack:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+          ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/'
+        TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/c1ws_avc_main.template.yaml'
+      DependsOn: 
+        - PlayerStack
+        - ServiceCatalogPortfolioStack
+        - OnboardingStack #Added for throttling IAM role creation
+        
   FSSStack:
     Type: AWS::CloudFormation::Stack
     Condition: BuildEks
