@@ -13,12 +13,20 @@ AuthKey = C1WSAPIKey.read()
 C1WSAPIKey.close()
 
 #Declare the path to the dsa_query executable, Agent Version Control information, and headers required for HTTP GET
+#Agent Version Control Profile = 0 as we only support the Default Profile currently
+#Agent Version Controls = 11 as this get the Windows 2016 64bit information. I hope to make this more "universal" later (check OS and OS version)
 path = '"C:/Program Files/Trend Micro/Deep Security Agent/dsa_query.cmd"'
-url = 'https://workload.%s.cloudone.trendmicro.com/api/agentversioncontrolprofiles/0/agentversioncontrols/24'%Region
+url = 'https://workload.%s.cloudone.trendmicro.com/api/agentversioncontrolprofiles/0/agentversioncontrols/11'%Region
 headers = {"Authorization": f"ApiKey {AuthKey}", "api-version": "v1"}
 
-#Request the Agent Version Control information
-response_API = requests.get(url, headers=headers)
+#Request the Agent Version Control information from Cloud One
+try:
+    response_API = requests.get(url, headers=headers)
+    response_API.raise_for_status()
+except requests.exceptions.RequestException as e: # Reports any error other than HTTP error
+    raise SystemExit(e)
+except requests.exceptions.HTTPError as err: # Reports any HTTP connection errors
+    raise SystemExit(err)
 
 #Use the API to GET the Agent Version Controls for (Win 10/64-bit) from the Default Agent Version Control Profile information in C1WS
 data = json.loads(response_API.text)
@@ -40,7 +48,7 @@ output = subprocess.check_output(path +" -c GetPluginVersion", shell=True)
 #Convert the output from bytes to a string
 str_convert = output.decode('ascii')
 
-#Load the results into a table to pull out the DSA Agent Version
+#Load the results into a table to pull out just the DSA Agent Version number
 result = {}
 for row in str_convert.split('\n'):
     if ': ' in row:
