@@ -70,7 +70,8 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
         CopyZipsS3Bucket: !GetAtt CopyZipsStack.Outputs.DestinationBucket
-        CopyZipsPrefix: !Ref QSS3KeyPrefix
+        CopyZipsPrefix: !Sub "${QSS3KeyPrefix}lambda/"
+        WebsiteCodeZip: "lambda/imageUploader/imageUploader.zip"
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/imageUploader.template.yaml"
 
   # CopyZips
@@ -87,9 +88,9 @@ Resources:
       ServiceToken: !GetAtt 'CopyZipsStack.Outputs.FunctionArn'
       DestBucket: !GetAtt 'CopyZipsStack.Outputs.DestinationBucket'
       SourceBucket: !Ref QSS3BucketName
-      Prefix: !Ref QSS3KeyPrefix
+      Prefix: !Sub "${QSS3KeyPrefix}lambda/"
       Objects:
-      - !Ref WebsiteCodeZip
+      - "lambda/imageUploader/imageUploader.zip"
   
 Outputs:
   S3ObjectURL:

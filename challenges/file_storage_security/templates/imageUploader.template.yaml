@@ -22,29 +22,18 @@ Parameters:
       forward slash (/).
     Type: String
 
+  CopyZipsS3Bucket:
+    Default: ""
+    Type: String
+  CopyZipsPrefix:
+    Default: ""
+    Type: String
+
   WebsiteCodeZip:
     Default: ""
     Type: String
 
 Resources:
-  # CopyZips
-  CopyZipsStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        SourceBucket: QSS3BucketName
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
-      TimeoutInMinutes: 10
-  CopyZips:
-    Type: Custom::CopyZips
-    Properties:
-      ServiceToken: !GetAtt 'CopyZipsStack.Outputs.FunctionArn'
-      DestBucket: !GetAtt 'CopyZipsStack.Outputs.DestinationBucket'
-      SourceBucket: !Ref QSS3BucketName
-      Prefix: !Ref QSS3KeyPrefix
-      Objects:
-      - !Ref WebsiteCodeZip
-  
   ImageUploaderS3Bucket:
     Type: 'AWS::S3::Bucket'
 
@@ -113,11 +102,11 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Handler: index.handler
-      Runtime: nodejs16.x
+      Runtime: nodejs14.x
       MemorySize: 128
       Code:
-        ZipFile: |
-          put the zip file location here
+        S3Bucket: !Ref CopyZipsS3Bucket
+        S3Key: !Sub '${CopyZipsPrefix}${WebsiteCodeZip}' # Make sure to set S3Key like this.
       Role: !GetAtt LambdaRole.Arn
       Timeout: 30
 
@@ -208,7 +197,6 @@ Resources:
     Type: AWS::ApiGatewayV2::Deployment
     DependsOn:
       - GetPresignedUrlRoute
-      - PutImageRoute
       - WebsiteRoute
     Properties:
       ApiId: !Ref ImageUploaderApi
