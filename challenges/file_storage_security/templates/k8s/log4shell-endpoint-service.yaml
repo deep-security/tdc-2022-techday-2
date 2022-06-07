@@ -5,6 +5,7 @@ metadata:
   labels:
     app: log4shell
 spec:
+  type: ClusterIP
   selector:
     app: log4shell
   ports:
