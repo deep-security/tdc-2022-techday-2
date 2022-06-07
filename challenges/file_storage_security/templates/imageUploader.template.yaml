@@ -1,0 +1,237 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: ImageUploaderApplication
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2021-2
+    Description: S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
+      or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: challenge/fss/lambdas/
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+  WebsiteCodeZip:
+    Default: ""
+    Type: String
+
+Resources:
+  # CopyZips
+  CopyZipsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        SourceBucket: QSS3BucketName
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
+      TimeoutInMinutes: 10
+  CopyZips:
+    Type: Custom::CopyZips
+    Properties:
+      ServiceToken: !GetAtt 'CopyZipsStack.Outputs.FunctionArn'
+      DestBucket: !GetAtt 'CopyZipsStack.Outputs.DestinationBucket'
+      SourceBucket: !Ref QSS3BucketName
+      Prefix: !Ref QSS3KeyPrefix
+      Objects:
+      - !Ref WebsiteCodeZip
+  
+  ImageUploaderS3Bucket:
+    Type: 'AWS::S3::Bucket'
+
+  GetPresignedUrlLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 128
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import json
+          import os
+          import logging
+          from botocore.config import Config
+          
+          # Get bucket name
+          bucket = "${ImageUploaderS3Bucket.Arn}"
+          
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          
+          
+          def handler(event, context):
+          
+              logger.info("event: {}".format(event))
+          
+              try:
+                  region = "${AWS::Region}"
+                  key = event["pathParameters"]["id"]
+                  logger.info(key)
+                  ttl = (
+                      5 * 24 * 60 * 60
+                  )  # days * hours per day * minutes per hour * seconds per hour
+          
+                  s3_client = boto3.client(
+                      "s3",
+                      config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+                      region_name=region,
+                  )
+          
+                  signed_url = s3_client.generate_presigned_url(
+                      "get_object",
+                      Params={"Bucket": bucket, "Key": key},
+                      ExpiresIn=ttl,
+                  )
+          
+                  return {
+                      "statusCode": 200,
+                      "headers": {
+                          "Access-Control-Allow-Headers": "*",
+                          "Access-Control-Allow-Origin": "*",
+                          "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+                      },
+                      "body": json.dumps(signed_url),
+                  }
+                    
+              except Exception as e:
+                  logger.info("Exception: {}".format(e))
+                  return {"statusCode": 404}
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 30
+
+  WebsiteLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs16.x
+      MemorySize: 128
+      Code:
+        ZipFile: |
+          put the zip file location here
+      Role: !GetAtt LambdaRole.Arn
+      Timeout: 30
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - 'arn:aws:logs:*:*:*'
+                Effect: Allow
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+
+  ImageUploaderApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ImageUploader-${AWS::StackId}
+      Description: !Sub ImageUploader-${AWS::StackId}
+      ProtocolType: HTTP
+      CorsConfiguration:
+        AllowHeaders:
+          - Authorization
+        AllowMethods:
+          - GET
+          - PUT
+          - OPTIONS
+        AllowOrigins:
+          - '*'
+
+  GetPresignedUrlIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      Description: Get presigned url function
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt GetPresignedUrlLambda.Arn
+      IntegrationMethod: POST
+      PayloadFormatVersion: '2.0'
+
+  WebsiteIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      Description: homepage
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt WebsiteLambda.Arn
+      IntegrationMethod: POST
+      PayloadFormatVersion: '2.0'
+
+  GetPresignedUrlRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      RouteKey: 'GET /geturl/{id}'
+      AuthorizationType: AWS_IAM
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref GetPresignedUrlIntegration
+
+  WebsiteRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      RouteKey: 'GET /'
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref WebsiteIntegration
+
+  ImageUploaderApiDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - GetPresignedUrlRoute
+      - PutImageRoute
+      - WebsiteRoute
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+
+  V1Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: v1
+      AutoDeploy: true
+      Description: v1 Stage
+      DeploymentId: !Ref ImageUploaderApiDeployment
+      ApiId: !Ref ImageUploaderApi
+
+  ApiGatewayInvokePermissionForGetPresignedUrl:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt GetPresignedUrlLambda.Arn
+      Principal: apigateway.amazonaws.com
+
+  ApiGatewayInvokePermissionForWebsite:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt WebsiteLambda.Arn
+      Principal: apigateway.amazonaws.com

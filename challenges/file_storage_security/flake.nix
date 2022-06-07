@@ -30,9 +30,9 @@
             shellcheck
 
             # node development
-            nodejs-slim-16_x
+            nodejs-slim-14_x
             (yarn.override {
-              nodejs = nodejs-slim-16_x;
+              nodejs = nodejs-slim-14_x;
             })
 
             # python development
