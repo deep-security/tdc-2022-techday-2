@@ -135,7 +135,7 @@ Resources:
               timeoutSeconds: "180"
               runCommand:
                 - !Sub |
-                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
+                  NAMESPACE=fss-log4shell-attacker-env \
                 - !Sub |
                   sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
@@ -185,7 +185,7 @@ Resources:
                     },
                 )
           - commands: !Sub |
-              sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) --ignore-not-found=true
+              sudo /usr/local/bin/kubectl delete namespace fss-log4shell-attacker-env --ignore-not-found=true
   LaunchK8sManifestsLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -255,7 +255,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl get services --namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                          "sudo /usr/local/bin/kubectl get services --namespace fss-log4shell-attacker-env attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
                       ]
                   },
               )
