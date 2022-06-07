@@ -42,6 +42,11 @@ Parameters:
   ServiceCatalogLaunchRoleArn:
     Type: String
 
+  # Zips for CopyZips
+  WebsiteCodeZip:
+    Default: ""
+    Type: String
+
 Resources:
   FssS3Bucket:
     Type: AWS::CloudFormation::Stack
@@ -58,6 +63,24 @@ Resources:
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_service_catalog_integration.template.yaml"
 
+  # CopyZips
+  CopyZipsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        SourceBucket: QSS3BucketName
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
+      TimeoutInMinutes: 10
+  CopyZips:
+    Type: Custom::CopyZips
+    Properties:
+      ServiceToken: !GetAtt 'CopyZipsStack.Outputs.FunctionArn'
+      DestBucket: !GetAtt 'CopyZipsStack.Outputs.DestinationBucket'
+      SourceBucket: !Ref QSS3BucketName
+      Prefix: !Ref QSS3KeyPrefix
+      Objects:
+      - !Ref WebsiteCodeZip
+  
 Outputs:
   S3ObjectURL:
     Value: !Sub 'https://${FssS3Bucket.Outputs.FSSS3BucketObjLambdaName}.s3.amazonaws.com/'
