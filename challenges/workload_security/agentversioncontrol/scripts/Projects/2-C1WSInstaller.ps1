@@ -4,13 +4,6 @@
 # PowerShell 4 or up is required to run this script
 # This script detects platform and architecture.  It then downloads and installs the relevant Deep Security Agent package
 
-[Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-choco install python --version=3.10.4 -y
-choco install awscli -y
-pip install requests
-pip install boto3
-
 if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
    Write-Warning "You are not running as an Administrator. Please try again with admin privileges."
    exit 1
@@ -66,4 +59,5 @@ Start-Sleep -s 50
 & $Env:ProgramFiles"\Trend Micro\Deep Security Agent\dsa_control" -r
 & $Env:ProgramFiles"\Trend Micro\Deep Security Agent\dsa_control" -a $ACTIVATIONURL ""tenantID:"$DStenantID" ""token:"$DStokenID"
 Stop-Transcript
-echo "$(Get-Date -format T) - DSA Deployment Finished" 
+echo "$(Get-Date -format T) - DSA Deployment Finished"
+</powershell>
