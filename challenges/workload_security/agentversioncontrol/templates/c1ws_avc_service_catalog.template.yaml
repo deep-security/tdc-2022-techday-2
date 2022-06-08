@@ -24,105 +24,161 @@ Parameters:
       forward slash (/).
     Type: 'AWS::SSM::Parameter::Value<String>'
   PublicSubnet1SSMParameter:
-    Default: "PublicSubnet1"
+    Default: PublicSubnet1
     Description: Retrieve the PublicSubnet1 from SSM Parameter Store
     Type: 'AWS::SSM::Parameter::Value<String>'
   LatestAmiId: 
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-windows-latest/Windows_Server-2016-English-Full-Base'
-
-#######################
-# You can retrieve parameters from SSM, in Parameter of CloudFormation:
-# QSS3BucketName and QSS3KeyPrefix are stored as SSM parameters in main.template
-####
-# C1 Onboarding Service Catalog takes the C1 API Key from the player, and stores multiple useful SSM parameters:
-# /player/C1/c1ApiKey, /player/C1/c1AccountId, /player/C1/c1Region, /player/C1/c1AccountsApiBaseUrl, /player/C1/c1ServicesApiBaseUrl"
-#######################
-#  C1AccountIDSSMParameter:
-#    Default: "/player/C1/c1AccountId"
-#    Description: Retrieve the C1 Account ID from SSM Parameter Store
-#    Type: String
+  CompanyID:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /player/V1/v1CustomerId
+  c1ApiKeySSMKey:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Description: Retrieve the C1 API Key from the SSM Parameter Store
+    Default: /player/C1/c1ApiKey
+  c1RegionSSMKey:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /player/C1/c1Region
+    Description: Retrieve the C1 Region Key from the SSM Parameter Store
 
 Resources:
   # Everything that needs to be created even before player starts playing.
+  AVCWinBucket:
+    Type: AWS::S3::Bucket
+  WriteToV1BucketManagedPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      Description: !Sub Policy to write to ${AVCWinBucket}
+      Path: /
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action: 's3:PutObject'
+            Resource: !Sub 'arn:${AWS::Partition}:s3:::${AVCWinBucket}/*'
+  CleanupBucketOnDelete:
+    Type: Custom::cleanupBucket
+    Properties:
+      ServiceToken: !GetAtt 'CleanBucketFunction.Arn'
+      BucketName: !Ref AVCWinBucket
+      DependsOn: AVCWinBucket
+  CleanBucketFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Cleans out Bucket during delete
+      Handler: index.handler
+      Runtime: python3.7
+      Role: !GetAtt "CleanBucketRole.Arn"
+      Timeout: 900
+
+      Code:
+        ZipFile: |
+          import cfnresponse
+          import logging
+          import boto3
+          import time
+          status = cfnresponse.SUCCESS
+          logger = logging.getLogger(__name__)
+          logging.basicConfig(format='%(asctime)s %(message)s',level=logging.DEBUG)
+          def handler(event, context):
+              logger.debug(event)
+              if event['RequestType'] == 'Delete':
+                BUCKETNAME = event['ResourceProperties']['BucketName']
+                s3 = boto3.resource('s3')
+                time.sleep(240)
+                bucket = s3.Bucket(BUCKETNAME)
+                bucket_versioning = s3.BucketVersioning(BUCKETNAME)
+                if bucket_versioning.status == 'Enabled':
+                  bucket.object_versions.delete()
+                else:
+                  bucket.objects.all().delete()
+                cfnresponse.send(event, context, status, {}, None)
+              else:
+                cfnresponse.send(event, context, status, {}, None)
+  CleanBucketRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: lambda-bucketcleaner
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:DeleteObject
+                  - s3:DeleteObjectVersion
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${AVCWinBucket}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetBucketVersioning
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${AVCWinBucket}'
+  AVCWinClientSSMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - !Ref WriteToV1BucketManagedPolicy
+        - !Ref CreateSSMParameterManagedPolicy
+      Path: /
   AVCWinInstance:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref 'LatestAmiId'
-      InstanceType: t3.medium
+      InstanceType: m6a.large
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
           SubnetId:
-            Ref: PublicSubnet1SSMParameter
+            !Ref PublicSubnet1SSMParameter
       Tags:
       - Key: Name
         Value: WinAVCClient
+      - Key: PlayerSsmAccess
+        Value: "true"
       UserData:
         Fn::Base64: !Sub |
-         <powershell>
-          [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
-          iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-          choco install python --version=3.10.4 -y
-          choco install awscli -y
-          pip install requests
-          pip install boto3
+          <powershell>
+            [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+            iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+            choco install python --version=3.10.4 -y
+            choco install awscli -y
+            pip install requests
+            pip install boto3
+            pip install http
+            net user Administrator TrendMicro0!
+            $scriptList = @(
+              'C:\Projects\2-C1WSInstaller.ps1'
+              'C:\Projects\3-CreateSchTask.ps1'
+            )
+            foreach ($c in Get-NetAdapter) { write-host 'Setting DNS for' $c.interfaceName ; Set-DnsClientServerAddress -InterfaceIndex $c.interfaceindex -ServerAddresses ("8.8.8.8")}
+            (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workloadsecurity/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
+            Expand-Archive C:\Users\Administrator\Downloads\Projects.zip c:\
+            Set-Content -Path 'C:\Projects\Bucket.txt' -Value '${AVCWinBucket}' -NoNewline
+            Set-Content -Path 'C:\Projects\C1Region.txt' -Value '${c1RegionSSMKey}' -NoNewline
+            Set-Content -Path 'C:\Projects\C1WSAPIKey.txt' -Value '${c1ApiKeySSMKey}' -NoNewline
+            python C:\Projects\1-population.py
+            foreach ($script in $scriptList) {
+              & $script 
+            }
+          </powershell>
 
-          if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-            Write-Warning "You are not running as an Administrator. Please try again with admin privileges."
-            exit 1
-          }
-
-          $C1WSRegion = [IO.File]::ReadAllText("c:\Projects\C1WSRegion.txt")
-          $managerUrl="https://workload." + C1WSRegion + ".cloudone.trendmicro.com:443/"
-
-          $env:LogPath = "$env:appdata\Trend Micro\Deep Security Agent\installer"
-          New-Item -path $env:LogPath -type directory
-          Start-Transcript -path "$env:LogPath\dsa_deploy.log" -append
-
-          echo "$(Get-Date -format T) - DSA download started"
-          if ( [intptr]::Size -eq 8 ) { 
-            $sourceUrl=-join($managerUrl, "software/agent/Windows/x86_64/20.0.0.3288/agent.msi") }
-          else {
-            $sourceUrl=-join($managerUrl, "software/agent/Windows/i386/20.0.0.3288/agent.msi") }
-          echo "$(Get-Date -format T) - Download Deep Security Agent Package" $sourceUrl
-
-          $ACTIVATIONURL = [IO.File]::ReadAllText("c:\Projects\C1WSActivationURL.txt")
-          $C1WStenantID = [IO.File]::ReadAllText("c:\Projects\C1WStenant.txt")
-          $C1WStokenID = [IO.File]::ReadAllText('c:\Projects\C1WStoken.txt')
-
-          $WebClient = New-Object System.Net.WebClient
-
-          # Add agent version control info
-          $WebClient.Headers.Add("Agent-Version-Control", "off")
-          $WebClient.QueryString.Add("windowsVersion", (Get-CimInstance Win32_OperatingSystem).Version)
-          $WebClient.QueryString.Add("windowsProductType", (Get-CimInstance Win32_OperatingSystem).ProductType)
-
-          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12;
-
-          Try
-          {
-              $WebClient.DownloadFile($sourceUrl,  "$env:temp\agent.msi")
-          } Catch [System.Net.WebException]
-          {
-                echo " Please check that your Workload Security Manager TLS certificate is signed by a trusted root certificate authority."
-                exit 2;
-          }
-
-          if ( (Get-Item "$env:temp\agent.msi").length -eq 0 ) {
-              echo "Failed to download the Deep Security Agent. Please check if the package is imported into the Workload Security Manager. "
-          exit 1
-          }
-          echo "$(Get-Date -format T) - Downloaded File Size:" (Get-Item "$env:temp\agent.msi").length
-
-          echo "$(Get-Date -format T) - DSA install started"
-          echo "$(Get-Date -format T) - Installer Exit Code:" (Start-Process -FilePath msiexec -ArgumentList "/i $env:temp\agent.msi /qn ADDLOCAL=ALL /l*v `"$env:LogPath\dsa_install.log`"" -Wait -PassThru).ExitCode 
-          echo "$(Get-Date -format T) - DSA activation started"
-
-          Start-Sleep -s 50
-          & $Env:ProgramFiles"\Trend Micro\Deep Security Agent\dsa_control" -r
-          & $Env:ProgramFiles"\Trend Micro\Deep Security Agent\dsa_control" -a $ACTIVATIONURL ""tenantID:"$C1WStenantID" ""token:"$C1WStokenID"
-          Stop-Transcript
-          echo "$(Get-Date -format T) - DSA Deployment Finished" 
-            
 #Outputs:
