@@ -102,12 +102,36 @@ Resources:
             Action:
               - iam:PassRole
             Resource: !GetAtt CodeBuildServiceRole.Arn
-  
+
+  startCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: c1csLambdaFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - codebuild:StartBuild
+            Resource:
+              - arn:aws:codebuild:*:*:project/c1cs-ecr-prod
+
   c1csECR:
     Type: AWS::ECR::Repository
     Properties: 
       ImageTagMutability: MUTABLE
-      RepositoryName: !Sub ${ServiceName}-${Environment}
+      RepositoryName: c1cs-attack
       RepositoryPolicyText: !Sub |
         {
           "Version":"2012-10-17",
@@ -167,6 +191,154 @@ Resources:
       TimeoutInMinutes: 10
     DependsOn: c1csECR
 
-#  lambdaFunctionInvokeDeployC1CSStateMachine:
-#    Description: update description
-#    Value: !GetAtt lambdaFunctionInvokeDeployC1CSStateMachine.Arn
+  lambdaFunctionStartCodeBuild:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 20
+          Handler: index.lambda_handler
+          Role: !GetAtt startCodeBuildRole.Arn
+          Code:
+            ZipFile:
+              !Sub
+                - |-
+                  import http.client
+                  import urllib.parse
+                  import json
+                  import boto3
+                  import traceback
+
+
+                  def lambda_handler(event, context):
+                      """Main Lambda Handling function."""
+                      account_id = context.invoked_function_arn.split(":")[4]
+
+                      try:
+                          # Log the received event
+                          print(("Received event: " + json.dumps(event, indent=2)))
+
+                          # Setup base response
+                          response = get_response_dict(event)
+
+                          # CREATE UPDATE (want to avoid rebuilds unless something changed)
+                          if event['RequestType'] in ("Create", "Update"):
+                              try:
+                                  print("Kicking off Build")
+                                  execute_build(event)
+                              except Exception as build_exce:
+                                  print("ERROR: Build threw exception")
+                                  print((repr(build_exce)))
+                                  # Signal back that we failed
+                                  return send_response(event, get_response_dict(event),
+                                                      "FAILED", repr(build_exce))
+                              else:
+                                  # CodeBuild will send the signal
+                                  print("Build Kicked off ok CodeBuild should signal back")
+                                  return
+                          elif event['RequestType'] == "Delete":
+                              # TODO: Remove the created images in the Repositories
+                              print("Delete event remove container images")
+                              response['PhysicalResourceId'] = "1233244324"
+                              try:
+                                  resources = event['ResourceProperties']
+                                  repository = resources['c1cs-attack']
+                                  cleanup_images_repo(repository, account_id)
+                              except Exception as cleanup_exception:
+                                  # signal failure to CFN
+                                  print((json.dumps(event, indent=2)))
+                                  traceback.print_stack()
+                                  print("---------")
+                                  traceback.print_exc()
+                                  print((repr(cleanup_exception)))
+                                  return send_response(event, response, "FAILED",
+                                                      "Cleanup of Container image failed." + repr(cleanup_exception))
+                              # signal success to CFN
+                              return send_response(event, response)
+                          else:
+                              # Invalid RequestType
+                              print("ERROR: Invalid request type send error signal to cfn")
+                              print("ERROR: Expected - Create, Update, Delete")
+                      except Exception as unhandled:
+                          response = get_response_dict(event)
+                          return send_response(event, response, "FAILED",
+                                              "Unhandled exception, failing gracefully: " + str(unhandled))
+
+
+                  def cleanup_images_repo(repository, account_id):
+                      """
+                      Delete Container images
+                      """
+                      ecr_client = boto3.client('ecr')
+
+                      print(("Repo:" + repository + " AccountID:" + account_id))
+                      response = ecr_client.describe_images(
+                          registryId=account_id,
+                          repositoryName=repository
+                      )
+                      image_ids = []
+                      for imageDetail in response['imageDetails']:
+                          image_ids.append(
+                                  {
+                                      'imageDigest': imageDetail['imageDigest'],
+                                  }
+                          )
+
+                      if len(image_ids):
+                          # delete images
+                          response = ecr_client.batch_delete_image(
+                              registryId=account_id,
+                              repositoryName=repository,
+                              imageIds=image_ids
+                          )
+
+
+                  def execute_build(event):
+                      """Kickoff CodeBuild Project."""
+                      build = boto3.client('codebuild')
+                      project_name = "c1cs-ecr-prod"
+                      signal_url = event["ResponseURL"]
+                      stack_id = event["StackId"]
+                      request_id = event["RequestId"]
+                      logical_resource_id = event["LogicalResourceId"]
+                      url = urllib.parse.urlparse(event['ResponseURL'])
+                      response = build.start_build(projectName=project_name)
+                      return response
+
+
+                  def get_response_dict(event):
+                      """Setup Response object for CFN Signal."""
+                      response = {
+                          'StackId': event['StackId'],
+                          'RequestId': event['RequestId'],
+                          'LogicalResourceId': event['LogicalResourceId'],
+                          'Status': 'SUCCESS'
+                      }
+                      return response
+
+
+                  def send_response(event, response, status=None, reason=None):
+                      """Response sender."""
+                      if status is not None:
+                          response['Status'] = status
+
+                      if reason is not None:
+                          response['Reason'] = reason
+
+                      if 'ResponseURL' in event and event['ResponseURL']:
+                          url = urllib.parse.urlparse(event['ResponseURL'])
+                          body = json.dumps(response)
+                          https = http.client.HTTPSConnection(url.hostname)
+                          https.request('PUT', url.path+'?'+url.query, body)
+                          print("Sent CFN Response")
+
+                      return response
+                -
+                  lambda_function_role_arn: !Ref startCodeBuildRole
+
+
+  InvokeStartCodeBuildLambda:
+    Type: Custom::InvokeStartCodeBuildLambda
+    Properties:
+      ServiceToken: !GetAtt lambdaFunctionStartCodeBuild.Arn
+      Timeout: 10
+        # The code build process takes about 4.5 minuts.  This timeout could be reduced from 10 minutes if needed.
