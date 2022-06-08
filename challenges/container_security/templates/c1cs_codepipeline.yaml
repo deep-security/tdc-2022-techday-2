@@ -126,6 +126,14 @@ Resources:
               - codebuild:StartBuild
             Resource:
               - arn:aws:codebuild:*:*:project/c1cs-ecr-prod
+          - Effect: Allow
+            Action:
+              - ecr:DescribeImages
+              - ecr:BatchDeleteImage
+              - ecr:ListImages
+              - ecr:DescribeRepositories
+            Resource:
+              - arn:aws:ecr:*:*:repository/c1cs-attack
 
   c1csECR:
     Type: AWS::ECR::Repository
@@ -254,6 +262,7 @@ Resources:
                                   return send_response(event, response, "FAILED",
                                                       "Cleanup of Container image failed." + repr(cleanup_exception))
                               # signal success to CFN
+                              cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeStartCodeBuildLambda")
                               return send_response(event, response)
                           else:
                               # Invalid RequestType
@@ -270,28 +279,16 @@ Resources:
                       Delete Container images
                       """
                       ecr_client = boto3.client('ecr')
+                      repository = "c1cs-attack"
 
-                      print(("Repo:" + repository + " AccountID:" + account_id))
-                      response = ecr_client.describe_images(
-                          registryId=account_id,
-                          repositoryName=repository
+                      response = client.batch_delete_image(
+                          repositoryName=repository,
+                          imageIds=[
+                              {
+                                  'imageTag': 'tdc_2022_2_c1csAttack'
+                              },
+                          ]
                       )
-                      image_ids = []
-                      for imageDetail in response['imageDetails']:
-                          image_ids.append(
-                                  {
-                                      'imageDigest': imageDetail['imageDigest'],
-                                  }
-                          )
-
-                      if len(image_ids):
-                          # delete images
-                          response = ecr_client.batch_delete_image(
-                              registryId=account_id,
-                              repositoryName=repository,
-                              imageIds=image_ids
-                          )
-
 
                   def execute_build(event):
                       """Kickoff CodeBuild Project."""
@@ -335,7 +332,6 @@ Resources:
                       return response
                 -
                   lambda_function_role_arn: !Ref startCodeBuildRole
-
 
   InvokeStartCodeBuildLambda:
     Type: Custom::InvokeStartCodeBuildLambda
