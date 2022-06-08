@@ -207,7 +207,7 @@ Resources:
                   import json
                   import boto3
                   import traceback
-
+                  import cfnresponse
 
                   def lambda_handler(event, context):
                       """Main Lambda Handling function."""
@@ -225,6 +225,7 @@ Resources:
                               try:
                                   print("Kicking off Build")
                                   execute_build(event)
+                                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeStartCodeBuildLambda")
                               except Exception as build_exce:
                                   print("ERROR: Build threw exception")
                                   print((repr(build_exce)))
