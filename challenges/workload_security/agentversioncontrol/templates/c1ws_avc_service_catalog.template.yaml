@@ -24,7 +24,7 @@ Parameters:
       forward slash (/).
     Type: 'AWS::SSM::Parameter::Value<String>'
   PublicSubnet1SSMParameter:
-    Default: PublicSubnet1
+    Default: "PublicSubnet1"
     Description: DO NOT CHANGE THIS VALUE
     Type: 'AWS::SSM::Parameter::Value<String>'
   LatestAmiId: 
@@ -69,7 +69,6 @@ Resources:
       Runtime: python3.7
       Role: !GetAtt "CleanBucketRole.Arn"
       Timeout: 900
-
       Code:
         ZipFile: |
           import cfnresponse
@@ -145,7 +144,7 @@ Resources:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
           SubnetId:
-            !Ref PublicSubnet1SSMParameter
+            Ref: PublicSubnet1SSMParameter
       Tags:
       - Key: Name
         Value: WinAVCClient
