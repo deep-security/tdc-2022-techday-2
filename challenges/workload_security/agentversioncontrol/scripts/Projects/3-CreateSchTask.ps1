@@ -5,9 +5,17 @@
     <Author></Author>
   </RegistrationInfo>
   <Triggers>
-    <BootTrigger>
+    <CalendarTrigger>
+      <Repetition>
+        <Interval>PT5M</Interval>
+        <StopAtDurationEnd>false</StopAtDurationEnd>
+      </Repetition>
+      <StartBoundary>2022-06-09T00:00:00</StartBoundary>
       <Enabled>true</Enabled>
-    </BootTrigger>
+      <ScheduleByDay>
+        <DaysInterval>1</DaysInterval>
+      </ScheduleByDay>
+    </CalendarTrigger>
   </Triggers>
   <Principals>
     <Principal id="Author">

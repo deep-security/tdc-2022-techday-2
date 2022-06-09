@@ -25,19 +25,20 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<String>'
   PublicSubnet1SSMParameter:
     Default: PublicSubnet1
-    Description: Retrieve the PublicSubnet1 from SSM Parameter Store
+    Description: DO NOT CHANGE THIS VALUE
     Type: 'AWS::SSM::Parameter::Value<String>'
   LatestAmiId: 
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-windows-latest/Windows_Server-2016-English-Full-Base'
+    Description: DO NOT CHANGE THIS VALUE
   c1ApiKeySSMKey:
     Type: 'AWS::SSM::Parameter::Value<String>'
-    Description: Retrieve the C1 API Key from the SSM Parameter Store
+    Description: DO NOT CHANGE THIS VALUE
     Default: /player/C1/c1ApiKey
   c1RegionSSMKey:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: /player/C1/c1Region
-    Description: Retrieve the C1 Region Key from the SSM Parameter Store
+    Description: DO NOT CHANGE THIS VALUE
 
 Resources:
   # Everything that needs to be created even before player starts playing.
@@ -134,7 +135,6 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
         - !Ref WriteToV1BucketManagedPolicy
-        - !Ref CreateSSMParameterManagedPolicy
       Path: /
   AVCWinInstance:
     Type: AWS::EC2::Instance
@@ -166,7 +166,7 @@ Resources:
               'C:\Projects\2-C1WSInstaller.ps1'
               'C:\Projects\3-CreateSchTask.ps1'
             )
-            (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workloadsecurity/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
+            (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
             Expand-Archive C:\Users\Administrator\Downloads\Projects.zip c:\
             Set-Content -Path 'C:\Projects\Bucket.txt' -Value '${AVCWinBucket}' -NoNewline
             Set-Content -Path 'C:\Projects\C1Region.txt' -Value '${c1RegionSSMKey}' -NoNewline
@@ -185,6 +185,6 @@ Resources:
        ObjectPrefixes: ''
        ExpectedValues: 'True'
        FunctionName: 'AVC-Custom-Script'
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workloadsecurity/agentversioncontrol/templates/answer_checker.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/agentversioncontrol/templates/answer_checker.template.yaml'
       TimeoutInMinutes: 5
 #Outputs:
