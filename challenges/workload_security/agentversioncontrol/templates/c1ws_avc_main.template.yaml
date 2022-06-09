@@ -3,11 +3,6 @@ Description: >
   This template defines a the main stack for a challenge.
 
 Parameters:
-  # Service Catalog related
-  PlayerServiceCatalogPortfolio:
-    Type: String
-  ServiceCatalogLaunchRoleArn:
-    Type: String
   # Bucket path related
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
@@ -45,7 +40,7 @@ Resources:
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1ws_avc_service_catalog.template.yaml
+            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workloadsecurity/agentversioncontrol/templates/c1ws_avc_service_catalog.template.yaml
 
   ######################
   # The Service Catalog Association is locked behind the Onboarding Challenge Service Catalog. This forces players to play onboarding challenge first.

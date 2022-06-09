@@ -30,9 +30,6 @@ Parameters:
   LatestAmiId: 
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-windows-latest/Windows_Server-2016-English-Full-Base'
-  CompanyID:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: /player/V1/v1CustomerId
   c1ApiKeySSMKey:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Description: Retrieve the C1 API Key from the SSM Parameter Store
@@ -169,7 +166,6 @@ Resources:
               'C:\Projects\2-C1WSInstaller.ps1'
               'C:\Projects\3-CreateSchTask.ps1'
             )
-            foreach ($c in Get-NetAdapter) { write-host 'Setting DNS for' $c.interfaceName ; Set-DnsClientServerAddress -InterfaceIndex $c.interfaceindex -ServerAddresses ("8.8.8.8")}
             (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workloadsecurity/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
             Expand-Archive C:\Users\Administrator\Downloads\Projects.zip c:\
             Set-Content -Path 'C:\Projects\Bucket.txt' -Value '${AVCWinBucket}' -NoNewline
@@ -180,5 +176,15 @@ Resources:
               & $script 
             }
           </powershell>
-
+  TaskCheckCustomScript:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+       BucketName: !Ref AVCWinBucket
+       ObjectNames: 'UpgradeTask.txt'
+       ObjectPrefixes: ''
+       ExpectedValues: 'True'
+       FunctionName: 'AVC-Custom-Script'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workloadsecurity/agentversioncontrol/templates/answer_checker.template.yaml'
+      TimeoutInMinutes: 5
 #Outputs:
