@@ -1,0 +1,80 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TargetBucketName:
+    Type: String
+
+Resources:
+  scoreroleday1task1C1WS:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies: 
+        - PolicyName: AllowReadScoreS3
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "s3:ListBucket"
+                Resource: 
+                  - Fn::Join:
+                    - ""
+                    - - "arn:aws:s3:::"
+                      - !Ref TargetBucketName
+
+  C1WSScoreLambdarday1task1:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: C1WSScoreLambdaday1task1
+      Code: 
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          target_bucket = os.environ['TARGETBucket']
+          s3 = boto3.resource('s3')
+          files = []
+          snskey = "day1TLSblock"
+          def lambda_handler(event, context):
+              counter = 0
+              my_bucket = s3.Bucket(target_bucket)
+              for object in my_bucket.objects.all():
+                  files.append(object.key)
+                  
+              print(files)
+              for x in files:
+                  if snskey in x:
+                          return True
+                  else:
+                      continue
+              print("[Woops!]Try harder")
+              raise Exception("You haven't finished, because... sns test is not completed.")
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - scoreroleday1task1C1WS
+          - Arn
+      Runtime: python3.7
+      Timeout: 30
+      Environment:
+        Variables:
+          TARGETBucket:
+            Ref: TargetBucketName
+    DependsOn:
+      - scoreroleday1task1C1WS
+Outputs:
+  C1WSScoreLambdarday1task1Name:
+    Value:
+      Ref: C1WSScoreLambdarday1task1
