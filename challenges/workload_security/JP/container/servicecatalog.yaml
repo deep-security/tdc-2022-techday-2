@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+
+  CreateDSMRuleLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: CreateDSMRuleLambda
+      Code:
+        S3Bucket: "{{resolve:ssm:QSS3BucketName:1}}"
+        S3Key: 
+          Fn::Join:
+          - ""
+          - - "{{resolve:ssm:QSS3KeyPrefix:1}}"
+            - "challenges/workload_security/day1/CreateRuleforDSM.zip"
+      Handler: lambda_function.lambda_handler
+      Role: '{{resolve:ssm:DefaultLambdaExecutionRole:1}}'
+      Runtime: python3.7
+      Timeout: 30
+      Environment:
+        Variables:
+          API: !Ref DSMAPIKey
+          DSMURL: "{{resolve:ssm:DSMURL:1}}"
+
+  CreateDSMRule:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt CreateDSMRuleLambda.Arn
