@@ -1,1 +1,136 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  DSA Template
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Tech Day Configuration
+      Parameters:
+      - QSS3BucketName
+      - QSS3KeyPrefix
+    ParameterLabels:
+      QSS3BucketName:
+        default: Tech Day S3 Bucket Name
+      QSS3KeyPrefix:
+        default: Quick Start S3 Key Prefix
 
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
+      forward slash (/).
+    Type: String
+  AllowIP:
+    Type: String
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet::Id
+  BucketName:
+    Type: String
+    Description: bucket name
+  BucketARN:
+    Type: String
+    Description: bucket arn
+
+Mappings:
+  #Amazon Linux 2 arm 
+  AMZN:
+    us-east-1:
+      AMZN: ami-0d296d66f22f256c2
+    us-west-2:
+      AMZN: ami-04071714ae6bc5aa7
+    us-east-2:
+      AMZN: ami-0950ad18d0a34dadc
+
+Resources:
+  WebSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+        GroupDescription: "Web Security Group"
+        VpcId: !Ref VPC
+        Tags:
+        - Key: Name
+          Value: webSecGroup
+  WebAppSGBaseIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref WebSecurityGroup
+      IpProtocol: -1
+      FromPort: 0
+      ToPort: 0
+      CidrIp: !Ref AllowIP
+
+  DSAkeysRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Path: /
+      Policies:
+      - PolicyName: DeepSecurityAgentS3cpPolicy
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action:
+            - s3:PutObject*
+            Resource: 
+              - Ref: BucketARN
+              - Fn::Join:
+                - ""
+                - - Ref: BucketARN
+                  - /*
+
+  DSAkeysProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - !Ref DSAkeysRole
+
+  DSA:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: !Ref DSAkeysProfile
+      ImageId:
+        !FindInMap
+        - AMZN
+        - !Ref AWS::Region
+        - AMZN
+      InstanceType: t4g.large
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: "0"
+          GroupSet:
+            - Ref: WebSecurityGroup
+          SubnetId:
+            Ref: PublicSubnet1
+      Tags:
+      - Key: Name
+        Value: DSA
+      - Key: PlayerSsmAccess
+        Value: "true"
+      UserData:
+        Fn::Base64: !Sub |
+            #!/bin/bash -x
