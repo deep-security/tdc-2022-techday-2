@@ -29,6 +29,12 @@ Parameters:
     Type: AWS::EC2::VPC::Id
   PublicSubnet1ID:
     Type: AWS::EC2::Subnet::Id
+  BucketName:
+    Type: String
+    Description: bucket name
+  BucketARN:
+    Type: String
+    Description: bucket arn
     
 Resources:
   ############################################ 
@@ -44,6 +50,8 @@ Resources:
         VPC: !Ref VPCID
         PrivateSubnet1: !Ref PrivateSubnet1ID
         AllowIP: 0.0.0.0/0
+        BucketName: !Ref BucketName
+        BucketARN: !Ref BucketARN
         
   ############################################ 
   ############# Service Catalog ############## 
