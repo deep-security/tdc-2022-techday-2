@@ -34,7 +34,7 @@ Resources:
   ############################################ 
   ############# For EC2 Instance ############# 
   ############################################
-  PriDSA:
+  Agent:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}ec2.yaml
@@ -43,7 +43,8 @@ Resources:
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
         VPC: !Ref VPCID
         PrivateSubnet1: !Ref PrivateSubnet1ID
-      
+        AllowIP: 0.0.0.0/0
+        
   ############################################ 
   ############# Service Catalog ############## 
   ############################################
