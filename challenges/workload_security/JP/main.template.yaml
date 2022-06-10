@@ -1,0 +1,108 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Tech Day C1WS day1 main Template
+Parameters:
+  # Service Catalog related
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+  # Bucket path related
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnet1ID:
+    Type: AWS::EC2::Subnet::Id
+
+Resources:
+  ############################################ 
+  ################ Onbording ################ 
+  ############################################
+  Onbording:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/onbording/main.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
+
+  ############################################ 
+  ############## TLS Inspection ############## 
+  ############################################
+  TLSI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/tlsi/main.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
+
+  ############################################ 
+  ################ Container ################ 
+  ############################################
+  Container:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/container/main.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
+        
+  ############################################ 
+  ################# Offline ################# 
+  ############################################
+  Offline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/offline/main.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
+        
+  ############################################ 
+  ################# Scoring ################# 
+  ############################################
+  ScoreLambdaTLSI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/scoring/tlsi.yaml
+      Parameters:
+        TargetBucketName: !Ref s3Bucket
+
+  ScoreLambdaContainer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/scoring/container.yaml
+      Parameters:
+        TargetBucketName: !Ref s3Bucket
+
+  ScoreLambdaOffline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/scoring/offline.yaml
+      Parameters:
+        TargetBucketName: !Ref s3Bucket
