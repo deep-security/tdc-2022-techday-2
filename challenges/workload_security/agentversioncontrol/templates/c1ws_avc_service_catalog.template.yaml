@@ -135,11 +135,20 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
         - !Ref WriteToV1BucketManagedPolicy
       Path: /
+
+  AVCClientSSMProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - !Ref AVCWinClientSSMRole
+      
   AVCWinInstance:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref 'LatestAmiId'
       InstanceType: m6a.large
+      IamInstanceProfile: !Ref AVCClientSSMProfile
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
@@ -153,27 +162,16 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
           <powershell>
+            Start-Transcript -path "c:\Projects\InstanceBuild.log" -append
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
             iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-            choco install python --version=3.10.4 -y
-            choco install awscli -y
-            pip install requests
-            pip install boto3
-            pip install http
-            net user Administrator TrendMicro0!
-            $scriptList = @(
-              'C:\Projects\2-C1WSInstaller.ps1'
-              'C:\Projects\3-CreateSchTask.ps1'
-            )
-            (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
+            (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
             Expand-Archive C:\Users\Administrator\Downloads\Projects.zip c:\
             Set-Content -Path 'C:\Projects\Bucket.txt' -Value '${AVCWinBucket}' -NoNewline
             Set-Content -Path 'C:\Projects\C1Region.txt' -Value '${c1RegionSSMKey}' -NoNewline
             Set-Content -Path 'C:\Projects\C1WSAPIKey.txt' -Value '${c1ApiKeySSMKey}' -NoNewline
-            python C:\Projects\1-population.py
-            foreach ($script in $scriptList) {
-              & $script 
-            }
+            c:\Projects\AVCClientScript.ps1
+            Stop-Transcript
           </powershell>
   TaskCheckCustomScript:
     Type: AWS::CloudFormation::Stack
@@ -184,6 +182,6 @@ Resources:
        ObjectPrefixes: ''
        ExpectedValues: 'True'
        FunctionName: 'AVC-Custom-Script'
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/agentversioncontrol/templates/answer_checker.template.yaml'
-      TimeoutInMinutes: 5
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/answer_checker.template.yaml'
+
 #Outputs:

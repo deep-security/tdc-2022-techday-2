@@ -64,4 +64,4 @@ $xmlinfo.Task.Principals.Principal.UserId = $sid
 
 $xmlinfo.Save($filepath)
 
-Register-ScheduledTask -xml (Get-Content 'C:\Projects\Ver_Check.xml' | out-string) -TaskName $taskname -Password 'TrendMicro0!' -User $localuser 
+Register-ScheduledTask -xml (Get-Content 'C:\Projects\Ver_Check.xml' | out-string) -TaskName $taskname -Password 'TrendMicro0!' -User $localuser  | Out-Host

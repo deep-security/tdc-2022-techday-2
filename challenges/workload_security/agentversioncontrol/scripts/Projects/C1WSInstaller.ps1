@@ -1,6 +1,3 @@
-<powershell>
-#requires -version 4.0
-
 # PowerShell 4 or up is required to run this script
 # This script detects platform and architecture.  It then downloads and installs the relevant Deep Security Agent package
 
@@ -9,8 +6,8 @@ if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdent
    exit 1
 }
 
-$C1WSRegion = [IO.File]::ReadAllText("c:\Projects\C1WSRegion.txt")
-$managerUrl="https://workload." + C1WSRegion + ".cloudone.trendmicro.com:443/"
+$C1WSRegion = [IO.File]::ReadAllText("c:\Projects\C1Region.txt")
+$managerUrl="https://workload.$C1WSRegion.cloudone.trendmicro.com:443/"
 
 $env:LogPath = "$env:appdata\Trend Micro\Deep Security Agent\installer"
 New-Item -path $env:LogPath -type directory
@@ -24,8 +21,8 @@ else {
 echo "$(Get-Date -format T) - Download Deep Security Agent Package" $sourceUrl
 
 $ACTIVATIONURL = [IO.File]::ReadAllText("c:\Projects\C1WSActivationURL.txt")
-$C1WStenantID = [IO.File]::ReadAllText("c:\Projects\C1WStenant.txt")
-$C1WStokenID = [IO.File]::ReadAllText('c:\Projects\C1WStoken.txt')
+$C1WStenantID = [IO.File]::ReadAllText("c:\Projects\C1WSTenantID.txt")
+$C1WStokenID = [IO.File]::ReadAllText('c:\Projects\C1WSTokenID.txt')
 
 $WebClient = New-Object System.Net.WebClient
 
@@ -57,7 +54,6 @@ echo "$(Get-Date -format T) - DSA activation started"
 
 Start-Sleep -s 50
 & $Env:ProgramFiles"\Trend Micro\Deep Security Agent\dsa_control" -r
-& $Env:ProgramFiles"\Trend Micro\Deep Security Agent\dsa_control" -a $ACTIVATIONURL ""tenantID:"$DStenantID" ""token:"$DStokenID"
+& $Env:ProgramFiles"\Trend Micro\Deep Security Agent\dsa_control" -a $ACTIVATIONURL ""tenantID:"$C1WStenantID" ""token:"$C1WStokenID"
 Stop-Transcript
 echo "$(Get-Date -format T) - DSA Deployment Finished"
-</powershell>

@@ -18,7 +18,7 @@ Parameters:
     Description: File encoding
     Default: utf-8
 Resources:
-  CheckerServiceRoleC3BCC528:
+  AVCCheckerServiceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -34,7 +34,7 @@ Resources:
             - - "arn:"
               - Ref: AWS::Partition
               - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  CheckerServiceRoleDefaultPolicyF4F2FB3F:
+  AVCCheckerServiceRoleDefaultPolicy:
     Type: AWS::IAM::Policy
     Properties:
       PolicyDocument:
@@ -59,10 +59,10 @@ Resources:
                     - Ref: BucketName
                     - /*
         Version: "2012-10-17"
-      PolicyName: CheckerServiceRoleDefaultPolicyF4F2FB3F
+      PolicyName: AVCCheckerServiceRoleDefaultPolicy
       Roles:
-        - Ref: CheckerServiceRoleC3BCC528
-  Checker1D892424:
+        - Ref: AVCCheckerServiceRole
+  AVCCheckerFunction:
     Type: AWS::Lambda::Function
     Properties:
       Code:
@@ -159,7 +159,7 @@ Resources:
       Handler: index.handler
       Role:
         Fn::GetAtt:
-          - CheckerServiceRoleC3BCC528
+          - AVCCheckerServiceRole
           - Arn
       Runtime: nodejs12.x
       Environment:
@@ -177,5 +177,5 @@ Resources:
       FunctionName:
         Ref: FunctionName
     DependsOn:
-      - CheckerServiceRoleDefaultPolicyF4F2FB3F
-      - CheckerServiceRoleC3BCC528
+      - AVCCheckerServiceRoleDefaultPolicy
+      - AVCCheckerServiceRole
