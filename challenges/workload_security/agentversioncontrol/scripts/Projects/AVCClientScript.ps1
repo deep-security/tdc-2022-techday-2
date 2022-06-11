@@ -35,7 +35,7 @@ $scriptList = @(
     'C:\Projects\C1WSInstaller.ps1'
     'C:\Projects\CreateSchTask.ps1'
 )
-c:\Python310\python.exe population.py | Out-Host
+
 foreach ($script in $scriptList) {
     & $script 
 }

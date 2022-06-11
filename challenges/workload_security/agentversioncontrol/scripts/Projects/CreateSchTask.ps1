@@ -45,7 +45,7 @@
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>"C:\Program Files\Python310\python.exe"</Command>
+      <Command>"C:\Python310\python.exe"</Command>
       <Arguments>c:\Projects\VersionChecker.py</Arguments>
     </Exec>
   </Actions>
@@ -53,8 +53,8 @@
 
 $loggeduser = $env:username
 $localuser = $env:USERDOMAIN +"\"+ $env:username
-$user = New-Object System.Security.Principal.NTAccount($loggeduser) 
-$usersid = $user.Translate([System.Security.Principal.SecurityIdentifier]) 
+$user = New-Object System.Security.Principal.NTAccount($loggeduser)
+$usersid = $user.Translate([System.Security.Principal.SecurityIdentifier])
 $sid = $usersid.Value
 $taskname = 'Version_Checker'
 $filepath = 'C:\Projects\Ver_Check.xml'
