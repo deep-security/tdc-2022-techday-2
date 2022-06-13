@@ -15,18 +15,17 @@ def get_ssm_params(*keys, region='us-east-1'):
         result[p['Name']] = p['Value']
     return result
     
-    
 def lambda_handler(event, context):
-    parameter = get_ssm_params("/player/c1/c1apikey/summer")
+    parameter = get_ssm_params("/player/C1/c1ApiKey")
     URL_policy = "https://workload.trend-us-1.cloudone.trendmicro.com/api/policies"
     URL_sns = "https://workload.trend-us-1.cloudone.trendmicro.com/api/systemsettings"
-    key = parameter["/player/c1/c1apikey/summer"]  //need to reconfigure here
+    key = parameter 
     APIkey = "Apikey " + key     
-    policyname = "thisisfromryoma"    //renaming
+    policyname = "usethispolicy"
     #SNS keys
-    SNS_access_key = ""   //adding accessing key
-    SNS_secret_key = ""   //asdding scr key
-    SNS_Topic_ARN = ""    //adding ARN
+    SNS_access_key = ""   #adding accessing key
+    SNS_secret_key = ""   #asdding scr key
+    SNS_Topic_ARN = ""    #adding ARN
 
     header = {
         "Content-Type": "application/json",
