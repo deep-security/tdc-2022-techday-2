@@ -410,8 +410,8 @@ Resources:
                                   setC1SsmParameter(ssmClient, "c1OnboardingStatus", "Success")
 
                                   # Since task was successful, we will kick of the Post Onboarding(AKA Wrinkler) lambda
-                                  lambda = boto3.client('lambda')
-                                  lambda.invoke(
+                                  lambdaClient = boto3.client('lambda')
+                                  lambdaClient.invoke(
                                     FunctionName=str(os.environ.get("POST_ONBOARD_LAMBDA_NAME")),
                                     InvocationType="Event"
                                   )
