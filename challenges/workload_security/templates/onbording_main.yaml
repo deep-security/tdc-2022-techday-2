@@ -107,7 +107,7 @@ Resources:
   SNStopic:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}sns.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/onbording_sns.yaml
       
   ############################################ 
   ############# Service Catalog ############## 
@@ -115,12 +115,12 @@ Resources:
   NewServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
-      Description: 
-      Name: 
+      Description: Be sure to expand this before tryng Cloud One Workload Challenges
+      Name: C1WS Initial preparation
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}servicecatalog.yaml
+            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/onbording_servicecatalog.yaml
   NewServicePorfolioProductAssociation:
     Type: AWS::ServiceCatalog::PortfolioProductAssociation
     Properties:
@@ -133,3 +133,11 @@ Resources:
       PortfolioId: !Ref PlayerServiceCatalogPortfolio
       ProductId: !Ref NewServiceCatalogProduct
       RoleArn: !Ref ServiceCatalogLaunchRoleArn
+
+Outputs:
+  S3BucketName:
+    Value: !Ref S3Bucket
+  S3BucketARN:
+    Value: !GetAtt S3Bucket.Arn
+  SNSTopicARN:
+    Value: !GetAtt SNStopic.Outputs.SNSTopicARN
