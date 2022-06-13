@@ -10,8 +10,8 @@ def lambda_handler(event, context):
     print(keyword)
     if keyword == correct_answer_container:
         response = s3.put_object(
-        Bucket='ryoma2022', //need to change
+        Bucket='', #need to change env variable
         Key="container_correct",  
          )
     else:
-        print("False")
+        print("do it again")
