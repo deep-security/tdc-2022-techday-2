@@ -82,7 +82,6 @@ Resources:
             Resource: !Sub "arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${ServiceName}"
           - Effect: Allow
             Action:
-              - ecr:GetAuthorizationToken
               - ecr:BatchCheckLayerAvailability
               - ecr:GetDownloadUrlForLayer
               - ecr:BatchGetImage
@@ -90,8 +89,11 @@ Resources:
               - ecr:InitiateLayerUpload
               - ecr:PutImage
               - ecr:UploadLayerPart
-            Resource: #"*"
-              - arn:aws:ecr:*:*:repository/*
+            Resource:
+              - arn:aws:ecr:*:*:repository/c1cs-attack
+          - Effect: Allow
+              - ecr:GetAuthorizationToken
+            Resource: "*"
           - Effect: Allow
             Action:
               - codebuild:CreateReportGroup
