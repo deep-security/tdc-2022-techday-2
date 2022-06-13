@@ -37,10 +37,10 @@ Resources:
   Onbording:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/onbording/main.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onbording_main.yaml
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
-        QSS3Key: !Sub ${QSS3KeyPrefix}workload_security/JP/onbording/
+        QSS3Key: !Sub ${QSS3KeyPrefix}
         PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
 
@@ -50,10 +50,10 @@ Resources:
   TLSI:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/tlsi/main.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tlsi_main.yaml
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
-        QSS3Key: !Sub ${QSS3KeyPrefix}workload_security/JP/tlsi/
+        QSS3Key: !Sub ${QSS3KeyPrefix}
         PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
         VPCID: !Ref VPCID
@@ -67,7 +67,7 @@ Resources:
   Container:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/container/ec2.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}container_ec2.yaml
       Parameters:
         PublicSubnet1ID: !Ref PublicSubnet1ID        
         
@@ -77,10 +77,10 @@ Resources:
   # Offline:
   #   Type: AWS::CloudFormation::Stack
   #   Properties:
-  #     TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/offline/main.yaml
+  #     TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}offline_main.yaml
   #     Parameters:
   #       QSS3BucketName: !Ref QSS3BucketName
-  #       QSS3Key: !Sub ${QSS3KeyPrefix}workload_security/JP/offline/
+  #       QSS3Key: !Sub ${QSS3KeyPrefix}
   #       PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
   #       ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
   #       VPCID: !Ref VPCID
@@ -92,18 +92,18 @@ Resources:
   ScoreLambdaTLSI:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/scoring/tlsi.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scoring_tlsi.yaml
       Parameters:
         TargetBucketName: !Ref s3Bucket
 
   ScoreLambdaContainer:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/scoring/container.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scoring_container.yaml
       Parameters:
         TargetBucketName: !Ref s3Bucket
 
   ScoreLambdaOffline:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/scoring/EppOfflineScan.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scoring_EppOfflineScan.yaml
