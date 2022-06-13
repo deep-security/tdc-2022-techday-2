@@ -37,30 +37,47 @@ Resources:
   C1WSScoreLambdarday1task1:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: C1WSScoreLambdaday1task1
+      FunctionName: C1WSEppOfflineCheck
       Code: 
         ZipFile: |
-          import json
+          import requests as rq
+          import json as js
           import boto3
-          import os
-          target_bucket = os.environ['TARGETBucket']
-          s3 = boto3.resource('s3')
-          files = []
-          snskey = "day1TLSblock"
+          
+          print('Loading function')
+          
+          def get_ssm_params(*keys, region='us-east-1'):
+              result = {}
+              ssm = boto3.client('ssm', region)
+              response = ssm.get_parameters(
+                  Names=keys,
+                  WithDecryption=True,
+              )
+              for p in response['Parameters']:
+                  result[p['Name']] = p['Value']
+              return result
+          
           def lambda_handler(event, context):
-              counter = 0
-              my_bucket = s3.Bucket(target_bucket)
-              for object in my_bucket.objects.all():
-                  files.append(object.key)
-                  
-              print(files)
-              for x in files:
-                  if snskey in x:
-                          return True
+              parameter = get_ssm_params("/player/C1/c1ApiKey")
+              URL_search_policy = "https://workload.trend-us-1.cloudone.trendmicro.com/api/policies"
+              key = parameter["/player/C1/c1ApiKey"]
+              APIkey = "Apikey " + key
+              header = {
+              "Content-Type": "application/json",
+              "Authorization" : APIkey,
+              "api-version": "v1",
+              }
+          
+              r = rq.get(URL_search_policy, headers=header)
+              search_policy = js.loads(r.text)
+              for policy in search_policy["policies"]:
+                  if policy["policySettings"]["antiMalwareSettingOfflineScheduledScanEnabled"]["value"] == "true":
+                      answer = policy["name"]
+                      answer == "usethispolicy"
+                      print(answer)
+                      return(True)
                   else:
-                      continue
-              print("[Woops!]Try harder")
-              raise Exception("You haven't finished, because... sns test is not completed.")
+                      return(False)
       Handler: index.lambda_handler
       Role:
         Fn::GetAtt:
@@ -70,8 +87,6 @@ Resources:
       MemorySize: 512
       Environment:
         Variables:
-          TARGETBucket:
-            Ref: TargetBucketName
     DependsOn:
       - scoreroleday1task1C1WS
 Outputs:
