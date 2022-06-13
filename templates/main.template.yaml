@@ -296,6 +296,13 @@ Resources:
         MainStackId: !Ref AWS::StackId
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/postonboard_trigger.template.yaml'
 
+  PostOnboardFunctionNameSsmParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "PostOnboardFunctionName"
+      Value: : !GetAtt PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
+      Type: String
+
   LockoutInfraStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -338,7 +345,6 @@ Resources:
         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/
-        PostOnboardFunctionName: !GetAtt PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/main.template.yaml'
 
 Outputs:

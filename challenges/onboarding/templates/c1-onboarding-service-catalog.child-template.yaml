@@ -112,8 +112,9 @@ Parameters:
     Type: Number
     Default: 900
   PostOnboardFunctionName:
-    Description: DO NOT MODIFY. Expected value of the Post Onboard function name.
-    Type: String
+    Default: "PostOnboardFunctionName"
+    Description: DO NOT MODIFY. Expected value of the SSM Parameter Value for the Post Onboard function name.
+    Type: 'AWS::SSM::Parameter::Value<String>'
 
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
