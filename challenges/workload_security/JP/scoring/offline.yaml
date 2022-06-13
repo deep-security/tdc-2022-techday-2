@@ -55,13 +55,9 @@ Resources:
               r = rq.get(URL_search_policy, headers=header)
               search_policy = js.loads(r.text)
               for policy in search_policy["policies"]:
-                  if policy["policySettings"]["antiMalwareSettingOfflineScheduledScanEnabled"]["value"] == "true":
-                      answer = policy["name"]
-                      answer == "usethispolicy"
-                      print(answer)
+                  if policy["policySettings"]["antiMalwareSettingOfflineScheduledScanEnabled"]["value"] == "true" and policy["name"] == "usethispolicy":
                       return(True)
-                  else:
-                      return(False)
+                  return(False) 
       Handler: index.lambda_handler
       Role: !GetAtt C1WSEppOfflineCheckScoreRole.Arn
       Runtime: python3.7
