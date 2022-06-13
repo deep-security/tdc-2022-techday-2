@@ -1,11 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: C1WS Role
-Parameters:
 
-  c1ApiKeySSMKey:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Description: DO NOT CHANGE THIS VALUE
-    Default: /player/C1/c1ApiKey
 
 Resources:
 #Role for adding AWS Connector to C1WS
@@ -21,7 +16,7 @@ Resources:
               - 'sts:AssumeRole'
             Condition:
               StringEquals:
-                sts:ExternalId: !Ref ExternalId
+                sts:ExternalId: !GetAtt GetExternalID.ExternalID 
       Path: /
 #Policy for adding AWS Connector to C1WS
       Policies:
@@ -150,7 +145,6 @@ Resources:
       Timeout: 20
       Handler: index.lambda_handler
       Role: !GetAtt AWSConnectorLambdaFunctionRole.Arn
-      DependsOn: GetExternalID
       Environment:
         Variables:
           awsaccountid: !Ref AWS::AccountId
@@ -221,6 +215,7 @@ Resources:
     Type: AWS::CloudFormation::CustomResource
     Properties:
       ServiceToken: !GetAtt AWSConnectorCreateLambda.Arn
+    DependsOn: GetExternalID 
 
 Outputs:
   CrossAccountRoleArn:
