@@ -338,7 +338,7 @@ Resources:
         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/
-        PostOnboardFunctionName: !GetAtt PostOnboardTrigger.PostOnboardTriggerLambdaName
+        PostOnboardFunctionName: !GetAtt PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/main.template.yaml'
 
 Outputs:
