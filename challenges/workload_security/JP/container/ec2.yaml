@@ -43,14 +43,14 @@ Parameters:
     Default: subnet-04517d9bf73a4753e
 
 Mappings:
-  #Amazon Linux 2 arm 
+  #Amazon Linux 2 x86_64 
   AMZN:
     us-east-1:
-      AMZN: ami-0d296d66f22f256c2
+      AMZN: ami-0022f774911c1d690
     us-west-2:
-      AMZN: ami-04071714ae6bc5aa7
+      AMZN: ami-0ca285d4c2cda3300
     us-east-2:
-      AMZN: ami-0950ad18d0a34dadc
+      AMZN: ami-0fa49cc9dc8d62c84
 
 Resources:
   DSAkeysRole:
@@ -83,7 +83,7 @@ Resources:
         - AMZN
         - !Ref AWS::Region
         - AMZN
-      InstanceType: t4g.large
+      InstanceType: t2.micro
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
@@ -91,9 +91,46 @@ Resources:
             Ref: PublicSubnet1
       Tags:
       - Key: Name
-        Value: DSA
+        Value: tnomura-DSA
       - Key: PlayerSsmAccess
         Value: "false"
       UserData:
         Fn::Base64: !Sub |
             #!/bin/bash -x
+            su ec2-user
+            sudo yum install -y docker
+            sudo yum install -y curl
+            sudo curl -L "https://github.com/docker/compose/releases/download/v2.4.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            sudo chmod 755 /usr/local/bin/docker-compose
+            sudo service docker start
+            sudo sed -i -e 's/secure_path = \/sbin:\/bin:\/usr\/sbin:\/usr\/bin/secure_path = \/sbin:\/bin:\/usr\/sbin:\/usr\/bin:\/usr\/local\/bin/' /etc/sudoers
+            sudo yum install -y git
+            cd /home/ec2-user
+            sudo git clone https://github.com/OWASP/NodeGoat.git
+            cd NodeGoat
+            sudo sed -i -e 's/4000/80/' config/env/all.js
+            sudo sed -i -e 's/4000:4000/80:80/' docker-compose.yml
+            sudo docker-compose build
+            sudo docker-compose up -d
+            cd ../
+            mkdir attacker
+            cd attacker
+            touch Dockerfile
+            echo "FROM ubuntu:18.04" >> Dockerfile
+            echo "RUN apt-get update && apt-get install -y wget && apt-get install -y cron" >> Dockerfile
+            echo "ADD attack.sh /root/attack.sh" >> Dockerfile
+            echo "RUN chmod 0644 /root/attack.sh" >> Dockerfile
+            echo "RUN crontab -l | { cat; echo \"* * * * *  bash /root/attack.sh\";} | crontab -" >> Dockerfile
+            echo "ADD run.sh /root/run.sh" >> Dockerfile
+            echo "CMD [\"sh\",\"/root/run.sh\"]" >> Dockerfile
+            touch attack.sh
+            echo "#!/bin/bash" >> attack.sh
+            echo "wget --user-agent=\"SQLNinja\" http://nodegoat-web-1/login" >> attack.sh
+            touch run.sh
+            echo "/etc/init.d/cron start" >> run.sh
+            echo "tail -f /dev/null" >> run.sh
+            sudo docker build -t attacker .
+            sudo docker run -d --net nodegoat_default attacker
+            cd ../
+            sudo curl -OL https://workload.trend-us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/20.0.0.4726/agent.rpm
+            sudo rpm -i agent.rpm
