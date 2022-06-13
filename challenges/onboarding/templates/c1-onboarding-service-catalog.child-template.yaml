@@ -76,6 +76,10 @@ Parameters:
     Default: QSS3KeyPrefix
     AllowedValues: ["QSS3KeyPrefix"]
     Description: DO NOT CHANGE THIS VALUE
+  QSS3BucketNameSSMValue:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3BucketName
+    Description: DO NOT CHANGE THIS VALUE
   QSS3KeyPrefixSSMValue:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: QSS3KeyPrefix
@@ -517,92 +521,12 @@ Resources:
       ProductId: '{{resolve:ssm:C1WSAVCProductID:1}}'
       RoleArn: '{{resolve:ssm:RoleArn:1}}'  
 
-############################
-# C1CS Invoke State Machine
-############################
-# Iam Role
-  LambdaFunctionRoleServiceCatalog:
-    Type: AWS::IAM::Role
+
+  c1csDeploy:
+    Type: AWS::CloudFormation::Stack
     Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-              - lambda.amazonaws.com
-          Action:
-            - sts:AssumeRole
-      Path: "/"
-      Policies:
-      - PolicyName: LambdaFunctionPolicy
-        PolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-          - Effect: Allow
-            Action:
-              - ssm:GetParameter
-              - states:StartExecution
-            Resource:
-              - arn:aws:states:*:*:stateMachine:DeployC1CSStateMachine
-              - arn:aws:ssm:*:*:parameter/player/C1CS/StateMachineArn
-
-# Lambda Functions
-  lambdaFunctionInvokeDeployC1CSStateMachine:
-      Type: AWS::Lambda::Function
-      Properties:
-        Runtime: python3.8
-        Timeout: 20
-        Handler: index.lambda_handler
-        Role: !GetAtt LambdaFunctionRoleServiceCatalog.Arn
-        Code:
-          ZipFile:
-            !Sub
-              - |-
-                import boto3
-                import json
-                import random
-                import string
-                import cfnresponse
-
-                client = boto3.client('stepfunctions')
-                clientssm = boto3.client('ssm')
-
-                def id_generator(size, chars=string.ascii_lowercase + string.digits):
-                  return ''.join(random.choice(chars) for _ in range(size))
-
-                def lambda_handler(event, context):
-                    parameter = clientssm.get_parameter(Name='/player/C1CS/StateMachineArn', WithDecryption=True)
-                    stateMachineArnParameter = parameter ['Parameter']['Value']
-                    
-                    # Add Random number to the end of the name of the statemachine
-                    randomString = ("%s.%s" % (id_generator(6), id_generator(16)))
-                    stateMachineName = 'DeployC1CSStateMachine-' + randomString
-                    
-                    
-                    response = client.start_execution(
-                      stateMachineArn=stateMachineArnParameter,
-                      name=stateMachineName,
-                    )
-                    
-                    #physicalResourceId = random_string(string_length) + "a^1B" 
-                    #response_data = { "RandomString": physicalResourceId }
-                    cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeDeployC1CSStateMachineLambda")
-              -
-                lambda_function_role_arn: !Ref LambdaFunctionRoleServiceCatalog
-
-# Custom Resources
-  InvokeDeployC1CSStateMachineLambda:
-    Type: Custom::DeployC1CSStateMachineLambda
-    Properties:
-      ServiceToken: !GetAtt lambdaFunctionInvokeDeployC1CSStateMachine.Arn
-      Timeout: 5
+      TemplateURL: !Sub 'https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}challenges/container_security/templates/c1cs_service_catalog.template.yaml'
     DependsOn: C1OnboardingLambdaCustomResource
-############################
-# /C1CS Invoke State Machine
-############################
-
-
 
 Outputs:
   # Returns the AWS Lambda Function ARN of the Cloud One Onboarding module.
