@@ -58,8 +58,8 @@ Resources:
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
         VPCID: !Ref VPCID
         PublicSubnet1ID: !Ref PublicSubnet1ID
-        BucketName: !Ref s3Bucket
-        BucketARN: !GetAtt s3Bucket.Arn
+        #BucketName: !Ref s3Bucket
+        #BucketARN: !GetAtt s3Bucket.Arn
         
   ############################################ 
   ################ Container ################ 
@@ -93,15 +93,15 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_tlsi.yaml
-      Parameters:
-        TargetBucketName: !Ref s3Bucket
+      #Parameters:
+        #TargetBucketName: !Ref s3Bucket
 
   ScoreLambdaContainer:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_container.yaml
-      Parameters:
-        TargetBucketName: !Ref s3Bucket
+      #Parameters:
+        #TargetBucketName: !Ref s3Bucket
 
   ScoreLambdaOffline:
     Type: AWS::CloudFormation::Stack
