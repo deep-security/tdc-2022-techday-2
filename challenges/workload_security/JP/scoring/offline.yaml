@@ -67,7 +67,7 @@ Resources:
           - scoreroleday1task1C1WS
           - Arn
       Runtime: python3.7
-      Timeout: 30
+      MemorySize: 512
       Environment:
         Variables:
           TARGETBucket:
