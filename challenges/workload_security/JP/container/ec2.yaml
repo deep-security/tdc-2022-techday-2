@@ -1,46 +1,8 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: >
-  DSA Template
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-    - Label:
-        default: Tech Day Configuration
-      Parameters:
-      - QSS3BucketName
-      - QSS3KeyPrefix
-    ParameterLabels:
-      QSS3BucketName:
-        default: Tech Day S3 Bucket Name
-      QSS3KeyPrefix:
-        default: Quick Start S3 Key Prefix
 
 Parameters:
-  QSS3BucketName:
-    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
-    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
-      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
-      (-).
-    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start bucket name
-      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
-      It cannot start or end with a hyphen (-).
-    Type: String
-    Default: nemoseax
-  QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/]*$
-    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
-      uppercase letters, hyphens (-), and forward slash (/).
-    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start key prefix
-      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
-      forward slash (/).
-    Type: String
-    Default: challenges/
-  VPC:
-    Type: AWS::EC2::VPC::Id
-    Default: vpc-00c409a8099fbba1d
   PublicSubnet1:
     Type: AWS::EC2::Subnet::Id
-    Default: subnet-04517d9bf73a4753e
 
 Mappings:
   #Amazon Linux 2 x86_64 
@@ -83,12 +45,8 @@ Resources:
         - AMZN
         - !Ref AWS::Region
         - AMZN
-      InstanceType: t2.micro
-      NetworkInterfaces:
-        - AssociatePublicIpAddress: true
-          DeviceIndex: "0"
-          SubnetId:
-            Ref: PublicSubnet1
+      InstanceType: t4g.large
+      SubnetId: !Ref PublicSubnet1
       Tags:
       - Key: Name
         Value: tnomura-DSA
