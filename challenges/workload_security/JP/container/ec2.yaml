@@ -25,6 +25,7 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
     Type: String
+    Default: nemoseax
   QSS3KeyPrefix:
     AllowedPattern: ^[0-9a-zA-Z-/]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
@@ -33,18 +34,13 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, hyphens (-), and
       forward slash (/).
     Type: String
-  AllowIP:
-    Type: String
+    Default: challenges/
   VPC:
     Type: AWS::EC2::VPC::Id
+    Default: vpc-00c409a8099fbba1d
   PublicSubnet1:
     Type: AWS::EC2::Subnet::Id
-  BucketName:
-    Type: String
-    Description: bucket name
-  BucketARN:
-    Type: String
-    Description: bucket arn
+    Default: subnet-04517d9bf73a4753e
 
 Mappings:
   #Amazon Linux 2 arm 
@@ -57,23 +53,6 @@ Mappings:
       AMZN: ami-0950ad18d0a34dadc
 
 Resources:
-  WebSecurityGroup:
-    Type: 'AWS::EC2::SecurityGroup'
-    Properties:
-        GroupDescription: "Web Security Group"
-        VpcId: !Ref VPC
-        Tags:
-        - Key: Name
-          Value: webSecGroup
-  WebAppSGBaseIngress:
-    Type: 'AWS::EC2::SecurityGroupIngress'
-    Properties:
-      GroupId: !Ref WebSecurityGroup
-      IpProtocol: -1
-      FromPort: 0
-      ToPort: 0
-      CidrIp: !Ref AllowIP
-
   DSAkeysRole:
     Type: AWS::IAM::Role
     Properties:
@@ -87,20 +66,6 @@ Resources:
           - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-      Path: /
-      Policies:
-      - PolicyName: DeepSecurityAgentS3cpPolicy
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-            - s3:PutObject*
-            Resource: 
-              - Ref: BucketARN
-              - Fn::Join:
-                - ""
-                - - Ref: BucketARN
-                  - /*
 
   DSAkeysProfile:
     Type: AWS::IAM::InstanceProfile
@@ -122,15 +87,13 @@ Resources:
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
-          GroupSet:
-            - Ref: WebSecurityGroup
           SubnetId:
             Ref: PublicSubnet1
       Tags:
       - Key: Name
         Value: DSA
       - Key: PlayerSsmAccess
-        Value: "true"
+        Value: "false"
       UserData:
         Fn::Base64: !Sub |
             #!/bin/bash -x
