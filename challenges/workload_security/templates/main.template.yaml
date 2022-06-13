@@ -37,7 +37,7 @@ Resources:
   Onbording:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onbording_main.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/onbording_main.yaml
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3Key: !Sub ${QSS3KeyPrefix}
@@ -50,7 +50,7 @@ Resources:
   TLSI:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tlsi_main.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/tlsi_main.yaml
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3Key: !Sub ${QSS3KeyPrefix}
@@ -59,7 +59,7 @@ Resources:
         VPCID: !Ref VPCID
         PublicSubnet1ID: !Ref PublicSubnet1ID
         BucketName: !Ref s3Bucket
-        BucketARN:
+        BucketARN: !GetAtt s3Bucket.Arn
         
   ############################################ 
   ################ Container ################ 
@@ -67,7 +67,7 @@ Resources:
   Container:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}container_ec2.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/container_ec2.yaml
       Parameters:
         PublicSubnet1ID: !Ref PublicSubnet1ID        
         
@@ -77,7 +77,7 @@ Resources:
   # Offline:
   #   Type: AWS::CloudFormation::Stack
   #   Properties:
-  #     TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}offline_main.yaml
+  #     TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/offline_main.yaml
   #     Parameters:
   #       QSS3BucketName: !Ref QSS3BucketName
   #       QSS3Key: !Sub ${QSS3KeyPrefix}
@@ -92,18 +92,18 @@ Resources:
   ScoreLambdaTLSI:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scoring_tlsi.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_tlsi.yaml
       Parameters:
         TargetBucketName: !Ref s3Bucket
 
   ScoreLambdaContainer:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scoring_container.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_container.yaml
       Parameters:
         TargetBucketName: !Ref s3Bucket
 
   ScoreLambdaOffline:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scoring_EppOfflineScan.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_EppOfflineScan.yaml
