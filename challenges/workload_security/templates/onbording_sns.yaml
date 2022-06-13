@@ -27,5 +27,5 @@ Outputs:
     Value: !Ref accesskey
   SecretKey:
     Value: !GetAtt accesskey.SecretAccessKey
-  TopicARN:
+  SNSTopicARN:
     Value: !Ref SNSTopic
