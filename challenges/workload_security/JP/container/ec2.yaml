@@ -45,7 +45,7 @@ Resources:
         - AMZN
         - !Ref AWS::Region
         - AMZN
-      InstanceType: t4g.large
+      InstanceType: m6g.large
       SubnetId: !Ref PublicSubnet1
       Tags:
       - Key: Name
