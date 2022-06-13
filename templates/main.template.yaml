@@ -300,7 +300,7 @@ Resources:
     Type: AWS::SSM::Parameter
     Properties:
       Name: "PostOnboardFunctionName"
-      Value: : !GetAtt PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
+      Value: !GetAtt PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
       Type: String
 
   LockoutInfraStack:
