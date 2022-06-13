@@ -1,11 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Parameters:
-  TargetBucketName:
-    Type: String
-
 Resources:
-  scoreroleday1task1C1WS:
+  C1WSEppOfflineCheckScoreRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -21,20 +17,8 @@ Resources:
             - - "arn:"
               - Ref: AWS::Partition
               - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Policies: 
-        - PolicyName: AllowReadScoreS3
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action: "s3:ListBucket"
-                Resource: 
-                  - Fn::Join:
-                    - ""
-                    - - "arn:aws:s3:::"
-                      - !Ref TargetBucketName
 
-  C1WSScoreLambdarday1task1:
+  C1WSEppOfflineCheckScoreLambda:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: C1WSEppOfflineCheck
@@ -79,10 +63,7 @@ Resources:
                   else:
                       return(False)
       Handler: index.lambda_handler
-      Role:
-        Fn::GetAtt:
-          - scoreroleday1task1C1WS
-          - Arn
+      Role: !GetAtt C1WSEppOfflineCheckScoreRole.Arn
       Runtime: python3.7
       MemorySize: 512
       Environment:
