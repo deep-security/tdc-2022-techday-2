@@ -74,17 +74,17 @@ Resources:
   ############################################ 
   ################# Offline ################# 
   ############################################
-  Offline:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/offline/main.yaml
-      Parameters:
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3Key: !Sub ${QSS3KeyPrefix}workload_security/JP/offline/
-        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
-        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
-        VPCID: !Ref VPCID
-        PublicSubnet1ID: !Ref PublicSubnet1ID
+  # Offline:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/offline/main.yaml
+  #     Parameters:
+  #       QSS3BucketName: !Ref QSS3BucketName
+  #       QSS3Key: !Sub ${QSS3KeyPrefix}workload_security/JP/offline/
+  #       PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
+  #       ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
+  #       VPCID: !Ref VPCID
+  #       PublicSubnet1ID: !Ref PublicSubnet1ID
         
   ############################################ 
   ################# Scoring ################# 
@@ -106,6 +106,4 @@ Resources:
   ScoreLambdaOffline:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/scoring/offline.yaml
-      Parameters:
-        TargetBucketName: !Ref s3Bucket
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/scoring/EppOfflineScan.yaml
