@@ -161,7 +161,7 @@ Resources:
         PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn 
         QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/workload_security/templates/
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/workload_security/
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/main.template.yaml'
