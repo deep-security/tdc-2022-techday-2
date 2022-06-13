@@ -1,5 +1,5 @@
 # PowerShell 4 or up is required to run this script
-# This script detects platform and architecture.  It then downloads and installs the relevant Deep Security Agent package
+# This script detects platform and architecture.  It then downloads and installs the relevant Cloud One Workload Security Agent package
 
 if (-NOT ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
    Write-Warning "You are not running as an Administrator. Please try again with admin privileges."

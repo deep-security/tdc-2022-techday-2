@@ -58,11 +58,6 @@ for row in str_convert.split('\n'):
 #Replace dash with dot in version information
 AgentVersion = re.sub("-", ".", result['PluginVersion.core'])
 
-# #Reset the UpgradeTask file to False, just in case... (***REMOVE AFTER DONE TESTING***)
-# cleanup = open("c:/Projects/UpgradeTask.txt", "w")
-# cleanup.write("False")
-# cleanup.close()
-
 #RegEx to check installed version vs N-2 Version in C1WS and update the UpgradeTask.txt file if Correct
 if re.match(n_minus_2_version, AgentVersion):
     with open("c:/Projects/UpgradeTask.txt", "w") as completed:

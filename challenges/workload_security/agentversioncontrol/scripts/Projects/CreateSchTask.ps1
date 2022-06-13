@@ -1,3 +1,4 @@
+#Set the XML information necessary to build the Windows Scheduled Task from the PoSH CLI
 [xml]$xmlinfo = {<?xml version="1.0" encoding="UTF-16"?>
 <Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task">
   <RegistrationInfo>
@@ -51,17 +52,23 @@
   </Actions>
 </Task>}
 
+#Variables used for the creation
 $loggeduser = $env:username
 $localuser = $env:USERDOMAIN +"\"+ $env:username
+#These next three lines are necessary for SID Mapping
 $user = New-Object System.Security.Principal.NTAccount($loggeduser)
 $usersid = $user.Translate([System.Security.Principal.SecurityIdentifier])
 $sid = $usersid.Value
+#More variables for the task creation
 $taskname = 'Version_Checker'
 $filepath = 'C:\Projects\Ver_Check.xml'
 
+#Sets the Author and SID in the XML file that's output to the system dynamically.
 $xmlinfo.Task.RegistrationInfo.Author = $localuser
 $xmlinfo.Task.Principals.Principal.UserId = $sid
 
+#Write the XML file
 $xmlinfo.Save($filepath)
 
+#Create the Windows Scheduled Task from the PoSH CLI
 Register-ScheduledTask -xml (Get-Content 'C:\Projects\Ver_Check.xml' | out-string) -TaskName $taskname -Password 'TrendMicro0!' -User $localuser  | Out-Host

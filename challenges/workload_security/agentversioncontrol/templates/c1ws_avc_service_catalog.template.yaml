@@ -157,12 +157,10 @@ Resources:
       Tags:
       - Key: Name
         Value: WinAVCClient
-      - Key: PlayerSsmAccess
-        Value: "true"
       UserData:
         Fn::Base64: !Sub |
           <powershell>
-            Start-Transcript -path "c:\Projects\InstanceBuild.log" -append
+            Start-Transcript -path "c:\Projects\InstanceBuild.log"
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
             iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
             (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
@@ -181,7 +179,7 @@ Resources:
        ObjectNames: 'UpgradeTask.txt'
        ObjectPrefixes: ''
        ExpectedValues: 'True'
-       FunctionName: 'AVC-Custom-Script'
+       FunctionName: 'AVC-Checker-Script'
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/answer_checker.template.yaml'
 
 #Outputs:
