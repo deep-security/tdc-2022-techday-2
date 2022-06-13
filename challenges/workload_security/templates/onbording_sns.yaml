@@ -22,6 +22,26 @@ Resources:
   SNSTopic:
     Type: AWS::SNS::Topic
 
+# Parameters set
+  WSAccessKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "WSAccessKey"
+      Value: !Ref accesskey
+      Type: String
+  WSSecretKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "WSSecretKey"
+      Value: !GetAtt accesskey.SecretAccessKey
+      Type: String      
+  WSSNSTopicARN:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "WSSNSTopicARN"
+      Value: !Ref SNSTopic
+      Type: String
+      
 Outputs:
   AccessKey:
     Value: !Ref accesskey
