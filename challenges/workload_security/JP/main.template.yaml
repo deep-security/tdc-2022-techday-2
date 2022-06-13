@@ -67,13 +67,8 @@ Resources:
   Container:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/container/main.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/JP/container/ec2.yaml
       Parameters:
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3Key: !Sub ${QSS3KeyPrefix}workload_security/JP/container/
-        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
-        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
-        VPCID: !Ref VPCID
         PublicSubnet1ID: !Ref PublicSubnet1ID        
         
   ############################################ 
