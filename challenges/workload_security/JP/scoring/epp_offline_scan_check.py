@@ -29,10 +29,6 @@ def lambda_handler(event, context):
     r = rq.get(URL_search_policy, headers=header)
     search_policy = js.loads(r.text)
     for policy in search_policy["policies"]:
-        if policy["policySettings"]["antiMalwareSettingOfflineScheduledScanEnabled"]["value"] == "true":
-            answer = policy["name"]
-            answer == "usethispolicy"
-            print(answer)
-            return True
-        else:
-            return False
+        if policy["policySettings"]["antiMalwareSettingOfflineScheduledScanEnabled"]["value"] == "true" and policy["name"] == "usethispolicy":
+            return(True)
+    return(False) 
