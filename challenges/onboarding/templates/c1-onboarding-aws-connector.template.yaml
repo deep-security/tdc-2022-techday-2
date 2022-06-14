@@ -108,7 +108,7 @@ Resources:
                       
                       if event["RequestType"] == "Create" or event["RequestType"] == "Update":
                         parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
-                        print(parameter)
+                        #print(parameter)
                         #return parameter ['Parameter']['Value']
                         playerApiKey = parameter ['Parameter']['Value']
                         #return playerApiKey
@@ -117,7 +117,7 @@ Resources:
                         playerC1Region = parameter ['Parameter']['Value']
 
 
-                        url = "https://workload.'+playerC1Region+'.cloudone.trendmicro.com/api/awsconnectorsettings"
+                        url = 'https://workload.'+playerC1Region+'.cloudone.trendmicro.com/api/awsconnectorsettings'
 
                         payload = json.dumps({
                         })
