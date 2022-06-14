@@ -511,7 +511,7 @@ Resources:
   C1AWSConnector:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketNameSSMKey}.s3.amazonaws.com/${QSS3KeyPrefixSSMKey}onboarding/c1-onboarding-aws-connector.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketNameSSMKey}.s3.amazonaws.com/${QSS3KeyPrefixSSMKey}challenges/onboarding/c1-onboarding-aws-connector.template.yaml'
     DependsOn: C1OnboardingLambdaCustomResource
 
   # Service Catalog associations
