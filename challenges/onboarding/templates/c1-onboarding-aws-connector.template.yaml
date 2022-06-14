@@ -130,6 +130,7 @@ Resources:
                         http = urllib3.PoolManager()
                         encoded_payload = payload.encode("utf-8")
                         print(headers)
+                        print (url)
                         response = http.request("GET", url=url, headers=headers, body=encoded_payload)
                         response_json_data = json.loads(response.data.decode("utf-8"))
                         print(response_json_data["externalId"])
