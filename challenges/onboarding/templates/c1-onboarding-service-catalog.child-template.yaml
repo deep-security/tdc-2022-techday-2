@@ -71,10 +71,6 @@ Parameters:
     Default: QSS3BucketName
     AllowedValues: ["QSS3BucketName"]
     Description: DO NOT CHANGE THIS VALUE
-  QSS3BucketNameSSMValue:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: QSS3BucketName
-    Description: DO NOT CHANGE THIS VALUE
   QSS3KeyPrefixSSMKey:
     Type: String
     Default: QSS3KeyPrefix
