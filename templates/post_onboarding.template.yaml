@@ -137,7 +137,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_service_catalog.template.yaml'
-    DependsOn: C1OnboardingLambdaCustomResource
 
 # SamplePostOnboard:
 #     Type: AWS::CloudFormation::Stack
