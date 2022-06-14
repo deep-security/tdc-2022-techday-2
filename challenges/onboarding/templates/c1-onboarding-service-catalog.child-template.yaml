@@ -538,13 +538,6 @@ Resources:
       ProductId: '{{resolve:ssm:C1WSAVCProductID:1}}'
       RoleArn: '{{resolve:ssm:RoleArn:1}}'  
 
-
-  c1csDeploy:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}challenges/container_security/templates/c1cs_service_catalog.template.yaml'
-    DependsOn: C1OnboardingLambdaCustomResource
-
 Outputs:
   # Returns the AWS Lambda Function ARN of the Cloud One Onboarding module.
   C1OnboardingLambdaFunctionArn:
