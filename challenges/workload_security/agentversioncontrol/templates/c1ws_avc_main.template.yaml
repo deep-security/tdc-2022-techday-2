@@ -3,7 +3,7 @@ Description: >
   This template defines a the main stack for a challenge.
 
 Parameters:
-  # Service Catalog related
+  # Service Catalog Related
   PlayerServiceCatalogPortfolio:
     Type: String
   ServiceCatalogLaunchRoleArn:
