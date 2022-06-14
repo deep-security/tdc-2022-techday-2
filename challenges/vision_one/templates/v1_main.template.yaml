@@ -56,8 +56,11 @@ Resources:
                                   }
 
                   headers = {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json;charset=utf-8'}
-
-                  r = requests.get(url_base + url_path, params=query_params, headers=headers)
+                  
+                  http = urllib3.PoolManager()
+                  encoded_payload = payload.encode("utf-8")
+                  
+                  r = http.request("GET",url_base + url_path, params=query_params, headers=headers)
 
                   #print(r.status_code)
                   if 'application/octet-stream' in r.headers.get('Content-Type', ''):
