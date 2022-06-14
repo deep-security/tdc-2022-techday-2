@@ -37,10 +37,9 @@ Resources:
           !Sub
             |-
               import json
-              import urllib3
+              import urllib3 #removed requests and added urllib3 - need to replace in code below
               import os
               import cfnresponse
-              import boto3
 
               url_path = '/v2.0/xdr/threatintel/suspiciousObjects'
               # Contains a list of Vision One supported regions for ctf.
