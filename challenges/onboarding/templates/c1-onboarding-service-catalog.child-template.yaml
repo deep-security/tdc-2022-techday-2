@@ -115,6 +115,10 @@ Parameters:
   LambdaFunctionTimeout:
     Type: Number
     Default: 900
+  PostOnboardFunctionName:
+    Default: "PostOnboardFunctionName"
+    Description: DO NOT MODIFY. Expected value of the SSM Parameter Value for the Post Onboard function name.
+    Type: 'AWS::SSM::Parameter::Value<String>'
 
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
@@ -171,6 +175,11 @@ Resources:
                 Action:
                   - "ssm:GetParameter"
                   - "ssm:PutParameter"
+              - Effect: Allow
+                Resource: 
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${PostOnboardFunctionName}
+                Action:
+                  - "lambda:InvokeFunction"
       Path: /
       Tags:
         - Key: BusinessCase
@@ -403,6 +412,13 @@ Resources:
 
                                   # Stores onboarding success as an SSM Parameter "c1Onboarding" for Mission Control verification.
                                   setC1SsmParameter(ssmClient, "c1OnboardingStatus", "Success")
+
+                                  # Since task was successful, we will kick of the Post Onboarding(AKA Wrinkler) lambda
+                                  lambdaClient = boto3.client('lambda')
+                                  lambdaClient.invoke(
+                                    FunctionName=str(os.environ.get("POST_ONBOARD_LAMBDA_NAME")),
+                                    InvocationType="Event"
+                                  )
               except Exception as e:
                   logger.info("Exception: {}".format(e))
                   status = cfnresponse.FAILED
@@ -421,7 +437,8 @@ Resources:
           awsRegion: !Ref AWS::Region
           c1ApiKey: !Ref c1ApiKey
           c1UsersList: !Ref c1UsersList
-          c1LicenseValidationDayCount: 3         
+          c1LicenseValidationDayCount: 3      
+          POST_ONBOARD_LAMBDA_NAME: !Ref PostOnboardFunctionName
       Role: !GetAtt TechDayC1onboardingLambdaRole.Arn
   
   # Task 1 - Creates an AWS Lambda function with the Cloud One Onboarding verification module.

@@ -289,12 +289,19 @@ Resources:
       - VPCStack
       - KeyPairStack
 
-  Wrinkles:
+  PostOnboardTrigger:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         MainStackId: !Ref AWS::StackId
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/wrinkles_trigger.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/postonboard_trigger.template.yaml'
+
+  PostOnboardFunctionNameSsmParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "PostOnboardFunctionName"
+      Value: !GetAtt PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
+      Type: String
 
   LockoutInfraStack:
     Type: AWS::CloudFormation::Stack

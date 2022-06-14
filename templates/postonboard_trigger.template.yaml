@@ -1,12 +1,12 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Wrinkles
+Description: Runs Post Onboard build.
 
 Parameters:
   MainStackId:
     Type: String
 
 Resources:
-  WrinkleTriggerLambdaExecutionRole:
+  PostOnboardTriggerLambdaExecutionRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -22,14 +22,14 @@ Resources:
             - - "arn:"
               - Ref: AWS::Partition
               - :iam::aws:policy/AdministratorAccess
-  WrinkleTriggerLambda:
+  PostOnboardTriggerLambda:
     Type: AWS::Lambda::Function
     Properties:
-      Description: Lambda to trigger wrinkle build
+      Description: Lambda function to trigger Post Onboard build
       Timeout: 30
       Handler: index.lambda_handler
       Runtime: python3.8
-      Role: !GetAtt WrinkleTriggerLambdaExecutionRole.Arn
+      Role: !GetAtt PostOnboardTriggerLambdaExecutionRole.Arn
       Code:
         ZipFile: |
           import json
@@ -50,8 +50,8 @@ Resources:
               for output in mainStack['Stacks'][0]['Outputs']:
                   outputs[output['OutputKey']] = output['OutputValue']
               createStackResponse = cfnClient.create_stack(
-                  StackName="Wrinkles",
-                  TemplateURL=f"https://{parameters['QSS3BucketName']}.s3.amazonaws.com/{parameters['QSS3KeyPrefix']}templates/day2_main.template.yaml",
+                  StackName="PostOnboarding",
+                  TemplateURL=f"https://{parameters['QSS3BucketName']}.s3.amazonaws.com/{parameters['QSS3KeyPrefix']}templates/post_onboarding.template.yaml",
                   Parameters=[
                       {
                           'ParameterKey': 'QSS3BucketName',
@@ -60,14 +60,6 @@ Resources:
                       {
                           'ParameterKey': 'QSS3KeyPrefix',
                           'ParameterValue': parameters['QSS3KeyPrefix']
-                      },
-                      {
-                          'ParameterKey': 'Parameter1',
-                          'ParameterValue': parameters['Parameter1']
-                      },
-                      {
-                          'ParameterKey': 'Output2',
-                          'ParameterValue': outputs['Output2']
                       }
                   ],
                   Capabilities=[
@@ -81,3 +73,9 @@ Resources:
       Environment:
         Variables:
           MainStackId: !Ref MainStackId
+
+Outputs:
+  # Returns the AWS Lambda Function ARN of the Cloud One Onboarding module.
+  PostOnboardTriggerLambdaName:
+    Description: Post Onboard Lambda function name
+    Value: !Ref PostOnboardTriggerLambda
