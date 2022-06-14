@@ -66,7 +66,7 @@ Resources:
     Properties:
       Description: Cleans out Bucket during delete
       Handler: index.handler
-      Runtime: python3.7
+      Runtime: python3.8
       Role: !GetAtt "CleanBucketRole.Arn"
       Timeout: 900
       Code:

@@ -161,7 +161,7 @@ Resources:
         Fn::GetAtt:
           - AVCCheckerServiceRole
           - Arn
-      Runtime: nodejs12.x
+      Runtime: nodejs16.x
       Environment:
         Variables:
           BUCKET_NAME:
