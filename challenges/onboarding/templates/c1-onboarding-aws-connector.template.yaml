@@ -200,8 +200,8 @@ Resources:
 
                         payload = json.dumps({
                           "displayName": "Techday",
-                          "accountId": "accountId",
-                          "crossAccountRoleArn": "crossAccountRoleArn"                                                                                            
+                          "accountId": accountId,
+                          "crossAccountRoleArn": crossAccountRoleArn                                                                                        
                         })
                         headers = {
                           'api-version': 'v1',
