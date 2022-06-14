@@ -199,16 +199,14 @@ Resources:
                     #print(headers)
                     response = http.request("POST", url=url, headers=headers, body=encoded_payload)
 
-#i dont need any output from this. Maybe we set a flag for success or something, so we can score it separate? just to make sure it happens? 
                   #   response_json_data = json.loads(response.data.decode("utf-8"))
                   #   print(response_json_data["externalId"])
-                  #   physicalResourceId = response_json_data["externalId"] 
-                  #   response_data = {"ExternalID": response_json_data["externalId"]}
+                    physicalResourceId = {} 
+                    response_data = {}
 
-                  # else: # if event["RequestType"] == "Delete":
-                  #   physicalResourceId = event["PhysicalResourceId"]
-                  # cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, physicalResourceId)
-# Dont need output, - figure out response_data for this
+                  else: # if event["RequestType"] == "Delete":
+                    physicalResourceId = event["PhysicalResourceId"]
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, physicalResourceId)
 
 #Create AWS Connector Custom Resource
   AWSConnectorCreate:
