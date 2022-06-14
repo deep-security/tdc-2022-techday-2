@@ -94,42 +94,50 @@ Resources:
 
               client = boto3.client('ssm')
 
-
               def lambda_handler(event, context):
+                  status = cfnresponse.SUCCESS
                   response_data = {}
-                  if event["RequestType"] == "Create" or event["RequestType"] == "Update":
-                    parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
-                    #print(parameter)
-                    #return parameter ['Parameter']['Value']
-                    playerApiKey = parameter ['Parameter']['Value']
-                    #return playerApiKey
-                    
-                    parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
-                    playerC1Region = parameter ['Parameter']['Value']
+                  physicalResourceId = None
+                  try:
+                      
+                      if event["RequestType"] == "Create" or event["RequestType"] == "Update":
+                        parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
+                        #print(parameter)
+                        #return parameter ['Parameter']['Value']
+                        playerApiKey = parameter ['Parameter']['Value']
+                        #return playerApiKey
+                        
+                        parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
+                        playerC1Region = parameter ['Parameter']['Value']
 
 
-                    url = "https://workload.'+playerC1Region+'.cloudone.trendmicro.com/api/awsconnectorsettings"
+                        url = "https://workload.'+playerC1Region+'.cloudone.trendmicro.com/api/awsconnectorsettings"
 
-                    payload = json.dumps({
-                    })
-                    headers = {
-                      'api-version': 'v1',
-                      'Authorization': 'ApiKey '+playerApiKey+'',
-                      'Content-Type': 'application/json'
-                    }
+                        payload = json.dumps({
+                        })
+                        headers = {
+                          'api-version': 'v1',
+                          'Authorization': 'ApiKey '+playerApiKey+'',
+                          'Content-Type': 'application/json'
+                        }
 
-                    http = urllib3.PoolManager()
-                    encoded_payload = payload.encode("utf-8")
-                    #print(headers)
-                    response = http.request("GET", url=url, headers=headers, body=encoded_payload)
-                    response_json_data = json.loads(response.data.decode("utf-8"))
-                    print(response_json_data["externalId"])
-                    physicalResourceId = response_json_data["externalId"] 
-                    response_data = {"ExternalID": response_json_data["externalId"]}
+                        http = urllib3.PoolManager()
+                        encoded_payload = payload.encode("utf-8")
+                        #print(headers)
+                        response = http.request("GET", url=url, headers=headers, body=encoded_payload)
+                        response_json_data = json.loads(response.data.decode("utf-8"))
+                        print(response_json_data["externalId"])
+                        physicalResourceId = response_json_data["externalId"] 
+                        response_data = {"ExternalID": response_json_data["externalId"]}
 
-                  else: # if event["RequestType"] == "Delete":
-                    physicalResourceId = event["PhysicalResourceId"]
-                  cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, physicalResourceId)
+                      else: # if event["RequestType"] == "Delete":
+                        physicalResourceId = event["PhysicalResourceId"]
+
+                  except Exception as e:
+                    logger.info("Exception: {}".format(e))
+                    status = cfnresponse.FAILED
+                  
+                  cfnresponse.send(event, context, status, response_data, physicalResourceId)
 
 #Get External ID Custom Resource
   GetExternalID:
