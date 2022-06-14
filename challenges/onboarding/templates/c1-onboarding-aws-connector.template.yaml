@@ -157,7 +157,6 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
-      Timeout: 20
       Handler: index.lambda_handler
       Role: !GetAtt AWSConnectorLambdaFunctionRole.Arn
       Environment:
@@ -202,7 +201,6 @@ Resources:
                         payload = json.dumps({
                           "displayName": "Techday",
                           "accountId": "accountId",
-                          "accountAlias": "string",
                           "crossAccountRoleArn": "crossAccountRoleArn"                                                                                            
                         })
                         headers = {
