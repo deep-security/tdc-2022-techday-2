@@ -197,7 +197,7 @@ Resources:
                         parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
                         playerC1Region = parameter ['Parameter']['Value']
 
-                        url = 'https://workload.'+playerC1Region+'.cloudone.trendmicro.com/api/awsconnectorsettings'
+                        url = 'https://workload.'+playerC1Region+'.cloudone.trendmicro.com/api/awsconnectors'
 
                         payload = json.dumps({
                           "displayName": "Techday",
