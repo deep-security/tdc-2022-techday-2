@@ -25,13 +25,6 @@ Parameters:
     Type: String
 
   #### EXAMPLES BELOW!! ####
-Resources:
-# Builds AWS Connector Role for C1AWS
-
-  C1AWSConnector:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/c1-onboarding-aws-connector.template.yaml'
 
 #   #Day 1 Outputs
 #   WireupSnsTopic:
@@ -137,8 +130,12 @@ Resources:
 
 Resources: 
 
-  SampleBucket:
-    Type: AWS::S3::Bucket
+# Builds AWS Connector Role for C1AWS
+
+  C1AWSConnector:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/c1-onboarding-aws-connector.template.yaml'
 
 # SamplePostOnboard:
 #     Type: AWS::CloudFormation::Stack
