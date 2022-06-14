@@ -179,11 +179,13 @@ Resources:
 
 
               def lambda_handler(event, context):
+                  status = cfnresponse.SUCCESS
+                  response_data = {}
+                  physicalResourceId = None
 
                   accountId = os.environ['awsaccountid']
                   externalId = os.environ['externalid']
-                  crossAccountRoleArn = os.environ[crossaccountrolearn]
-                  response_data = {}
+                  crossAccountRoleArn = os.environ['crossaccountrolearn']
                   try:
                       if event["RequestType"] == "Create" or event["RequestType"] == "Update":
                         parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
