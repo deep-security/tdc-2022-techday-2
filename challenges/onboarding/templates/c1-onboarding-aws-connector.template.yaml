@@ -183,44 +183,44 @@ Resources:
                   accountId = os.environ['awsaccountid']
                   externalId = os.environ['externalid']
                   crossAccountRoleArn = os.environ[crossaccountrolearn]
-
                   response_data = {}
-                  if event["RequestType"] == "Create" or event["RequestType"] == "Update":
-                    parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
-                    #print(parameter)
-                    #return parameter ['Parameter']['Value']
-                    playerApiKey = parameter ['Parameter']['Value']
-                    #return playerApiKey
-                    
-                    parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
-                    playerC1Region = parameter ['Parameter']['Value']
+                  try:
+                      if event["RequestType"] == "Create" or event["RequestType"] == "Update":
+                        parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
+                        #print(parameter)
+                        #return parameter ['Parameter']['Value']
+                        playerApiKey = parameter ['Parameter']['Value']
+                        #return playerApiKey
+                        
+                        parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
+                        playerC1Region = parameter ['Parameter']['Value']
 
-                    url = 'https://workload.'+playerC1Region+'.cloudone.trendmicro.com/api/awsconnectorsettings'
+                        url = 'https://workload.'+playerC1Region+'.cloudone.trendmicro.com/api/awsconnectorsettings'
 
-                    payload = json.dumps({
-                      "displayName": "Techday",
-                      "accountId": "accountId",
-                      "accountAlias": "string",
-                      "crossAccountRoleArn": "crossAccountRoleArn"                                                                                            
-                    })
-                    headers = {
-                      'api-version': 'v1',
-                      'Authorization': 'ApiKey '+playerApiKey+'',
-                      'Content-Type': 'application/json'
-                    }
+                        payload = json.dumps({
+                          "displayName": "Techday",
+                          "accountId": "accountId",
+                          "accountAlias": "string",
+                          "crossAccountRoleArn": "crossAccountRoleArn"                                                                                            
+                        })
+                        headers = {
+                          'api-version': 'v1',
+                          'Authorization': 'ApiKey '+playerApiKey+'',
+                          'Content-Type': 'application/json'
+                        }
 
-                    http = urllib3.PoolManager()
-                    encoded_payload = payload.encode("utf-8")
-                    #print(headers)
-                    response = http.request("POST", url=url, headers=headers, body=encoded_payload)
+                        http = urllib3.PoolManager()
+                        encoded_payload = payload.encode("utf-8")
+                        #print(headers)
+                        response = http.request("POST", url=url, headers=headers, body=encoded_payload)
 
-                  #   response_json_data = json.loads(response.data.decode("utf-8"))
-                  #   print(response_json_data["externalId"])
-                    physicalResourceId = {} 
-                    response_data = {}
+                      #   response_json_data = json.loads(response.data.decode("utf-8"))
+                      #   print(response_json_data["externalId"])
+                        physicalResourceId = {} 
+                        response_data = {}
 
-                  else: # if event["RequestType"] == "Delete":
-                    physicalResourceId = event["PhysicalResourceId"]
+                      else: # if event["RequestType"] == "Delete":
+                        physicalResourceId = event["PhysicalResourceId"]
 
                   except Exception as e:
                     print(e)
