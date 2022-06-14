@@ -221,7 +221,12 @@ Resources:
 
                   else: # if event["RequestType"] == "Delete":
                     physicalResourceId = event["PhysicalResourceId"]
-                  cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data, physicalResourceId)
+
+                  except Exception as e:
+                    print(e)
+                    status = cfnresponse.FAILED
+                  
+                  cfnresponse.send(event, context, status, response_data, physicalResourceId)
 
 #Create AWS Connector Custom Resource
   AWSConnectorCreate:
