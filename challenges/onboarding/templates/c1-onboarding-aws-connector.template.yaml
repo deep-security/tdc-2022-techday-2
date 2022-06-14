@@ -140,7 +140,7 @@ Resources:
                         physicalResourceId = event["PhysicalResourceId"]
 
                   except Exception as e:
-                    logger.info("Exception: {}".format(e))
+                    print(e)
                     status = cfnresponse.FAILED
                   
                   cfnresponse.send(event, context, status, response_data, physicalResourceId)
