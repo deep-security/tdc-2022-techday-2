@@ -511,13 +511,6 @@ Resources:
     Properties:
       ServiceToken: !GetAtt C1OnboardingLambdaFunction.Arn
 
-# Builds AWS Connector Role for C1AWS
-  C1AWSConnector:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}challenges/onboarding/templates/c1-onboarding-aws-connector.template.yaml'
-    DependsOn: C1OnboardingLambdaCustomResource
-
   # Service Catalog associations
 
   # ExampleChallengePortfolioProductAssociation:
