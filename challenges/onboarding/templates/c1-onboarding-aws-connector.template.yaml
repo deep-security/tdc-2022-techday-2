@@ -108,7 +108,7 @@ Resources:
                       
                       if event["RequestType"] == "Create" or event["RequestType"] == "Update":
                         parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
-                        #print(parameter)
+                        print(parameter)
                         #return parameter ['Parameter']['Value']
                         playerApiKey = parameter ['Parameter']['Value']
                         #return playerApiKey
@@ -129,7 +129,7 @@ Resources:
 
                         http = urllib3.PoolManager()
                         encoded_payload = payload.encode("utf-8")
-                        #print(headers)
+                        print(headers)
                         response = http.request("GET", url=url, headers=headers, body=encoded_payload)
                         response_json_data = json.loads(response.data.decode("utf-8"))
                         print(response_json_data["externalId"])
