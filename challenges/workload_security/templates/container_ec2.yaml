@@ -3,16 +3,8 @@ AWSTemplateFormatVersion: 2010-09-09
 Parameters:
   PublicSubnet1:
     Type: AWS::EC2::Subnet::Id
-
-Mappings:
-  #Amazon Linux 2 x86_64 
-  AMZN:
-    us-east-1:
-      AMZN: ami-0022f774911c1d690
-    us-west-2:
-      AMZN: ami-0ca285d4c2cda3300
-    us-east-2:
-      AMZN: ami-0fa49cc9dc8d62c84
+  AMIID:
+    Type: String
 
 Resources:
   DSAkeysRole:
@@ -40,11 +32,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       IamInstanceProfile: !Ref DSAkeysProfile
-      ImageId:
-        !FindInMap
-        - AMZN
-        - !Ref AWS::Region
-        - AMZN
+      ImageId: !Ref AMIID
       InstanceType: m6g.large
       SubnetId: !Ref PublicSubnet1
       Tags:
