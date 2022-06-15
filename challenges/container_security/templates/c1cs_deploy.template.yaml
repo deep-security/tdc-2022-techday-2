@@ -810,7 +810,70 @@ Resources:
               -
                 lambda_function_role_arn: !Ref c1csLambdaFunctionRole
 
+  lambdaFunctionRunSSMCommandCreateC1csAttackContainer:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import boto3
 
+                ssm = boto3.client('ssm')
+                region = 'us-east-1'
+
+                def lambda_handler(event, context):
+                    response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                        DocumentName='CreateC1csAttackContainer',
+                        DocumentVersion='$DEFAULT',
+                        TimeoutSeconds=123,
+                        Comment='string'
+                    )
+              -
+                lambda_function_role_arn: !Ref c1csLambdaFunctionRole
+  lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import boto3
+
+                ssm = boto3.client('ssm')
+                region = 'us-east-1'
+
+                def lambda_handler(event, context):
+                    response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                        DocumentName='CreateC1csAttackContainerLoadBalancer',
+                        DocumentVersion='$DEFAULT',
+                        TimeoutSeconds=123,
+                        Comment='string'
+                    )
+              -
+                lambda_function_role_arn: !Ref c1csLambdaFunctionRole
 # Create State Machine
   DeployC1CSStateMachine:
     Type: AWS::StepFunctions::StateMachine
@@ -847,7 +910,7 @@ Resources:
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "${CreateC1csAttackContainer.Arn}"
+                "FunctionName": "${lambdaFunctionRunSSMCommandCreateC1csAttackContainer.Arn}"
               },
               "Retry": [
                 {
@@ -868,7 +931,7 @@ Resources:
               "Resource": "arn:aws:states:::lambda:invoke",
               "Parameters": {
                 "Payload.$": "$",
-                "FunctionName": "${CreateC1csAttackContainerLoadBalancer.Arn}"
+                "FunctionName": "${lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer.Arn}"
               },
               "Retry": [
                 {
