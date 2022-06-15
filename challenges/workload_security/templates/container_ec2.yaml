@@ -80,3 +80,10 @@ Resources:
             cd ../
             sudo curl -OL https://workload.trend-us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/20.0.0.4726/agent.rpm
             sudo rpm -i agent.rpm
+
+  WS_CONTAINER_INSTANCEARN:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "WS_CONTAINER_INSTANCE"
+      Value: !Ref DSA
+      Type: String
