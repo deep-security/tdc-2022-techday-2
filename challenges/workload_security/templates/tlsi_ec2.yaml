@@ -1,20 +1,4 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: >
-  DSA Template
-Metadata:
-  AWS::CloudFormation::Interface:
-    ParameterGroups:
-    - Label:
-        default: Tech Day Configuration
-      Parameters:
-      - QSS3BucketName
-      - QSS3KeyPrefix
-    ParameterLabels:
-      QSS3BucketName:
-        default: Tech Day S3 Bucket Name
-      QSS3KeyPrefix:
-        default: Quick Start S3 Key Prefix
-
 Parameters:
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
@@ -39,22 +23,14 @@ Parameters:
     Type: AWS::EC2::VPC::Id
   PublicSubnet1:
     Type: AWS::EC2::Subnet::Id
-  BucketName:
+  #BucketName:
+  #  Type: String
+  #  Description: bucket name
+  #BucketARN:
+  #  Type: String
+  #  Description: bucket arn
+  AMIID:
     Type: String
-    Description: bucket name
-  BucketARN:
-    Type: String
-    Description: bucket arn
-
-Mappings:
-  #Amazon Linux 2 arm 
-  AMZN:
-    us-east-1:
-      AMZN: ami-0d296d66f22f256c2
-    us-west-2:
-      AMZN: ami-04071714ae6bc5aa7
-    us-east-2:
-      AMZN: ami-0950ad18d0a34dadc
 
 Resources:
   WebSecurityGroup:
@@ -113,11 +89,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       IamInstanceProfile: !Ref DSAkeysProfile
-      ImageId:
-        !FindInMap
-        - AMZN
-        - !Ref AWS::Region
-        - AMZN
+      ImageId: !Ref AMIID
       InstanceType: t4g.large
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
