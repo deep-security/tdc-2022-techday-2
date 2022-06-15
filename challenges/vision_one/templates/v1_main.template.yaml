@@ -1,6 +1,18 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: V1 Challenge Main stack
 
+Parameters:
+
+  v1ApiKeySSMKey:
+    Default: "/player/V1/v1ApiKey"
+    Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One API Key.
+    Type: String
+
+  v1Region:
+    Default: "/player/V1/v1regionkey"
+    Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One API Key.
+    Type: String
+
 Resources:
 
 #Lambda Execution Role
@@ -32,6 +44,11 @@ Resources:
       Runtime: python3.7
       Handler: index.lambda_handler
       Role: !GetAtt V1S0ScoreFunctionRole.Arn
+      Environment:
+        Variables:
+          v1TrendRegion: !Ref v1Region
+          v1AuthToken: !Ref v1ApiKeySSMKey
+
       Code:
         ZipFile:
           !Sub
@@ -79,9 +96,8 @@ Resources:
             # Main
             def handler(event, context):
 
-                key = 'value'
-                v1TrendRegion = str(os.environ.get("v1TrendRegion"))
-                v1AuthToken =s tr(os.environ.get("v1AuthToken"))
+                v1TrendRegion = os.environ['v1TrendRegion']
+                v1AuthToken = os.environ['v1AuthToken']
                 url_base = region[v1TrendRegion]
 
 
