@@ -6,13 +6,29 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: CreateDSMRuleLambda
-      Code:
-        S3Bucket: "{{resolve:ssm:QSS3BucketName:1}}"
-        S3Key: 
-          Fn::Join:
-          - ""
-          - - "{{resolve:ssm:QSS3KeyPrefix:1}}"
-            - "challenges/workload_security/day1/CreateRuleforDSM.zip"
+      Code: 
+        ZipFile: |
+          import json
+          import boto3
+          import os
+          target_bucket = os.environ['TARGETBucket']
+          s3 = boto3.resource('s3')
+          files = []
+          snskey = "day1TLSblock"
+          def lambda_handler(event, context):
+              counter = 0
+              my_bucket = s3.Bucket(target_bucket)
+              for object in my_bucket.objects.all():
+                  files.append(object.key)
+                  
+              print(files)
+              for x in files:
+                  if snskey in x:
+                          return True
+                  else:
+                      continue
+              print("[Woops!]Try harder")
+              raise Exception("You haven't finished, because... sns test is not completed.")
       Handler: lambda_function.lambda_handler
       Role: '{{resolve:ssm:DefaultLambdaExecutionRole:1}}'
       Runtime: python3.7
