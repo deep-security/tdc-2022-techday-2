@@ -210,7 +210,7 @@ Resources:
         DocumentType: Command'
         Name: 'CreateC1csAttackContainer'
 
-  CreateC1csAttackContainer: 
+  CreateC1csAttackContainerLoadBalancer: 
       Type: AWS::SSM::Document
       Properties:
         Content:
@@ -240,7 +240,7 @@ Resources:
               - "echo -e '        targetPort: 8080' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
               - "sudo /usr/local/bin/kubectl apply -f /tmp/c1cs_AttackContainer_loadbalancer.yaml"
         DocumentType: Command'
-        Name: 'CreateC1csAttackContainer'
+        Name: 'CreateC1csAttackContainerLoadBalancer'
 
 # Create Lambda Functions
   lambdaFunctionQueryPlayerApiKey:
@@ -827,6 +827,48 @@ Resources:
               "Parameters": {
                 "Payload.$": "$",
                 "FunctionName": "${EKSCalicoInstallLambda.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "CreateC1csAttackContainer"
+            },
+            "CreateC1csAttackContainer": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${CreateC1csAttackContainer.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "CreateC1csAttackContainerLoadBalancer"
+            },
+            "CreateC1csAttackContainerLoadBalancer": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${CreateC1csAttackContainerLoadBalancer.Arn}"
               },
               "Retry": [
                 {
