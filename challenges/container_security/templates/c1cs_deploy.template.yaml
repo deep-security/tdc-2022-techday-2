@@ -88,6 +88,8 @@ Resources:
               - !GetAtt lambdaFunctionRunSSMCommandCreateOverridesFile.Arn
               - !GetAtt lambdaFunctionRunSSMCommandHelmInstallC1CS.Arn
               - !GetAtt lambdaFunctionRunSSMCommandHelmUninstallC1CS.Arn
+              - !GetAtt lambdaFunctionRunSSMCommandCreateC1csAttackContainer.Arn
+              - !GetAtt lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer.Arn
 
 
 # Create SSM Documents
@@ -1099,6 +1101,12 @@ Outputs:
   lambdaFunctionRunSSMCommandHelmUninstallC1CS:
     Description: Run SSM Command to uninstall C1CS
     Value: !GetAtt lambdaFunctionRunSSMCommandHelmUninstallC1CS.Arn
+  lambdaFunctionRunSSMCommandCreateC1csAttackContainer:
+    Description: Run SSM Command to uninstall C1CS
+    Value: !GetAtt lambdaFunctionRunSSMCommandCreateC1csAttackContainer.Arn
+  lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer:
+    Description: Run SSM Command to uninstall C1CS
+    Value: !GetAtt lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer.Arn
   DeployC1CSStateMachine:
     Description: Step function that deploys C1CS in EKS
     Value: !GetAtt DeployC1CSStateMachine.Arn
