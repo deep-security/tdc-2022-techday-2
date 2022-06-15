@@ -177,7 +177,7 @@ Resources:
           parameters:
             c1Region:
               type: String
-              default: '{{ssm:/player/C1/c1Region}}'
+              default: '{{AWS::AccountId}}'
           mainSteps:
           - action: aws:runShellScript
             name: runCommands
@@ -202,7 +202,7 @@ Resources:
               - "echo -e '    spec:' >> /tmp/c1cs_AttackContainer.yaml"
               - "echo -e '      containers:' >> /tmp/c1cs_AttackContainer.yaml"
               - "echo -e '      - name: gotty' >> /tmp/c1cs_AttackContainer.yaml"
-              - "echo -e '        image: 758454129343.dkr.ecr.us-east-1.amazonaws.com/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '        image: {{AWS::AccountId}}.dkr.ecr.us-east-1.amazonaws.com/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
               - "echo -e '        imagePullPolicy: Always' >> /tmp/c1cs_AttackContainer.yaml"
               - "echo -e '        ports:' >> /tmp/c1cs_AttackContainer.yaml"
               - "echo -e '        - containerPort: 8080' >> /tmp/c1cs_AttackContainer.yaml"
