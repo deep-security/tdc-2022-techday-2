@@ -168,6 +168,80 @@ Resources:
       DocumentType: Command
       Name: 'c1csHelmInstall'
 
+  CreateC1csAttackContainer: 
+      Type: AWS::SSM::Document
+      Properties:
+        Content:
+          schemaVersion: '2.2'
+          description: 'Command Document will deploy the c1cs attack container'
+          parameters:
+            c1Region:
+              type: String
+              default: '{{ssm:/player/C1/c1Region}}'
+          mainSteps:
+          - action: aws:runShellScript
+            name: runCommands
+            inputs:
+              timeoutSeconds: '60'
+              runCommand:
+              - "echo 'apiVersion: apps/v1' > /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e 'kind: Deployment' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e 'metadata:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '  name: gotty-attack' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '  labels:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '    app: gotty' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e 'spec:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '  replicas: 1' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '  selector:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '    matchLabels:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '      app: gotty' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '  template:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '    metadata:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '      labels:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '        app: gotty' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '    spec:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '      containers:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '      - name: gotty' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '        image: 758454129343.dkr.ecr.us-east-1.amazonaws.com/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '        imagePullPolicy: Always' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '        ports:' >> /tmp/c1cs_AttackContainer.yaml"
+              - "echo -e '        - containerPort: 8080' >> /tmp/c1cs_AttackContainer.yaml"
+              - "sudo /usr/local/bin/kubectl apply -f /tmp/c1cs_AttackContainer.yaml"
+        DocumentType: Command'
+        Name: 'CreateC1csAttackContainer'
+
+  CreateC1csAttackContainer: 
+      Type: AWS::SSM::Document
+      Properties:
+        Content:
+          schemaVersion: '2.2'
+          description: 'Command Document will deploy the c1cs attack container'
+          parameters:
+            c1Region:
+              type: String
+              default: '{{ssm:/player/C1/c1Region}}'
+          mainSteps:
+          - action: aws:runShellScript
+            name: runCommands
+            inputs:
+              timeoutSeconds: '60'
+              runCommand:
+              - "echo 'apiVersion: v1' > /tmp/c1cs_AttackContainer_c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo 'kind: Service' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo 'metadata:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo -e '  name: nginx-service-loadbalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo 'spec:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo -e '  type: LoadBalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo -e '  selector:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo -e '    app: gotty' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo -e '  ports:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo -e '      - protocol: TCP' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo -e '        port: 80' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "echo -e '        targetPort: 8080' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+              - "sudo /usr/local/bin/kubectl apply -f /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+        DocumentType: Command'
+        Name: 'CreateC1csAttackContainer'
+
 # Create Lambda Functions
   lambdaFunctionQueryPlayerApiKey:
     Type: AWS::Lambda::Function
