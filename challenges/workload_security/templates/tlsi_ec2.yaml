@@ -106,3 +106,12 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
             #!/bin/bash -x
+            ls -la
+
+
+  WS_TLSI_INSTANCEARN:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "WS_TLSI_INSTANCE"
+      Value: !Ref DSA
+      Type: String
