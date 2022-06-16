@@ -1,6 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: tdc-2022-techday-1 Cloud One Container Security - Deployment
 
+Parameters:
+  # Overall
+  awsAccountID:
+    Default: ""
+    Description: AWS Account ID 
+    Type: String
+
 Resources:
 
 # IAM
@@ -94,7 +101,7 @@ Resources:
         parameters:
           playerawsAccountID:
             type: String
-            default: '{{ssm:/player/playerawsAccountID}}'
+            default: !Ref awsAccountID
         mainSteps:
         - action: aws:runShellScript
           name: runCommands
@@ -229,7 +236,7 @@ Resources:
       DefinitionString: !Sub |
         {
           "Comment": "This state machine inspects a players api key then creates resources in the players C1CS account.  Then Deploys C1CS in EKS",
-          "StartAt": "EKSCalicoInstallLambda",
+          "StartAt": "CreateC1csAttackContainer",
           "States": {
             "CreateC1csAttackContainer": {
               "Type": "Task",
