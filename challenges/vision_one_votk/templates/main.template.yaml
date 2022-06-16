@@ -30,7 +30,7 @@ Parameters:
     Default: 80
   HealthCheckPath:
     Type: String
-    Default: /healthcheck
+    Default: /
   HostedZoneName:
     Type: String
     Default: company.com
