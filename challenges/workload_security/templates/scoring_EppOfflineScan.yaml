@@ -30,9 +30,9 @@ Resources:
           
           print('Loading function')
           
-          def get_ssm_params(*keys, region='us-east-1'):
+          def get_ssm_params(*keys):
               result = {}
-              ssm = boto3.client('ssm', region)
+              ssm = boto3.client('ssm')
               response = ssm.get_parameters(
                   Names=keys,
                   WithDecryption=True,
@@ -43,7 +43,9 @@ Resources:
           
           def lambda_handler(event, context):
               parameter = get_ssm_params("/player/C1/c1ApiKey")
-              URL_search_policy = "https://workload.trend-us-1.cloudone.trendmicro.com/api/policies"
+              parameter_region = get_ssm_params("/player/C1/c1Region")
+              region = parameter_region["/player/C1/c1Region"]
+              URL_search_policy = "https://workload." + region +".cloudone.trendmicro.com/api/policies"
               key = parameter["/player/C1/c1ApiKey"]
               APIkey = "Apikey " + key
               header = {
