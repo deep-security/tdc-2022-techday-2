@@ -47,7 +47,7 @@ Resources:
     Properties:
       Code:
         ZipFile: |
-          import json
+          import json, os
           import boto3
           #Print when loading function
           print('Loading function')
