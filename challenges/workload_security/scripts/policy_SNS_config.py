@@ -4,9 +4,9 @@ import json as js
 
 print('Loading function')
 
-def get_ssm_params(*keys, region='us-east-1'):
+def get_ssm_params(*keys):
     result = {}
-    ssm = boto3.client('ssm', region)
+    ssm = boto3.client('ssm')
     response = ssm.get_parameters(
         Names=keys,
         WithDecryption=True,
@@ -17,8 +17,10 @@ def get_ssm_params(*keys, region='us-east-1'):
     
 def lambda_handler(event, context):
     parameter = get_ssm_params("/player/C1/c1ApiKey")
-    URL_policy = "https://workload.trend-us-1.cloudone.trendmicro.com/api/policies"
-    URL_sns = "https://workload.trend-us-1.cloudone.trendmicro.com/api/systemsettings"
+    parameter_region = get_ssm_params("/player/C1/c1Region")
+    region = parameter_region["/player/C1/c1Region"]
+    URL_policy = "https://workload." + region + ".cloudone.trendmicro.com/api/policies"
+    URL_sns = "https://workload." + region + ".cloudone.trendmicro.com/api/systemsettings"
     key = parameter 
     APIkey = "Apikey " + key     
     policyname = "usethispolicy"
