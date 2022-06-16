@@ -1,6 +1,10 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
+  QSS3BucketName:
+    Type: String
+  QSS3KeyPrefix:
+    Type: String
   PublicSubnet1:
     Type: AWS::EC2::Subnet::Id
   AMIID:
@@ -33,11 +37,11 @@ Resources:
     Properties:
       IamInstanceProfile: !Ref DSAkeysProfile
       ImageId: !Ref AMIID
-      InstanceType: m6g.large
+      InstanceType: t2.micro
       SubnetId: !Ref PublicSubnet1
       Tags:
       - Key: Name
-        Value: tnomura-DSA
+        Value: DSA
       - Key: PlayerSsmAccess
         Value: "false"
       UserData:
@@ -50,35 +54,22 @@ Resources:
             sudo chmod 755 /usr/local/bin/docker-compose
             sudo service docker start
             sudo sed -i -e 's/secure_path = \/sbin:\/bin:\/usr\/sbin:\/usr\/bin/secure_path = \/sbin:\/bin:\/usr\/sbin:\/usr\/bin:\/usr\/local\/bin/' /etc/sudoers
-            sudo yum install -y git
             cd /home/ec2-user
-            sudo git clone https://github.com/OWASP/NodeGoat.git
+            sudo curl -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-victim-NodeGoat.zip" -o NodeGoat.zip
+            sudo unzip NodeGoat.zip
             cd NodeGoat
-            sudo sed -i -e 's/4000/80/' config/env/all.js
-            sudo sed -i -e 's/4000:4000/80:80/' docker-compose.yml
             sudo docker-compose build
             sudo docker-compose up -d
-            cd ../
+            cd /home/ec2-user
             mkdir attacker
             cd attacker
-            touch Dockerfile
-            echo "FROM ubuntu:18.04" >> Dockerfile
-            echo "RUN apt-get update && apt-get install -y wget && apt-get install -y cron" >> Dockerfile
-            echo "ADD attack.sh /root/attack.sh" >> Dockerfile
-            echo "RUN chmod 0644 /root/attack.sh" >> Dockerfile
-            echo "RUN crontab -l | { cat; echo \"* * * * *  bash /root/attack.sh\";} | crontab -" >> Dockerfile
-            echo "ADD run.sh /root/run.sh" >> Dockerfile
-            echo "CMD [\"sh\",\"/root/run.sh\"]" >> Dockerfile
-            touch attack.sh
-            echo "#!/bin/bash" >> attack.sh
-            echo "wget --user-agent=\"SQLNinja\" http://nodegoat-web-1/login" >> attack.sh
-            touch run.sh
-            echo "/etc/init.d/cron start" >> run.sh
-            echo "tail -f /dev/null" >> run.sh
+            sudo curl -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-attacker-Dockerfile" -o Dockerfile
+            sudo curl -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-attacker-run.sh" -o run.sh
+            sudo curl -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-attacker-attack.sh" -o attack.sh
             sudo docker build -t attacker .
             sudo docker run -d --net nodegoat_default attacker
-            cd ../
-            sudo curl -OL https://workload.trend-us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/20.0.0.4726/agent.rpm
+            cd /home/ec2-user
+            sudo curl -OL https://workload.trend-us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/agent.rpm
             sudo rpm -i agent.rpm
 
   WS_CONTAINER_INSTANCEARN:
