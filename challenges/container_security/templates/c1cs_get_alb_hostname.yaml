@@ -27,11 +27,6 @@ Resources:
               - ssm:SendCommand
               - ssm:PutParameter
             Resource:
-              - arn:aws:ssm:*:*:document/EKSCalicoInstall
-              - arn:aws:ssm:*:*:document/C1CSRemoveLB
-              - arn:aws:ssm:*:*:document/C1CSRemoveNginx
-              - arn:aws:ssm:*:*:document/C1CSCreateNginx
-              - arn:aws:ssm:*:*:document/C1CSCreateLBService
               - arn:aws:ssm:*:*:document/AWS-RunShellScript
               - arn:aws:ssm:*:*:parameter/player/C1CS/LoadBalancerHostname
           - Effect: Allow
