@@ -72,6 +72,9 @@ Resources:
       ExecutionRoleArn: !GetAtt ExecutionRole.Arn
       # "The Amazon Resource Name (ARN) of an AWS Identity and Access Management (IAM) role that grants containers in the task permission to call AWS APIs on your behalf."
       TaskRoleArn: !Ref TaskRole
+      RuntimePlatform:
+        OperatingSystemFamily: LINUX
+        CpuArchitecture: ARM64
       ContainerDefinitions:
         - Name: !Ref ServiceName
           Image: !Ref Image
