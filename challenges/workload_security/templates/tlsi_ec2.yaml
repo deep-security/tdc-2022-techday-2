@@ -90,7 +90,7 @@ Resources:
     Properties:
       IamInstanceProfile: !Ref DSAkeysProfile
       ImageId: !Ref AMIID
-      InstanceType: t4g.large
+      InstanceType: m6a.large
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
