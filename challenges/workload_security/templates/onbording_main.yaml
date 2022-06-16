@@ -107,7 +107,7 @@ Resources:
   SNStopic:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/onbording_sns.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onbording_sns.yaml
       
   ############################################ 
   ############# Service Catalog ############## 
@@ -120,7 +120,7 @@ Resources:
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/onbording_servicecatalog.yaml
+            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onbording_servicecatalog.yaml
   NewServicePorfolioProductAssociation:
     Type: AWS::ServiceCatalog::PortfolioProductAssociation
     Properties:
