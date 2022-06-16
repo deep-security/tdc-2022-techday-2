@@ -46,7 +46,7 @@ Resources:
       Role: !GetAtt V1S0ScoreFunctionRole.Arn
       Environment:
         Variables:
-          v1TrendRegion: !Ref v1Region
+          v1ApiBaseURL: !Ref v1ApiBaseURL
           v1AuthToken: !Ref v1ApiKeySSMKey
 
       Code:
@@ -96,9 +96,8 @@ Resources:
             # Main
             def lambda_handler(event, context):
 
-                v1TrendRegion = os.environ['v1TrendRegion']
                 v1AuthToken = os.environ['v1AuthToken']
-                url_base = region[v1TrendRegion]
+                url_base = os.environ['v1ApiBaseURL']
 
 
                 res = checkSO('domain')
