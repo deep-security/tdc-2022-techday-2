@@ -33,6 +33,11 @@ Resources:
           Statement:
           - Effect: Allow
             Action:
+              - ssm:GetParameter
+            Resource:
+              - arn:aws:ssm:*:*:parameter/playerawsAccountID
+          - Effect: Allow
+            Action:
               - ssm:PutParameter
               - ssm:GetParameter
               - ssm:SendCommand
@@ -41,6 +46,8 @@ Resources:
               - arn:aws:ssm:*:*:document/c1csHelmUninstall
               - arn:aws:ssm:*:*:document/c1csCreateOverridesFile
               - arn:aws:ssm:*:*:document/c1csHelmInstall
+              - arn:aws:ssm:*:*:document/CreateC1csAttackContainer
+              - arn:aws:ssm:*:*:document/CreateC1csAttackContainerLoadBalancer
               - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
               - arn:aws:ssm:*:*:parameter/player/C1/c1Region
               - arn:aws:ssm:*:*:parameter/player/C1CS/clusterApiKey
@@ -79,6 +86,7 @@ Resources:
           - Effect: Allow
             Action:
               - lambda:InvokeFunction
+              - ssm:SendCommand
             Resource:
               - !GetAtt EKSCalicoInstallLambda.Arn
               - !GetAtt lambdaFunctionQueryPlayerApiKey.Arn
@@ -177,9 +185,9 @@ Resources:
         schemaVersion: '2.2'
         description: 'Command Document will deploy the c1cs attack container'
         parameters:
-          c1Region:
+          awsAccountID:
             type: String
-            default: '{{AWS::AccountId}}'
+            default: '{{ssm::playerawsAccountID}}'
         mainSteps:
         - action: aws:runShellScript
           name: runCommands
@@ -204,12 +212,12 @@ Resources:
             - "echo -e '    spec:' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '      containers:' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '      - name: gotty' >> /tmp/c1cs_AttackContainer.yaml"
-            - "echo -e '        image: {{AWS::AccountId}}.dkr.ecr.us-east-1.amazonaws.com/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        image: {{awsAccountID}}.dkr.ecr.us-east-1.amazonaws.com/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '        imagePullPolicy: Always' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '        ports:' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '        - containerPort: 8080' >> /tmp/c1cs_AttackContainer.yaml"
             - "sudo /usr/local/bin/kubectl apply -f /tmp/c1cs_AttackContainer.yaml"
-      DocumentType: Command'
+      DocumentType: Command
       Name: 'CreateC1csAttackContainer'
 
   CreateC1csAttackContainerLoadBalancer: 
@@ -218,10 +226,6 @@ Resources:
       Content:
         schemaVersion: '2.2'
         description: 'Command Document will deploy the c1cs attack container'
-        parameters:
-          c1Region:
-            type: String
-            default: '{{ssm:/player/C1/c1Region}}'
         mainSteps:
         - action: aws:runShellScript
           name: runCommands
@@ -241,7 +245,7 @@ Resources:
             - "echo -e '        port: 80' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo -e '        targetPort: 8080' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "sudo /usr/local/bin/kubectl apply -f /tmp/c1cs_AttackContainer_loadbalancer.yaml"
-      DocumentType: Command'
+      DocumentType: Command
       Name: 'CreateC1csAttackContainerLoadBalancer'
 
 # Create Lambda Functions
