@@ -94,7 +94,7 @@ Resources:
                 return res.count(True)
 
             # Main
-            def handler(event, context):
+            def lambda_handler(event, context):
 
                 v1TrendRegion = os.environ['v1TrendRegion']
                 v1AuthToken = os.environ['v1AuthToken']
