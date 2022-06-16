@@ -154,45 +154,14 @@ Resources:
         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
 
-  # SAMPLE: Load Challenges and Infra for Challenges
-  # Sample:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     Parameters:
-  #       PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
-  #       ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
-  #     TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/challenges/sample/templates/main.template.yaml'
-
-# Comment Out DSM and DSA Stack - likely unused this year.
-#   DSMStack:
-#     Type: AWS::CloudFormation::Stack
-#     Properties:
-#       Parameters:
-#         DSActivationCode: !Ref DSActivationCode
-#         QSS3BucketName: !Ref QSS3BucketName
-#         QSS3KeyPrefix: !Ref QSS3KeyPrefix
-#         VPC: !GetAtt VPCStack.Outputs.VPCID
-#         PublicSubnet1: !GetAtt VPCStack.Outputs.PublicSubnet1ID
-# #        ReadS3BucketProfile: !GetAtt Infra.Outputs.ReadS3BucketProfile
-#         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-#         SecretPassword: !GetAtt Passwords.Outputs.SecretPassword
-#         KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
-#       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/dsm/templates/dsm.template.yaml'
-
-  # DSAStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     Parameters:
-  #       QSS3BucketName: !Ref QSS3BucketName
-  #       QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}dsm/'
-  #       VPC: !GetAtt VPCStack.Outputs.VPCID
-  #       PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1AID
-  #       PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-  #       SecretPassword: !GetAtt Passwords.Outputs.SecretPassword
-  #       DSMFQDN: !GetAtt DSMStack.Outputs.DSMFQDN
-  #       KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
-  #       VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
-  #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/infra/dsm/templates/ds_clients.template.yaml'
+  VOTKStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        VPC: !GetAtt VPCStack.Outputs.VPCID
+        SubnetA: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+        SubnetB: !GetAtt VPCStack.Outputs.PublicSubnet2ID
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml
 
 
   # ☠️ DON'T TOUCH - Or Webster might have a talk with you... or worse, Amanda! ☠️
