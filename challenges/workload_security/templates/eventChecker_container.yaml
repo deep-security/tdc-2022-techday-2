@@ -42,7 +42,7 @@ Resources:
                       - - Ref: StateS3BucketcArn
                         - /*  
 
-  eventCheckerContainer:
+  eventCheckerContainerLambda:
     Type: AWS::Lambda::Function
     Properties:
       Code:
@@ -84,7 +84,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName: !GetAtt eventCheckerContainerLamb.Arn
+      FunctionName: !GetAtt eventCheckerContainerLambda.Arn
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: SnsTopicArn
