@@ -39,10 +39,3 @@ Resources:
       Type: String
       Value: startingValue
       Description: Player C1CS Ruleset ID
-  awsAccountIDParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /player/playerawsAccountID
-      Type: String
-      Value: ${AWS::AccountId}
-      Description: AWS Account ID
