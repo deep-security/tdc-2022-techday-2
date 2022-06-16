@@ -102,12 +102,26 @@ Resources:
       - Key: Name
         Value: DSA
       - Key: PlayerSsmAccess
-        Value: "true"
+        Value: "false"
       UserData:
         Fn::Base64: !Sub |
-            #!/bin/bash -x
-            ls -la
-
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+          echo "Hello World from user data" > /var/www/html/index.html
+          sudo yum install -y mod_ssl
+          cd /etc/pki/tls/certs
+          sudo ./make-dummy-cert localhost.crt
+          sed -i 's/SSLProtocol\s/all\s/-SSLv3/SSLProtocol\s/-all\s/+TLSv1.2/g' /etc/httpd/conf.d/ssl.conf
+          sed -i 's/SSLCertificateKeyFile\s\/etc\/pki\/tls\/private\/localhost.key/#SSLCertificateKeyFile\s\/etc\/pki\/tls\/private\/localhost.key/g' /etc/httpd/conf.d/ssl.conf
+          public_host_name=`curl http://169.254.169.254/latest/meta-data/public-hostname`
+          sed -i "6i DocumentRoot $public_host_name" /etc/httpd/conf.d/ssl.conf
+          sed -i "7i ServerName $public_host_name" /etc/httpd/conf.d/ssl.conf
+          sudo systemctl restart httpd
+          aws s3 cp s3://koshida-td-dsa/Agent-PGPCore-amzn2-20.0.0-3770.x86_64.rpm /tmp/Agent-PGPCore-amzn2-20.0.0-3770.x86_64.rpm
+          sudo rpm -i /tmp/Agent-PGPCore-amzn2-20.0.0-3770.x86_64.rpm
 
   WS_TLSI_INSTANCEARN:
     Type: AWS::SSM::Parameter
