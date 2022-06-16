@@ -58,60 +58,58 @@ Resources:
           !Sub
             - |-
               import json
-              import json
               import boto3
               import botocore
               import time
               import cfnresponse
+
               def lambda_handler(event=None, context=None):
-                print(f"Data in event: {event}")
-                response_data = {}
-                physicalResourceId = None
-                if event["RequestType"] == "Create":
-                  client = boto3.client('ssm')
-                  instance_id = 'i-0713c813e8fef545d' # hard-code for example
-                  response = client.send_command(
-                      Targets = [
-                          {
-                              'Key': 'tag:Name',
-                              'Values': ['EKSBastion']
-                          }
-                      ],
-                      DocumentName='AWS-RunShellScript',
-                      Parameters={
-                          'commands': [
-                              "sudo /usr/local/bin/kubectl get services --namespace default c1cs-attack-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
-                          ]
-                      }
-                  )
-                  command_id = response['Command']['CommandId']
-                  tries = 0
-                  output = 'False'
-                  while tries < 10:
-                      tries = tries + 1
-                      try:
-                          time.sleep(0.5)  # some delay always required...
-                          result = client.get_command_invocation(
-                              CommandId=command_id,
-                              InstanceId=instance_id,
-                          )
-                          if result['Status'] == 'InProgress':
+                  response_data = {}
+                  physicalResourceId = None
+                  if event["RequestType"] == "Create":
+                      client = boto3.client("ssm")
+                      response = client.send_command(
+                          Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                          DocumentName="AWS-RunShellScript",
+                          Parameters={
+                              "commands": [
+                                  "sudo /usr/local/bin/kubectl get services --namespace default c1cs-attack-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                              ]
+                          },
+                      )
+                      command_id = response["Command"]["CommandId"]
+                      tries = 0
+                      output = "False"
+                      while tries < 10:
+                          tries = tries + 1
+                          try:
+                              time.sleep(0.5)  # some delay always required...
+                              invocations_list = client.list_command_invocations(
+                                  CommandId=command_id,
+                              )["CommandInvocations"]
+                              instance_id = sorted(
+                                  invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
+                              )[0]["InstanceId"]
+                              print(instance_id)
+                              result = client.get_command_invocation(
+                                  CommandId=command_id,
+                                  InstanceId=instance_id,
+                              )
+                              print(result)
+                              if result["Status"] == "InProgress":
+                                  continue
+                              output = result["StandardOutputContent"]
+                              print(output)
+                              break
+                          except client.exceptions.InvocationDoesNotExist:
                               continue
-                          output = result['StandardOutputContent']
-                          #output = result
-                          break
-                      except client.exceptions.InvocationDoesNotExist:
-                          continue
-                  response_data = { "c1csAttackAlbHostname": output }
-                  client.put_parameter(Name='/player/C1CS/LoadBalancerHostname', Value=output, Type='String', Overwrite=True)
-                  print("XXXXXXXXXX")
-                  print(output)
-                else: # if event["RequestType"] == "Delete":
-                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeDeployC1CSStateMachineLambda")
-                
-                
-                cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
-                  #return output #== 'True'
+                      response_data = { "c1csAttackAlbHostname": output }
+                      client.put_parameter(Name='/player/C1CS/LoadBalancerHostname', Value=output, Type='String', Overwrite=True)
+                  else: # if event["RequestType"] == "Delete":
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "GetC1csAlbAttackHostname")
+                      output = "Recieved Delete command from CFN"
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+                  return output
             -
               lambda_function_role_arn: !Ref c1csAttackRole
 
