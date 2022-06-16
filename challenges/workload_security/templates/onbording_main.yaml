@@ -108,6 +108,25 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onbording_sns.yaml
+
+  ############################################ 
+  ######### For event check template ######### 
+  ############################################
+  eventCheckerContainer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}eventChecker_container.yaml
+      Parameters:
+        SnsTopicArn: !GetAtt SNStopic.Outputs.SNSTopicARN
+        StateS3BucketcArn: !GetAtt S3Bucket.Arn
+
+  eventCheckerTLSI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}eventChecker_tlsi.yaml
+      Parameters:
+        SnsTopicArn: !GetAtt SNStopic.Outputs.SNSTopicARN
+        StateS3BucketcArn: !GetAtt S3Bucket.Arn
       
   ############################################ 
   ############# Service Catalog ############## 
