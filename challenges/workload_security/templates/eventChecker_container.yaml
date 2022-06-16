@@ -6,118 +6,66 @@ Parameters:
     Type: String
   StateS3BucketcArn:
     Type: String
-  S3ObjectName:
-    Type: String
-    Default: completed
-  S3ObjectPrefix:
-    Type: String
-    Description: Don't forget the "/" at the end of the prefix!
 
 Resources:
-
-  day1DectectionCheckerServiceRoleDefaultPolicy:
-    Type: AWS::IAM::Policy
+  eventCheckerContainerLambdaRole:
+    Type: AWS::IAM::Role
     Properties:
-      PolicyDocument:
+      AssumeRolePolicyDocument:
         Statement:
-          - Action:
-              - s3:DeleteObject*
-              - s3:PutObject*
-              - s3:Abort*
+          - Action: sts:AssumeRole
             Effect: Allow
-            Resource:
-              - Ref: StateS3BucketcArn
-              - Fn::Join:
-                  - ""
-                  - - Ref: StateS3BucketcArn
-                    - /*
+            Principal:
+              Service: lambda.amazonaws.com
         Version: "2012-10-17"
-      PolicyName: day1DectectionCheckerServiceRoleDefaultPolicy
-      Roles:
-        - '{{resolve:ssm:DetectionCheckerServiceRoleName:1}}'
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+      Policies: 
+        - PolicyName: eventCheckerContainerPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - s3:DeleteObject*
+                  - s3:PutObject*
+                  - s3:Abort*
+                Effect: Allow
+                Resource:
+                  - Ref: StateS3BucketcArn
+                  - Fn::Join:
+                      - ""
+                      - - Ref: StateS3BucketcArn
+                        - /*  
 
-  day1DectectionChecker:
+  eventCheckerContainer:
     Type: AWS::Lambda::Function
     Properties:
       Code:
         ZipFile: |
           import json
-          import os
           import boto3
-          import logging
-          import traceback
-          # logging
-          logger = logging.getLogger()
-          logger.setLevel(logging.INFO)
-          bucket = os.environ['BUCKET_NAME']
-          answerObject = os.environ['ANSWER_OBJECT']
-          answerPrefix = os.environ['ANSWER_PREFIX']
-          s3 = boto3.resource('s3')
-          def isTaskComplete(events):
-            try:
-              #TODO: check for type of args:events
-              if type(events) != dict:
-                return
-                  
-              #If it DO NOT have target key, set to None.
-              actionID = events.get('Action')
-                  
-              if actionID == 2:
-                print("call checkTlsBlock")
-                checkTlsBlock(events)
-              else:
-                logger.debug("Not right anser!!")
-            except Exception as e:
-              print(traceback.format_exc())
-              print(e)
-          def checkTlsBlock(events):
-              apptype = 'TCP(11000)'
-              dstport = 11000
-              action = 'reset'
-              rule = 'nginx TLS Post(TCP/11000)'
-              sender = 'day1TLSblock'
-              
-              try:
-                print("in checkTlsBlock")
-                if (events.get('ApplicationType'),events.get('Reason')) == (apptype,rule):
-                  print("[DAY1COOL!]success to block malicious connection!")
-                  sendToS3(events, sender)    
-              except Exception as e:
-                print(traceback.format_exc())
-                print("failed in checkTlsBlock")
-                print(e)
-                
-          def sendToS3(events, sender):
-            Bucket = bucket
-            Keys = answerObject + sender + answerPrefix
-            Body = json.dumps(events)
-              
-            try:
-              response = s3.Bucket(Bucket).put_object(Key=Keys, Body=Body)
-              print("[really cool!]send it!")
-            except Exception as e:
-              print(e)
-              exit()
+          #Print when loading function
+          print('Loading function')
           def lambda_handler(event, context):
-            try:
-              x = event['Records'][0]['Sns']['Message']
-              y = json.loads(x)
-              isTaskComplete(y)
-            except:
-              pass
-              
-            try:
-              message = str(event['Records'][0]['Sns']['Message'])
-              a = json.loads(message)
-              for x in a:
-                #dump json string(for checking by S.U.)
-                print("var x: "+ str(x))
-                isTaskComplete(x)
-            except Exception as e:
-              print(traceback.format_exc())
-              print(e)
+              s3 = boto3.client("s3")
+              correct_answer_container = "1005402 - Identified Suspicious User Agent In HTTP Request"
+              print(event)
+              keyword = event[0]["Reason"]
+              print(keyword)
+              if keyword == correct_answer_container:
+                  response = s3.put_object(
+                  Bucket = os.environ['BUCKET_NAME'],
+                  Key="container_correct",  
+                   )
+              else:
+                  print("do it again")
       Handler: index.lambda_handler
-      Role: '{{resolve:ssm:DetectionCheckerServiceRole:1}}'
+      Role: !GetAtt eventCheckerContainerLambdaRole.Arn
       Runtime: python3.7
       Environment:
         Variables:
@@ -131,35 +79,23 @@ Resources:
                       - Fn::Split:
                           - ":"
                           - Ref: StateS3BucketcArn
-          ANSWER_OBJECT:
-            Ref: S3ObjectName
-          ANSWER_PREFIX:
-            Ref: S3ObjectPrefix
-    DependsOn:
-      - day1DectectionCheckerServiceRoleDefaultPolicy
 
-  day1DectectionCheckerAllowInvokeCheckForSecurityEventSnsTopic:
+  eventCheckerContainerAllowInvokeCheckForSecurityEventSnsTopic:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
-      FunctionName:
-        Fn::GetAtt:
-          - day1DectectionChecker
-          - Arn
+      FunctionName: !GetAtt eventCheckerContainerLamb.Arn
       Principal: sns.amazonaws.com
       SourceArn:
         Ref: SnsTopicArn
 
-  day1DectectionCheckerSnsTopic:
+  eventCheckerContainerSnsTopic:
     Type: AWS::SNS::Subscription
     Properties:
       Protocol: lambda
       TopicArn:
         Ref: SnsTopicArn
-      Endpoint:
-        Fn::GetAtt:
-          - day1DectectionChecker
-          - Arn
+      Endpoint: !GetAtt eventCheckerContainerLambda.Arn
       Region:
         Fn::Select:
           - 3
