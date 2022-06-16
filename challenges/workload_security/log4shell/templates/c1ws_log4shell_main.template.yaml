@@ -45,7 +45,7 @@ Resources:
               - Ref: AWS::Partition
               - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: AllowReadScoreS3
+        - PolicyName: C1WSLog4ShellScore
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -63,8 +63,10 @@ Resources:
   VictimLog4Shell:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/victim_log4shell.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/victim_log4shell.template.yaml
       Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
         AllowIP: 0.0.0.0/0
         VPC: !Ref VPCID
         PublicSubnet1: !Ref PublicSubnet1ID
@@ -72,7 +74,7 @@ Resources:
   ScoreLambdaTask1:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}score/task1.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task1.template.yaml
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3Key: !Ref QSS3KeyPrefix

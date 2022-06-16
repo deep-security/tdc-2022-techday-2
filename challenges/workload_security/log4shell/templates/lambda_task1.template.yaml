@@ -31,11 +31,11 @@ Resources:
       FunctionName: C1WSScoreLambdatask1
       Code:
         S3Bucket: !Ref QSS3BucketName
-        S3Key: !Sub ${QSS3Key}score/task1.zip
-      Handler: lambda_function.lambda_handler
+        S3Key: !Sub ${QSS3Key}scripts/task1.zip
+      Handler: task1.lambda_handler
       Environment:
         Variables:
           HostName: !Ref HostName
       Role: !Ref ScoreLambdaRole
-      Runtime: python3.7
+      Runtime: python3.8
       Timeout: 30

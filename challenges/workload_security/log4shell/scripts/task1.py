@@ -20,15 +20,20 @@ def lambda_handler(event, context):
 
     # API request to workload security
     headers = {'Content-Type': 'application/json', 'api-version': 'v1', 'Authorization': authorization}
-    result = requests.get(BaseURL, headers=headers)
-    dict_result = json.loads(result.text)
     
-    # Check agent   
-    for i in dict_result["computers"]:
-        if hostName == i["hostName"]:
-            if i["computerStatus"]["agentStatus"] == "active" and i["computerStatus"]['agentStatusMessages'][0] == "Managed (Online)":
-                result_flag = True
-                break
-       
-    # Return task result
-    return result_flag
+    try:
+        result = requests.get(BaseURL, headers=headers)
+        dict_result = json.loads(result.text)
+        
+        # Check agent   
+        for i in dict_result["computers"]:
+            if hostName == i["hostName"]:
+                if i["computerStatus"]["agentStatus"] == "active" and i["computerStatus"]['agentStatusMessages'][0] == "Managed (Online)":
+                    result_flag = True
+                    break
+        
+        # Return task result
+        return result_flag
+        
+    except requests.exceptions.RequestException as e:
+        raise SystemExit(e)

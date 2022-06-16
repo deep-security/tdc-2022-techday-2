@@ -3,6 +3,27 @@ Description: >
   EC2 Victim Server with Tomcat Vulnerable Application (Log4Shell)
 
 Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/_]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
+      forward slash (/).
+    Type: String
+  LatestAMIID:
+    Description: "Latest AMI ID for Amazon Linux 2"
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
   VPC:
     Type: AWS::EC2::VPC::Id
   PublicSubnet1:
@@ -54,8 +75,8 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       IamInstanceProfile: !Ref VictimLog4ShellProfile
-      ImageId: "ami-0022f774911c1d690"
-      InstanceType: t3.micro
+      ImageId: !Ref LatestAMIID
+      InstanceType: m5.large
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
           DeviceIndex: "0"
@@ -67,22 +88,21 @@ Resources:
       - Key: Name
         Value: VictimLog4Shell
       - Key: PlayerSsmAccess
-        Value: "true"
+        Value: "false"
       UserData:
-        Fn::Base64: |
+        Fn::Base64: !Sub |
             #!/bin/bash
             yum update -y
-            yum install -y git
-            git clone https://github.com/kozmer/log4j-shell-poc.git /home/ec2-user/log4j-shell-poc/
+            wget https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}vulnerable_app.zip -P /home/ec2-user/
+            unzip /home/ec2-user/vulnerable_app.zip -d /home/ec2-user/
             yum install -y java-1.8.0-openjdk-devel
-            TOMCAT_HOME="/opt/tomcat/"
             echo "Creating Tomcat user..."
-            useradd -m -U -d ${TOMCAT_HOME} -s /bin/false tomcat
+            useradd -m -U -d /opt/tomcat/ -s /bin/false tomcat
             echo "Downloading Tomcat.."
-            wget -qO- https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.3/bin/apache-tomcat-8.5.3.tar.gz | eval $SUDO tar xvz -C ${TOMCAT_HOME}/ --strip-components=1
+            wget -qO- https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.3/bin/apache-tomcat-8.5.3.tar.gz | eval $SUDO tar xvz -C /opt/tomcat/ --strip-components=1
             echo "Configuring Tomcat.."
-            chown -R tomcat: ${TOMCAT_HOME}
-            chmod +x ${TOMCAT_HOME}/bin/*.sh
+            chown -R tomcat: /opt/tomcat/
+            chmod +x /opt/tomcat/bin/*.sh
             echo "
             [Unit]
             Description=Apache Tomcat Web Application Container
@@ -90,13 +110,13 @@ Resources:
             [Service]
             Type=forking
             Environment=JAVA_HOME="/"
-            Environment=CATALINA_PID=${TOMCAT_HOME}/temp/tomcat.pid
-            Environment=CATALINA_HOME=${TOMCAT_HOME}
-            Environment=CATALINA_BASE=${TOMCAT_HOME}
+            Environment=CATALINA_PID=/opt/tomcat/temp/tomcat.pid
+            Environment=CATALINA_HOME=/opt/tomcat/
+            Environment=CATALINA_BASE=/opt/tomcat/
             Environment='CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC'
             Environment='JAVA_OPTS=-Dcom.sun.jndi.ldap.object.trustURLCodebase=true -Djava.net.preferIPv4Stack=true -Djava.net.preferIPv4Addresses=true -Djava.awt.headless=true'
-            ExecStart=${TOMCAT_HOME}/bin/startup.sh
-            ExecStop=${TOMCAT_HOME}/bin/shutdown.sh
+            ExecStart=/opt/tomcat/bin/startup.sh
+            ExecStop=/opt/tomcat/bin/shutdown.sh
             User=tomcat
             Group=tomcat
             UMask=0007
@@ -112,7 +132,7 @@ Resources:
             systemctl stop log4j-cve-2021-44228-hotpatch
             systemctl disable log4j-cve-2021-44228-hotpatch
             rm -rf /opt/tomcat/webapps/*
-            cp /home/ec2-user/log4j-shell-poc/target/log4shell-* /opt/tomcat/webapps/ROOT.war
+            cp /home/ec2-user/log4shell-* /opt/tomcat/webapps/ROOT.war
             systemctl restart tomcat
             
 Outputs:
