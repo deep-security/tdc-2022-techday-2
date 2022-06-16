@@ -1,0 +1,11 @@
+FROM ubuntu:18.04
+
+RUN apt-get update && apt-get install -y wget && apt-get install -y cron
+
+ADD attack.sh /root/attack.sh
+RUN chmod 0644 /root/attack.sh
+
+RUN crontab -l | { cat; echo "* * * * *  bash /root/attack.sh";} | crontab -
+
+ADD run.sh /root/run.sh
+CMD ["sh","/root/run.sh"]
