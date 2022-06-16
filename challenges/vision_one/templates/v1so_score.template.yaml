@@ -4,13 +4,13 @@ Description: V1 Challenge Main stack
 Parameters:
 
   v1ApiKeySSMKey:
-    Default: "v1AuthToken"
+    Default: /player/V1/v1AuthToken
     Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One API Key.
     Type: 'AWS::SSM::Parameter::Value<String>'
 
   v1Region:
-    Default: "v1TrendRegion"
-    Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One API Key.
+    Default: /player/V1/v1TrendRegion
+    Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One Region.
     Type: 'AWS::SSM::Parameter::Value<String>'
 
 Resources:
