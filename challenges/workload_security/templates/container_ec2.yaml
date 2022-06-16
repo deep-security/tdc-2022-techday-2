@@ -37,7 +37,7 @@ Resources:
     Properties:
       IamInstanceProfile: !Ref DSAkeysProfile
       ImageId: !Ref AMIID
-      InstanceType: t2.micro
+      InstanceType: m6a.large
       SubnetId: !Ref PublicSubnet1
       Tags:
       - Key: Name
