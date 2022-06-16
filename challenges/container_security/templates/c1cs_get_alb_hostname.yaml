@@ -63,6 +63,7 @@ Resources:
           !Sub
             - |-
               import json
+              import json
               import boto3
               import botocore
               import time
@@ -70,9 +71,10 @@ Resources:
               def lambda_handler(event=None, context=None):
                 print(f"Data in event: {event}")
                 response_data = {}
+                physicalResourceId = None
                 if event["RequestType"] == "Create":
                   client = boto3.client('ssm')
-                  instance_id = 'i-0b54408df4f7d1236' # hard-code for example
+                  instance_id = 'i-0713c813e8fef545d' # hard-code for example
                   response = client.send_command(
                       Targets = [
                           {
@@ -106,11 +108,13 @@ Resources:
                       except client.exceptions.InvocationDoesNotExist:
                           continue
                   response_data = { "c1csAttackAlbHostname": output }
-                #else: # if event["RequestType"] == "Update" or event["RequestType"] == "Delete":
-                #  physicalResourceId = event["output"]
-                print("XXXXXXXXXX")
-                print(output)
-                client.put_parameter(Name='/player/C1CS/LoadBalancerHostname', Value=output, Type='String', Overwrite=True)
+                  client.put_parameter(Name='/player/C1CS/LoadBalancerHostname', Value=output, Type='String', Overwrite=True)
+                  print("XXXXXXXXXX")
+                  print(output)
+                else: # if event["RequestType"] == "Delete":
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeDeployC1CSStateMachineLambda")
+                
+                
                 cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
                   #return output #== 'True'
             -
