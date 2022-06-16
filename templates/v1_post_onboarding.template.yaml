@@ -132,8 +132,8 @@ Resources:
 
 # Builds AWS Connector Role for C1AWS
 
-SampleResourceS3Bucket:
-  Type: AWS::S3::Bucket
+  SampleResourceS3Bucket:
+    Type: AWS::S3::Bucket
 
   # C1AWSConnector:
   #   Type: AWS::CloudFormation::Stack
