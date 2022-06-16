@@ -185,9 +185,9 @@ Resources:
         schemaVersion: '2.2'
         description: 'Command Document will deploy the c1cs attack container'
         parameters:
-          awsAccountID:
+          playerawsAccountID:
             type: String
-            default: '{{ssm::playerawsAccountID}}'
+            default: '{{ssm:playerawsAccountID}}'
         mainSteps:
         - action: aws:runShellScript
           name: runCommands
@@ -212,7 +212,7 @@ Resources:
             - "echo -e '    spec:' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '      containers:' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '      - name: gotty' >> /tmp/c1cs_AttackContainer.yaml"
-            - "echo -e '        image: {{awsAccountID}}.dkr.ecr.us-east-1.amazonaws.com/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        image: {{playerawsAccountID}}.dkr.ecr.us-east-1.amazonaws.com/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '        imagePullPolicy: Always' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '        ports:' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '        - containerPort: 8080' >> /tmp/c1cs_AttackContainer.yaml"
