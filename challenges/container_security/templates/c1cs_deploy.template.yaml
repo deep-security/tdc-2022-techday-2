@@ -232,7 +232,7 @@ Resources:
           inputs:
             timeoutSeconds: '60'
             runCommand:
-            - "echo 'apiVersion: v1' > /tmp/c1cs_AttackContainer_c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo 'apiVersion: v1' > /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo 'kind: Service' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo 'metadata:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo -e '  name: nginx-service-loadbalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
