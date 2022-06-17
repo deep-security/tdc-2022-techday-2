@@ -38,6 +38,7 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_deploy.template.yaml'
     DependsOn: c1csssmparameters
+
   c1csCodeBuild:
     Type: AWS::CloudFormation::Stack
     Properties:
