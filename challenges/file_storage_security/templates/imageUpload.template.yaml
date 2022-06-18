@@ -13,9 +13,6 @@ Parameters:
       or end with a hyphen (-).
     Type: String
   QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/.]*$
-    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
-      uppercase letters, hyphens (-), dots(.) and forward slash (/).
     Default: challenge/fss/lambdas/
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and

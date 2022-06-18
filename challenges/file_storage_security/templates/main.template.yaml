@@ -63,7 +63,7 @@ Resources:
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_service_catalog_integration.template.yaml"
 
-  ImageUploader:
+  ImageUpload:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -71,15 +71,15 @@ Resources:
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
         CopyZipsS3Bucket: !GetAtt CopyZipsStack.Outputs.DestinationBucket
         CopyZipsPrefix: !Sub "${QSS3KeyPrefix}lambda/"
-        WebsiteCodeZip: "lambda/imageUploader/imageUploader.zip"
-      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/imageUploader.template.yaml"
+        WebsiteCodeZip: "imageUpload/imageUpload.zip"
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/imageUpload.template.yaml"
 
   # CopyZips
   CopyZipsStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        SourceBucket: QSS3BucketName
+        SourceBucket: !Ref QSS3BucketName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
       TimeoutInMinutes: 10
   CopyZips:
@@ -90,7 +90,7 @@ Resources:
       SourceBucket: !Ref QSS3BucketName
       Prefix: !Sub "${QSS3KeyPrefix}lambda/"
       Objects:
-      - "lambda/imageUploader/imageUploader.zip"
+      - "imageUpload/imageUpload.zip"
   
 Outputs:
   S3ObjectURL:

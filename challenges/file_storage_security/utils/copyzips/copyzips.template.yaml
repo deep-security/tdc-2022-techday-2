@@ -32,7 +32,7 @@ Resources:
               for o in objects:
                   key = prefix + o
                   copy_source = {'Bucket': source_bucket, 'Key': key}
-                  logging.info(f'copy_source: {copy_source}\ndest_bucket: {dest_bucket}\nkey: {key}')
+                  logging.error(f'copy_source: {copy_source}\ndest_bucket: {dest_bucket}\nkey: {key}')
                   s3.copy_object(CopySource=copy_source, Bucket=dest_bucket, Key=key)
           def delete_objects(bucket, prefix, objects):
               s3 = boto3.client('s3')
