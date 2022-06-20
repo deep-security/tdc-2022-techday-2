@@ -8,9 +8,9 @@ Resources:
         Fn::Join:
         - ""
         - - "https://"
-          - "{{resolve:ssm:QSS3BucketName:1}}"
+          - "nemoseax"
           - ".s3.amazonaws.com/"
-          - "{{resolve:ssm:QSS3KeyPrefix:1}}"
+          - ""
           - "challenges/workload_security/templates/agent_activation.yaml"
 
   SetSNSandPolicyconfig:
@@ -20,7 +20,7 @@ Resources:
         Fn::Join:
         - ""
         - - "https://"
-          - "{{resolve:ssm:QSS3BucketName:1}}"
+          - "nemoseax"
           - ".s3.amazonaws.com/"
-          - "{{resolve:ssm:QSS3KeyPrefix:1}}"
+          - ""
           - "challenges/workload_security/templates/setSNSandPolicyconfig.yaml"

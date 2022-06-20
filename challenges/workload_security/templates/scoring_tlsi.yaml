@@ -52,7 +52,7 @@ Resources:
               print(keyword)
               if keyword == correct_answer_tls:
                   response = s3.put_object(
-                  Bucket = os.environ['BUCKET_NAME'],
+                  Bucket = os.environ['TARGETBucket'],
                   Key="tls_correct",  
                    )
               else:

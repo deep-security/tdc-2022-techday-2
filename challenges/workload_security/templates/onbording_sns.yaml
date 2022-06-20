@@ -18,7 +18,7 @@ Resources:
   accesskey:
     Type: AWS::IAM::AccessKey
     Properties:
-      UserName: !Ref 1user
+      UserName: !Ref user
   SNSTopic:
     Type: AWS::SNS::Topic
 

@@ -10,7 +10,6 @@ Parameters:
       It cannot start or end with a hyphen (-).
     Type: String
   QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slash (/).
     Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start key prefix
@@ -63,20 +62,6 @@ Resources:
           - sts:AssumeRole
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-      Path: /
-      Policies:
-      - PolicyName: DeepSecurityAgentS3cpPolicy
-        PolicyDocument:
-          Statement:
-          - Effect: Allow
-            Action:
-            - s3:PutObject*
-            Resource: 
-              - Ref: BucketARN
-              - Fn::Join:
-                - ""
-                - - Ref: BucketARN
-                  - /*
 
   DSAkeysProfile:
     Type: AWS::IAM::InstanceProfile
@@ -123,7 +108,7 @@ Resources:
           aws s3 cp s3://koshida-td-dsa/Agent-PGPCore-amzn2-20.0.0-3770.x86_64.rpm /tmp/Agent-PGPCore-amzn2-20.0.0-3770.x86_64.rpm
           sudo rpm -i /tmp/Agent-PGPCore-amzn2-20.0.0-3770.x86_64.rpm
 
-  WS_TLSI_INSTANCEARN:
+  WSTLSIInstanceARN:
     Type: AWS::SSM::Parameter
     Properties:
       Name: "WS_TLSI_INSTANCE"

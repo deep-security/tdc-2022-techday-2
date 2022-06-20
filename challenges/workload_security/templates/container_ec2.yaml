@@ -72,7 +72,7 @@ Resources:
             sudo curl -OL https://workload.trend-us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/agent.rpm
             sudo rpm -i agent.rpm
 
-  WS_CONTAINER_INSTANCEARN:
+  WSContainerInstanceARN:
     Type: AWS::SSM::Parameter
     Properties:
       Name: "WS_CONTAINER_INSTANCE"

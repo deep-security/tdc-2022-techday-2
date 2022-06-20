@@ -5,8 +5,10 @@ Parameters:
   # Service Catalog related
   PlayerServiceCatalogPortfolio:
     Type: String
+    Default: port-weofpwtmtkgsk
   ServiceCatalogLaunchRoleArn:
     Type: String
+    Default: arn:aws:iam::333053306512:role/TD-main-ServiceCatalogPor-ServiceCatalogLaunchRole-1V4P4U0KL2D3O
   # Bucket path related
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
@@ -17,18 +19,21 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
     Type: String
+    Default: nemoseax
   QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/.]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
     Type: String
+    Default: challenges/workload_security/
   VPCID:
     Type: AWS::EC2::VPC::Id
+    Default: vpc-00c409a8099fbba1d
   PublicSubnet1ID:
     Type: AWS::EC2::Subnet::Id
+    Default: subnet-04517d9bf73a4753e
     
 Mappings:
   #Amazon Linux 2 x86_64 
@@ -88,7 +93,7 @@ Resources:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/onbording_main.yaml
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
-        QSS3Key: !Sub ${QSS3KeyPrefix}templates/
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}templates/
         PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
 
@@ -101,13 +106,11 @@ Resources:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/tlsi_main.yaml
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
-        QSS3Key: !Sub ${QSS3KeyPrefix}templates/
-        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
-        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}templates/
         VPCID: !Ref VPCID
         PublicSubnet1ID: !Ref PublicSubnet1ID
-        #BucketName: !Ref s3Bucket
-        #BucketARN: !GetAtt s3Bucket.Arn
+        #BucketName: nemoseax
+        #BucketARN: arn:aws:s3:::nemoseax
         AMIID:
           !FindInMap
           - AMZN
@@ -123,8 +126,8 @@ Resources:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/container_ec2.yaml
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
-        QSS3Key: !Ref QSS3KeyPrefix
-        PublicSubnet1ID: !Ref PublicSubnet1ID
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        PublicSubnet1: !Ref PublicSubnet1ID
         AMIID:
           !FindInMap
           - AMZN
@@ -134,12 +137,12 @@ Resources:
   ############################################ 
   ################# Scoring ################# 
   ############################################
-  ScoreLambdaTLSI:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_tlsi.yaml
-      Parameters:
-        TargetBucketName: !GetAtt Onbording.Outputs.S3BucketName
+  #ScoreLambdaTLSI:
+  #  Type: AWS::CloudFormation::Stack
+  #  Properties:
+  #    TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_tlsi.yaml
+  #    Parameters:
+  #      TargetBucketName: !GetAtt Onbording.Outputs.S3BucketName
 
   ScoreLambdaContainer:
     Type: AWS::CloudFormation::Stack
