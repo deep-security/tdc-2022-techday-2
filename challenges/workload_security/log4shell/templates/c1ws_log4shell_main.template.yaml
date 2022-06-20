@@ -26,8 +26,15 @@ Parameters:
     Type: AWS::EC2::VPC::Id
   PublicSubnet1ID:
     Type: AWS::EC2::Subnet::Id
+  SNSTopicArn:
+    Type: String
 
 Resources:
+  verificationBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+
   scoreroleC1WS:
     Type: AWS::IAM::Role
     Properties:
@@ -60,6 +67,61 @@ Resources:
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1ApiKey
                   - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1Region
 
+  snslambdaroleC1WS:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: C1WSLog4ShellSNSLambda
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - s3:PutObject*
+                Resource:
+                  - !GetAtt verificationBucket.Arn
+                  - !Join ["", [!GetAtt verificationBucket.Arn, "/*"]]
+
+  s3verifylambdaroleC1WS:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: C1WSLog4ShellS3VerificationLambda
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt verificationBucket.Arn
+
   VictimLog4Shell:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -75,6 +137,58 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task1.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        HostName: !GetAtt VictimLog4Shell.Outputs.Log4ShellPrivateDNSName
+        ScoreLambdaRole: !GetAtt scoreroleC1WS.Arn
+
+  SNSLambdaTask2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task2_sns.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        bucketName: !Ref verificationBucket
+        SNSLambdaRole: !GetAtt snslambdaroleC1WS.Arn
+        SNSTopicArn: !Ref SNSTopicArn
+
+  S3VerifyLambdaTask2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task2_verify.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        bucketName: !Ref verificationBucket
+        S3VerifyLambdaRole: !GetAtt s3verifylambdaroleC1WS.Arn
+
+  SNSLambdaTask3:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task3_sns.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        bucketName: !Ref verificationBucket
+        SNSLambdaRole: !GetAtt snslambdaroleC1WS.Arn
+        SNSTopicArn: !Ref SNSTopicArn
+
+  S3VerifyLambdaTask3:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task3_verify.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        bucketName: !Ref verificationBucket
+        S3VerifyLambdaRole: !GetAtt s3verifylambdaroleC1WS.Arn
+
+  ScoreLambdaTask4:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task4.template.yaml
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3Key: !Ref QSS3KeyPrefix
