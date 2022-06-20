@@ -21,7 +21,7 @@ def lambda_handler(event, context):
     region = parameter_region["/player/C1/c1Region"]
     URL_policy = "https://workload." + region + ".cloudone.trendmicro.com/api/policies"
     URL_sns = "https://workload." + region + ".cloudone.trendmicro.com/api/systemsettings"
-    key = parameter 
+    key = parameter["/player/C1/c1ApiKey"]
     APIkey = "Apikey " + key     
     policyname = "usethispolicy"
     #SNS keys
