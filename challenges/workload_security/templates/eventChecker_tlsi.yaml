@@ -53,7 +53,7 @@ Resources:
           print('Loading function')
           def lambda_handler(event, context):
               s3 = boto3.client("s3")
-              tls_answer =  //TLS’s answer
+              tls_answer =  "tls_correct"
               print(event)
               keyword = event[0]["Reason"]
               print(keyword)
