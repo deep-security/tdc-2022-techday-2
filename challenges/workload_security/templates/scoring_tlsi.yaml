@@ -40,27 +40,23 @@ Resources:
       FunctionName: C1WSScoreLambdaday1task1
       Code: 
         ZipFile: |
-          import json
+          import json, os
           import boto3
-          import os
-          target_bucket = os.environ['TARGETBucket']
-          s3 = boto3.resource('s3')
-          files = []
-          snskey = "day1TLSblock"
+          #Print when loading function
+          print('Loading function')
           def lambda_handler(event, context):
-              counter = 0
-              my_bucket = s3.Bucket(target_bucket)
-              for object in my_bucket.objects.all():
-                  files.append(object.key)
-                  
-              print(files)
-              for x in files:
-                  if snskey in x:
-                          return True
-                  else:
-                      continue
-              print("[Woops!]Try harder")
-              raise Exception("You haven't finished, because... sns test is not completed.")
+              s3 = boto3.client("s3")
+              correct_answer_TLS = "1000763 - URI Length And Depth Restriction"
+              print(event)
+              keyword = event[0]["Reason"]
+              print(keyword)
+              if keyword == correct_answer_tls:
+                  response = s3.put_object(
+                  Bucket = os.environ['BUCKET_NAME'],
+                  Key="container_correct",  
+                   )
+              else:
+                  print("do it again")
       Handler: index.lambda_handler
       Role:
         Fn::GetAtt:
