@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >
-  This is the Day 2 main stack. It will be created whenever Wrinkles is ran.
+  This is the post onboarding stack. It will be created whenever Wrinkles is ran.
 
 Parameters:
   # Overall
@@ -130,16 +130,26 @@ Parameters:
 
 Resources: 
 
-  SampleBucket:
-    Type: AWS::S3::Bucket
+# Builds AWS Connector Role for C1AWS
 
-#   SampleDay2:
+  C1AWSConnector:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/c1-onboarding-aws-connector.template.yaml'
+
+  c1csDeploy:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_service_catalog.template.yaml'
+
+# SamplePostOnboard:
 #     Type: AWS::CloudFormation::Stack
 #     Properties:
 #       Parameters:
 #         PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
 #         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
-#       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}example/templates/day2_main.template.yaml'
+#         QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}/example/'
+#       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}example/templates/post_onboarding.template.yaml'
 
 #   WSDay2:
 #     Type: AWS::CloudFormation::Stack
