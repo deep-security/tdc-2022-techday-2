@@ -43,8 +43,10 @@ Resources:
           import boto3, os
           import requests as rq
           import json as js
+          import cfnresponse
 
           print('Loading function')
+          status = cfnresponse.SUCCESS
 
           def get_ssm_params(*keys):
               result = {}
@@ -112,6 +114,8 @@ Resources:
                   print("SNS Configured")
               else:
                   print("SNS error")  
+              cfnresponse.send(event, context, status, {}, None)   
+              
       Handler: index.lambda_handler
       Role: !GetAtt SetSNSandPolicyconfigLambdaRole.Arn
       Runtime: python3.7
