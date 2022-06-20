@@ -5,10 +5,8 @@ Parameters:
   # Service Catalog related
   PlayerServiceCatalogPortfolio:
     Type: String
-    Default: port-weofpwtmtkgsk
   ServiceCatalogLaunchRoleArn:
     Type: String
-    Default: arn:aws:iam::333053306512:role/TD-main-ServiceCatalogPor-ServiceCatalogLaunchRole-1V4P4U0KL2D3O
   # Bucket path related
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
@@ -19,7 +17,6 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
     Type: String
-    Default: nemoseax
   QSS3KeyPrefix:
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
@@ -27,13 +24,10 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
     Type: String
-    Default: challenges/workload_security/
   VPCID:
     Type: AWS::EC2::VPC::Id
-    Default: vpc-00c409a8099fbba1d
   PublicSubnet1ID:
     Type: AWS::EC2::Subnet::Id
-    Default: subnet-04517d9bf73a4753e
     
 Mappings:
   #Amazon Linux 2 x86_64 
