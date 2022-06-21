@@ -94,6 +94,12 @@ Resources:
                 Resource:
                   - 'arn:aws:logs:*:*:*'
                 Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectTagging"
+                Effect: Allow
+                Resource: !Sub arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*
+                # Principal: '*'
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
