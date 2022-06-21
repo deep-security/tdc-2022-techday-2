@@ -39,7 +39,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        SourceBucket: QSS3BucketName
+        SourceBucket: !Ref QSS3BucketName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
       TimeoutInMinutes: 10
 
