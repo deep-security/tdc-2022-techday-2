@@ -80,5 +80,5 @@ Resources:
 
 Outputs:
   V1SOtaskBucket:
-    Value: !Sub 'https://s3.console.aws.amazon.com/s3/buckets/${CopyZipsStack.Outputs.DestinationBucket}?region=${AWS::Region}/${QSSQSS3KeyPrefix}/challenges/vision_one/scripts/Hunting_ngrok_Activity_C99.sh.pdf.zip'
+    Value: !Sub 'https://s3.console.aws.amazon.com/s3/buckets/${CopyZipsStack.Outputs.DestinationBucket}?region=${AWS::Region}/${QSSQSS3KeyPrefix}/challenges/vision_one/scripts/Hunting_ngrok_Activity_C99.sh.pdf'
     Description: URL of S3 bucket to be use in the challenge
