@@ -32,7 +32,7 @@ Resources:
     Properties:
       Parameters:
         SourceBucket: !Ref QSS3BucketName
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/vocopyzips.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/vocopyzips.template.yaml'
       TimeoutInMinutes: 10
 
   # Run a CopyZip custom resource for the given parameters
@@ -80,5 +80,5 @@ Resources:
 
 Outputs:
   S3BucketToScanURL:
-    Value: !Sub 'https://s3.console.aws.amazon.com/s3/buckets/${fsss3bucket.Outputs.FSSS3BucketObjLambdaName}?region=${AWS::Region}'
+    Value: !Sub 'https://s3.console.aws.amazon.com/s3/buckets/${CopyZipsStack.Outputs.DestinationBucket}?region=${AWS::Region}'
     Description: URL of S3 bucket to be use in the challenge
