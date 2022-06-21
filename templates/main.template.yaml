@@ -128,6 +128,13 @@ Resources:
         - PlayerStack
         - ServiceCatalogPortfolioStack
         - OnboardingStack #Added for throttling IAM role creation
+  deployC1csAttacks:
+    Type:
+    Condition: BuildEks
+    Properties:
+      TemplateUR: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_deploy_attack_container.template.yaml'
+    DependsOn:
+      - EKSStack
 
   c1wsAVCStack:
       Type: AWS::CloudFormation::Stack
