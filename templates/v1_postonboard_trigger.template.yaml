@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: Runs Post Onboard build.
+Description: Runs Post Onboard build for V1.
 
 Parameters:
   MainStackId:
@@ -50,8 +50,8 @@ Resources:
               for output in mainStack['Stacks'][0]['Outputs']:
                   outputs[output['OutputKey']] = output['OutputValue']
               createStackResponse = cfnClient.create_stack(
-                  StackName="PostOnboarding",
-                  TemplateURL=f"https://{parameters['QSS3BucketName']}.s3.amazonaws.com/{parameters['QSS3KeyPrefix']}templates/post_onboarding.template.yaml",
+                  StackName="V1PostOnboarding",
+                  TemplateURL=f"https://{parameters['QSS3BucketName']}.s3.amazonaws.com/{parameters['QSS3KeyPrefix']}templates/v1_post_onboarding.template.yaml",
                   Parameters=[
                       {
                           'ParameterKey': 'QSS3BucketName',
