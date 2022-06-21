@@ -73,12 +73,7 @@ Resources:
                     #response_data = { "RandomString": physicalResourceId }
                     cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeDeployC1CSStateMachineLambda")
               -
-                #lambda_function_role_arn: !Ref LambdaFunctionRole
                 lambda_function_role_arn: !Ref LambdaFunctionRoleServiceCatalog
-# lambdaFunctionInvokeDeployC1CSStateMachine
-  # Ref stateMachine arn instead of reading ssm para /player/C1CS/StateMachineArn
-  # https://gist.github.com/dasgoll/611220330a187c6efccbcb4180603794
-
 
 # Custom Resources
   InvokeDeployC1CSStateMachineLambda:
