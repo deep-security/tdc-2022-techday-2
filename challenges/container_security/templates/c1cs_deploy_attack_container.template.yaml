@@ -337,7 +337,7 @@ Resources:
 
 # Invoke State Machine
   invokeAttackContainerStateMatchine:
-    Type: Custom::DeployC1CSStateMachineLambda
+    Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_invoke_attack_container_state_matchine.template.yaml'
 
