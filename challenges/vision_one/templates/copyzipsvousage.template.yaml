@@ -32,7 +32,7 @@ Resources:
     Properties:
       Parameters:
         SourceBucket: !Ref QSS3BucketName
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/vocopyzips.template.yaml'
       TimeoutInMinutes: 10
 
   # Run a CopyZip custom resource for the given parameters
@@ -77,3 +77,8 @@ Resources:
             - - "arn:"
               - Ref: AWS::Partition
               - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+Outputs:
+  S3BucketToScanURL:
+    Value: !Sub 'https://s3.console.aws.amazon.com/s3/buckets/${fsss3bucket.Outputs.FSSS3BucketObjLambdaName}?region=${AWS::Region}'
+    Description: URL of S3 bucket to be use in the challenge
