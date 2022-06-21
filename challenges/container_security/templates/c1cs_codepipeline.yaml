@@ -92,6 +92,7 @@ Resources:
             Resource:
               - arn:aws:ecr:*:*:repository/c1cs-attack
           - Effect: Allow
+            Action:
               - ecr:GetAuthorizationToken
             Resource: "*"
           - Effect: Allow
