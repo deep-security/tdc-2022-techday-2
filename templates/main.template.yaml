@@ -129,10 +129,13 @@ Resources:
         - ServiceCatalogPortfolioStack
         - OnboardingStack #Added for throttling IAM role creation
   deployC1csAttacks:
-    Type:
+    Type: AWS::CloudFormation::Stack
     Condition: BuildEks
     Properties:
-      TemplateUR: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_deploy_attack_container.template.yaml'
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/container_security/'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_deploy_attack_container.template.yaml'
     DependsOn:
       - EKSStack
 
@@ -416,4 +419,4 @@ Outputs:
 
 # #Sample Challenge Outputs
 #   SampleChallengeBucket:
-#     Value: !GetAtt Sample.Outputs.CoolBucketName
+#   Value: !GetAtt Sample.Outputs.CoolBucketName
