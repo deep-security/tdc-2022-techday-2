@@ -311,7 +311,7 @@ Resources:
     Properties:
       ApiId: !Ref ImageUploaderApi
       RouteKey: 'GET /getimg/{id}'
-      AuthorizationType: AWS_IAM
+      AuthorizationType: NONE
       Target: !Join
         - /
         - - integrations
@@ -365,7 +365,7 @@ Resources:
     Properties:
       ApiId: !Ref ImageUploaderApi
       RouteKey: 'GET /upload/{name}'
-      AuthorizationType: AWS_IAM
+      AuthorizationType: NONE
       Target: !Join
         - /
         - - integrations
