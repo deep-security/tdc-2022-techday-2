@@ -137,11 +137,6 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/c1-onboarding-aws-connector.template.yaml'
 
-  V1Scoring:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/v1so_score.template.yaml'
-
   c1csDeploy:
     Type: AWS::CloudFormation::Stack
     Properties:

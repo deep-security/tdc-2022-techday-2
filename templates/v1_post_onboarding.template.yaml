@@ -132,8 +132,10 @@ Resources:
 
 # Builds AWS Connector Role for C1AWS
 
-  SampleResourceS3Bucket:
-    Type: AWS::S3::Bucket
+  V1Scoring:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/v1so_score.template.yaml'
 
   # C1AWSConnector:
   #   Type: AWS::CloudFormation::Stack
