@@ -118,7 +118,7 @@ Resources:
     Type: Custom::GetC1csAlbAttackHostname
     Properties:
       ServiceToken: !GetAtt GetLoadBalancerHostname.Arn
-      Timeout: 5
+      Timeout: 120
   
 Outputs:
  c1csAttackAlbHostname:
