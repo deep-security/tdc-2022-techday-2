@@ -102,7 +102,7 @@
           console.log(error);
         });
 
-      let url = `${apiEndpoint}geturl/${imageName}`;
+      let url = `${apiEndpoint}getimg/${imageName}`;
 
       let imgB64 = await axios.get(url)
         .then((response) => {
