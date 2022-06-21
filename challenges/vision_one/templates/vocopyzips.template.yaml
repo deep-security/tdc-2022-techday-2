@@ -1,0 +1,89 @@
+Parameters:
+  SourceBucket:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-,]*[0-9a-zA-Z])*$
+    ConstraintDescription: Destination bucket name can include numbers, lowercase
+      letters, uppercase letters, hyphens (-), and dots (.). It cannot start or end with a hyphen
+      (-) or dot (.).
+    Description: S3 bucket name for the Destination bucket. This string can include
+      numbers, lowercase letters, uppercase letters, hyphens (-), and dots (.). It cannot start
+      or end with a hyphen (-) or dot (.).
+    Type: String
+
+Resources:
+  DestinationBucket:
+    Type: AWS::S3::Bucket
+
+  CopyZipsFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Copies objects from a source S3 bucket to a destination
+      Handler: index.handler
+      Runtime: python3.7
+      Role: !GetAtt "CopyZipsRole.Arn"
+      Timeout: 900
+      Code:
+        ZipFile: |
+          import cfnresponse
+          import logging
+          import boto3
+          logger = logging.getLogger(__name__)
+          def copy_objects(source_bucket, dest_bucket, prefix, objects):
+              s3 = boto3.client('s3')
+              for o in objects:
+                  key = prefix + o
+                  copy_source = {'Bucket': source_bucket, 'Key': key}
+                  logging.info(f'copy_source: {copy_source}\ndest_bucket: {dest_bucket}\nkey: {key}')
+                  s3.copy_object(CopySource=copy_source, Bucket=dest_bucket, Key=key)
+          def delete_objects(bucket, prefix, objects):
+              s3 = boto3.client('s3')
+              objects = {'Objects': [{'Key': prefix + o} for o in objects]}
+              s3.delete_objects(Bucket=bucket, Delete=objects)
+          def handler(event, context):
+              logger.debug(event)
+              status = cfnresponse.SUCCESS
+              try:
+                  if event['RequestType'] == 'Delete':
+                      delete_objects(event['ResourceProperties']['DestBucket'], event['ResourceProperties']['Prefix'],
+                                    event['ResourceProperties']['Objects'])
+                  else:
+                      copy_objects(event['ResourceProperties']['SourceBucket'], event['ResourceProperties']['DestBucket'],
+                                  event['ResourceProperties']['Prefix'], event['ResourceProperties']['Objects'])
+              except Exception:
+                  logging.error('Unhandled exception', exc_info=True)
+                  status = cfnresponse.FAILED
+              finally:
+                  cfnresponse.send(event, context, status, {}, None)
+  CopyZipsRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: lambda-copier
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub 'arn:aws:s3:::${SourceBucket}/*'
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:DeleteObject
+                Resource: !Sub 'arn:aws:s3:::${DestinationBucket}/*'
+
+Outputs:
+  FunctionArn:
+    Description: CopyZipsFunction's arn for custom resource usage.
+    Value: !GetAtt CopyZipsFunction.Arn
+
+  DestinationBucket:
+    Description: CopyZipsFunction's destination bucket for lambda usage.
+    Value: !Ref DestinationBucket
