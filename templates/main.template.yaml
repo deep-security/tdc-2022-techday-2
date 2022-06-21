@@ -159,7 +159,7 @@ Resources:
       Properties:
         Parameters:
           QSS3BucketName: !Ref QSS3BucketName
-          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}"
+          QSS3KeyPrefix: !Ref QSS3KeyPrefix
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/main.template.yaml' 
   # SAMPLE: Load Challenges and Infra for Challenges
   # Sample:
@@ -419,5 +419,5 @@ Outputs:
 #     Value: !GetAtt Sample.Outputs.CoolBucketName
 
   V1SOtaskBucketURL:
-    Value: !GetAtt V1SOCopyZipsStack.Outputs.V1SOtaskBucket
+    Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
     Description: Bucket for V1 SO task information (player access required)
