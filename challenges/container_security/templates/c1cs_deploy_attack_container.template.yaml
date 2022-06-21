@@ -339,7 +339,7 @@ Resources:
   invokeAttackContainerStateMatchine:
     Type:
     Properties:
-      TemplateUR: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_invoke_attack_container_state_matchine.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_invoke_attack_container_state_matchine.template.yaml'
 
 # Wait 60 seconds for c1cs_invoke_attack_container_state_matchine.template.yaml to finish invoking: Deployc1csAttackContainerstateMachine
   deployC1csAttackWaitHandle:
