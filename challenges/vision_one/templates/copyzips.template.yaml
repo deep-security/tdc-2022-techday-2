@@ -4,7 +4,6 @@ Parameters:
     Default: challenges/vision_one/scripts/Hunting_ngrok_Activity_C99.sh.pdf
     Type: String
 
-  # Others
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
     ConstraintDescription: Quick Start bucket name can include numbers, lowercase
