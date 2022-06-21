@@ -17,7 +17,23 @@ Resources:
             - - "arn:"
               - Ref: AWS::Partition
               - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-
+      Path: /
+      Policies: 
+        - PolicyName: C1WSEppOfflineCheckScorePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: 
+                  - ssm:DescribeParameters
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParameterHistory
+                  - ssm:GetParametersByPath
+                Resource: 
+                - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1ApiKey
+                - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1Region
+                
   C1WSEppOfflineCheckScoreLambda:
     Type: AWS::Lambda::Function
     Properties:
