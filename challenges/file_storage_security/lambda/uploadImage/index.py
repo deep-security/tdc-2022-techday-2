@@ -1,37 +1,37 @@
 import boto3
-import base64
 import json
 import os
 import logging
 from botocore.config import Config
 
 # Get bucket name
-bucket = "techdaydev-fssstack-hanrcwm-imageuploaders3bucket-1q1hwobw2xeiv"
+bucket = "<BUCKET>"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-region = "us-east-1"
-s3_client = boto3.client(
-    "s3",
-    config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
-    region_name=region,
-)
 
 def handler(event, context):
 
     logger.info("event: {}".format(event))
 
     try:
-        key = event["pathParameters"]["id"]
+        region = "us-east-1"
+        key = event["pathParameters"]["name"]
         logger.info(key)
-        
-        s3_client.download_file(bucket, key, f'/tmp/{key}')
-        
-        file = open(f'/tmp/{key}', 'rb')
-        image_b64 = base64.b64encode(file.read()).decode('utf-8')
-        file.close()
-        logger.info(image_b64)
+        ttl = 120
+
+        s3_client = boto3.client(
+            "s3",
+            config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+            region_name=region,
+        )
+
+        signed_url = s3_client.generate_presigned_url(
+            "put_object",
+            Params={"Bucket": bucket, "Key": key},
+            ExpiresIn=ttl,
+        )
 
         return {
             "statusCode": 200,
@@ -40,7 +40,7 @@ def handler(event, context):
                 "Access-Control-Allow-Origin": "*",
                 "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
             },
-            "body": json.dumps(image_b64),
+            "body": json.dumps(signed_url),
         }
           
     except Exception as e:
