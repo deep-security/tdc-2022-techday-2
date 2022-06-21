@@ -352,7 +352,7 @@ Resources:
       Timeout: '60'
       Count: 1
   getC1csAttackAlb:
-    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Type: AWS::CloudFormation::Stack
     DependsOn: deployC1csAttackWaitCondition
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_get_alb_hostname.yaml'
