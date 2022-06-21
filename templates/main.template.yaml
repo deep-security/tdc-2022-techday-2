@@ -417,3 +417,7 @@ Outputs:
 # #Sample Challenge Outputs
 #   SampleChallengeBucket:
 #     Value: !GetAtt Sample.Outputs.CoolBucketName
+
+  V1SOtaskBucketURL:
+    Value: !GetAtt V1SOCopyZipsStack.Outputs.V1SOtaskBucket
+    Description: Bucket for V1 SO task information (player access required)
