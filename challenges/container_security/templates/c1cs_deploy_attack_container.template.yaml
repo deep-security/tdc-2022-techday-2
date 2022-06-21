@@ -316,6 +316,30 @@ Resources:
         }
       RoleArn: !GetAtt [ c1csAttackStateMachineRole, Arn ]
 
+# Invoke State Machine
+  invokeAttackContainerStateMatchine:
+    Type:
+    Properties:
+      TemplateUR: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_invoke_attack_container_state_matchine.template.yaml'
+
+
+  PrivateWaitHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  PrivateWaitCondition:
+    DependsOn: invokeAttackContainerStateMatchine
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref PrivateWaitHandle
+      Timeout: '360'
+      Count: 1
+
+  deployC1csAttacks:
+    Type:
+    DependsOn: PrivateWaitCondition
+    Properties:
+      TemplateUR: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_deploy_attack_container.template.yaml'
+
 Outputs:
   lambdaFunctionRunSSMCommandCreateC1csAttackContainer:
     Description: Run SSM Command to uninstall C1CS
