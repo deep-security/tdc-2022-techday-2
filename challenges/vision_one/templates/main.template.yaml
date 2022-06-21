@@ -34,3 +34,7 @@ Resources:
           QSS3BucketName: !Ref QSS3BucketName
           QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}"
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/copyzipsvousage.template.yaml.template.yaml' 
+
+Outputs:
+  V1SOtaskBucket:
+    Value: !GetAtt V1SOCopyZipsStack.Outputs.V1SOtaskBucket
