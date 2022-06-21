@@ -75,7 +75,7 @@ Resources:
               - s3:GetBucketAcl
               - s3:GetBucketLocation
             Resource:
-              - !Sub "arn:aws:s3:::${QSS3BucketName}/${QSS3KeyPrefix}/challenges/container_security/*"
+              - !Sub "arn:aws:s3:::${QSS3BucketName}/${QSS3KeyPrefix}challenges/container_security/*"
           - Effect: Allow
             Action:
               - codecommit:GitPull
