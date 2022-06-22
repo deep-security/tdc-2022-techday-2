@@ -177,6 +177,11 @@ Resources:
                 Action:
                   - "ssm:GetParameter"
                   - "ssm:PutParameter"
+              - Effect: Allow
+                Resource: 
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${V1PostOnboardFunctionName}
+                Action:
+                  - "lambda:InvokeFunction"
       Path: /
       Tags:
         - Key: BusinessCase
