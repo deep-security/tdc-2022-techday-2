@@ -55,7 +55,7 @@ Resources:
                   return ''.join(random.choice(chars) for _ in range(size))
 
                 def lambda_handler(event, context):
-                    parameter = clientssm.get_parameter(Name='/player/C1CS/StateMachineArn', WithDecryption=True)
+                    parameter = clientssm.get_parameter(Name='/player/C1CS/Deployc1csAttackContainerstateMachine', WithDecryption=True)
                     stateMachineArnParameter = parameter ['Parameter']['Value']
                     
                     # Add Random number to the end of the name of the statemachine
