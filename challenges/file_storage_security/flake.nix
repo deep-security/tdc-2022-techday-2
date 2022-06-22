@@ -26,6 +26,11 @@
             # cloudformation development
             python39Packages.cfn-lint
 
+            # kubernetes development
+            eksctl
+            kubectl
+            yq
+
             # shell development
             shellcheck
 
