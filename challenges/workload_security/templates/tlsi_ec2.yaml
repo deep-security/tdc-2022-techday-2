@@ -1,21 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
 Parameters:
-  QSS3BucketName:
-    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
-    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
-      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
-      (-).
-    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start bucket name
-      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
-      It cannot start or end with a hyphen (-).
-    Type: String
-  QSS3KeyPrefix:
-    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
-      uppercase letters, hyphens (-), and forward slash (/).
-    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start key prefix
-      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
-      forward slash (/).
-    Type: String
   AllowIP:
     Type: String
   VPC:
@@ -85,7 +69,7 @@ Resources:
             Ref: PublicSubnet1
       Tags:
       - Key: Name
-        Value: DSA
+        Value: TLS-DSA
       - Key: PlayerSsmAccess
         Value: "false"
       UserData:
