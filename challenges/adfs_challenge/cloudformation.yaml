@@ -34,12 +34,7 @@ Parameters:
     NoEcho: 'true'
     Type: String
     Description: SafeModeAdministrator Password - used when creating ADDS
-    Default: testing123!
-  Environment: 
-    Type: String
-    Description: Specific Environment - leveraged for AD group creation as well as OU location for server objects
-    AllowedValues:
-      - Dev    
+    Default: testing123!   
   AvailabilityZone:
     Type: String
     Description: Default AZ
@@ -47,20 +42,6 @@ Parameters:
       - us-east-1a
       - us-east-1b
     Default: us-east-1a
-  Owner:
-    Description: Resource Owner - defaults to Niv
-    Type: String
-    Default: Niv
-  Project:
-    Type: String
-    Description: Tag Value for Project
-    Default: Niv
-  Application:
-    Type: String
-    Description: Tag value for Application - leveraged for Active Directory Group creation.
-    Default: techday
-    AllowedValues: 
-      - techday
   KeyPair: 
     Type: String
     Description: KeyPair Name
@@ -78,7 +59,6 @@ Mappings:
       Dev: "subnet-02b06c3be07039439"
     us-east-1c:
       Dev: "subnet-09832fef26595c7bd"
-
 Resources:
   Profile:
     Type: 'AWS::IAM::InstanceProfile'
