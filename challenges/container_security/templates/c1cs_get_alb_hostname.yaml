@@ -51,7 +51,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
-      Timeout: 20
+      Timeout: 60
       Handler: index.lambda_handler
       Role: !GetAtt c1csGetAlbHostnameRole.Arn
       Code:
@@ -65,6 +65,7 @@ Resources:
               import cfnresponse
 
               def lambda_handler(event=None, context=None):
+                  time.sleep(1)
                   response_data = {}
                   physicalResourceId = None
                   if event["RequestType"] == "Create":
