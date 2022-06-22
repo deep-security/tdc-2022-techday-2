@@ -102,11 +102,10 @@ Resources:
           sed -i 's/SSLProtocol\s/all\s/-SSLv3/SSLProtocol\s/-all\s/+TLSv1.2/g' /etc/httpd/conf.d/ssl.conf
           sed -i 's/SSLCertificateKeyFile\s\/etc\/pki\/tls\/private\/localhost.key/#SSLCertificateKeyFile\s\/etc\/pki\/tls\/private\/localhost.key/g' /etc/httpd/conf.d/ssl.conf
           public_host_name=`curl http://169.254.169.254/latest/meta-data/public-hostname`
-          sed -i "6i DocumentRoot $public_host_name" /etc/httpd/conf.d/ssl.conf
           sed -i "7i ServerName $public_host_name" /etc/httpd/conf.d/ssl.conf
           sudo systemctl restart httpd
-          aws s3 cp s3://koshida-td-dsa/Agent-PGPCore-amzn2-20.0.0-3770.x86_64.rpm /tmp/Agent-PGPCore-amzn2-20.0.0-3770.x86_64.rpm
-          sudo rpm -i /tmp/Agent-PGPCore-amzn2-20.0.0-3770.x86_64.rpm
+          curl -OL https://workload.trend-us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/20.0.0.3770/agent.rpm
+          sudo rpm -i agent.rpm
 
   WSTLSIInstanceARN:
     Type: AWS::SSM::Parameter
@@ -114,3 +113,8 @@ Resources:
       Name: "WS_TLSI_INSTANCE"
       Value: !Ref DSA
       Type: String
+
+Outputs:
+  PublicDNS:
+    Description: Public DNSName of the newly created EC2 instance
+    Value: !GetAtt DSA.PublicDnsName
