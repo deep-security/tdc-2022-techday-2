@@ -129,12 +129,12 @@ Resources:
   ############################################ 
   ################# Scoring ################# 
   ############################################
-  #ScoreLambdaTLSI:
-  #  Type: AWS::CloudFormation::Stack
-  #  Properties:
-  #    TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_tlsi.yaml
-  #    Parameters:
-  #      TargetBucketName: !GetAtt Onbording.Outputs.S3BucketName
+  ScoreLambdaTLSI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_tlsi.yaml
+      Parameters:
+        TargetBucketName: !GetAtt Onbording.Outputs.S3BucketName
 
   ScoreLambdaContainer:
     Type: AWS::CloudFormation::Stack
