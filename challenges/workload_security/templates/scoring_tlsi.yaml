@@ -58,7 +58,7 @@ Resources:
               else:
                   print("do it again")
       Handler: index.lambda_handler
-      Role: !GetAtt scoreroleTLSIC1WS.Arn
+      Role: !GetAtt scoreTLSIC1WS.Arn
       Runtime: python3.7
       Timeout: 30
       Environment:
@@ -66,7 +66,7 @@ Resources:
           TARGETBucket:
             Ref: TargetBucketName
     DependsOn:
-      - scoreroleTLSIC1WS
+      - scoreTLSIC1WS
 Outputs:
   C1WSScoreLambdaTLSI:
     Value:
