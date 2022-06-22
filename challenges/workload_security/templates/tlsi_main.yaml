@@ -25,12 +25,6 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
   AMIID:
     Type: String
-  #BucketName:
-  #  Type: String
-  #  Description: bucket name
-  #BucketARN:
-  #  Type: String
-  #  Description: bucket arn
     
 Resources:
   ############################################ 
@@ -41,11 +35,16 @@ Resources:
     Properties:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tlsi_ec2.yaml
       Parameters:
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
         VPC: !Ref VPCID
         PublicSubnet1: !Ref PublicSubnet1ID
         AllowIP: 0.0.0.0/0
         AMIID: !Ref AMIID
-        #BucketName: !Ref BucketName
-        #BucketARN: !Ref BucketARN
+
+  attackerLambda:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tlsi_attacker.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        targetURL: !GetAtt Agent.Outputs.PublicDNS
