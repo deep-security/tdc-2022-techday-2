@@ -86,7 +86,7 @@ Resources:
                   - 'lambda:InvokeFunction'
                 Effect: Allow
                 Resource: 
-                  - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:*:TM-FSS-MANAGED"
+                  - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:*ScannerLambda*TM-FSS-MANAGED"
               - Action:
                   - 'logs:CreateLogGroup'
                   - 'logs:CreateLogStream'
@@ -98,8 +98,13 @@ Resources:
                   - "s3:GetObject"
                   - "s3:GetObjectTagging"
                 Effect: Allow
-                Resource: !Sub arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*
-                # Principal: '*'
+                Resource: 
+                  - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:*ScannerLambda*TM-FSS-MANAGED"
+                  - !Sub "arn:${AWS::Partition}:s3-object-lambda:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
+                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
+                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}"
+                  - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
+
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
