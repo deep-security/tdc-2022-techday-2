@@ -5,7 +5,7 @@ Parameters:
     Type: String
 
 Resources:
-  scoreroleday1task1C1WS:
+  scoreTLSIC1WS:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -22,7 +22,7 @@ Resources:
               - Ref: AWS::Partition
               - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies: 
-        - PolicyName: AllowReadScoreS3
+        - PolicyName: ScoreTLSI
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -34,10 +34,10 @@ Resources:
                     - - "arn:aws:s3:::"
                       - !Ref TargetBucketName
 
-  C1WSScoreLambdarday1task1:
+  C1WSScoreLambdaTLSI:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: C1WSScoreLambdaday1task1
+      FunctionName: C1WSScoreLambdaTLSI
       Code: 
         ZipFile: |
           import json, os
@@ -58,10 +58,7 @@ Resources:
               else:
                   print("do it again")
       Handler: index.lambda_handler
-      Role:
-        Fn::GetAtt:
-          - scoreroleday1task1C1WS
-          - Arn
+      Role: !GetAtt scoreroleTLSIC1WS.Arn
       Runtime: python3.7
       Timeout: 30
       Environment:
@@ -69,8 +66,8 @@ Resources:
           TARGETBucket:
             Ref: TargetBucketName
     DependsOn:
-      - scoreroleday1task1C1WS
+      - scoreroleTLSIC1WS
 Outputs:
-  C1WSScoreLambdarday1task1Name:
+  C1WSScoreLambdaTLSI:
     Value:
-      Ref: C1WSScoreLambdarday1task1
+      Ref: C1WSScoreLambdaTLSI
