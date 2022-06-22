@@ -62,7 +62,7 @@ Resources:
               print("[Woops!]Try harder")
               raise Exception("You haven't finished, because... sns test is not completed.")
       Handler: index.lambda_handler
-      Role: !GetAtt: scoreContainerC1WS.Arn
+      Role: !GetAtt scoreContainerC1WS.Arn
       Runtime: python3.7
       Timeout: 30
       Environment:
