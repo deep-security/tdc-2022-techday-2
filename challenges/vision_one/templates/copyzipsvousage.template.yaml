@@ -78,9 +78,9 @@ Resources:
   #           - - "arn:"
   #             - Ref: AWS::Partition
   #             - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-  
+
 #Provide URL for player access
 Outputs:
   V1SOtaskBucket:
-    Value: !Sub 'https://s3.console.aws.amazon.com/s3/buckets/${CopyZipsStack.Outputs.DestinationBucket}?region=${AWS::Region}/${QSS3KeyPrefix}/challenges/vision_one/scripts/Hunting_ngrok_Activity_C99.sh.pdf'
+    Value: !Sub 'https://${CopyZipsStack.Outputs.DestinationBucket}.s3.amazonaws.com/${QSS3KeyPrefix}/challenges/vision_one/scripts/Hunting_ngrok_Activity_C99.sh.pdf'
     Description: URL of S3 bucket to be use in the challenge
