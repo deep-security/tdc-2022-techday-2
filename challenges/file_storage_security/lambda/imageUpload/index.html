@@ -104,16 +104,15 @@
 
       let url = `${apiEndpoint}getimg/${imageName}`;
 
-      let imgB64 = await axios.get(url)
+
+
+      const img = document.createElement("img");
+      img.src = await axios.get(url)
         .then((response) => {
           // handle success
           console.log(response)
           return response.data
         });
-
-
-      const img = document.createElement("img");
-      img.src = `data:image/png;base64, ${imgB64}`;
       console.log(img);
 
       while (wrapperElement.firstChild) {
