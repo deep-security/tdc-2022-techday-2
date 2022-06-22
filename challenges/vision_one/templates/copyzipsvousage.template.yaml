@@ -1,7 +1,7 @@
 Parameters:
 
   V1SOtask1info:
-    Default: challenges/vision_one/scripts/Hunting_ngrok_Activity_C99.sh.pdf
+    Default: scripts/Hunting_ngrok_Activity_C99.sh.pdf
     Type: String
 
   QSS3BucketName:
