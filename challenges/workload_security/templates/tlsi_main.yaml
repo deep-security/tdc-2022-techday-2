@@ -45,6 +45,4 @@ Resources:
     Properties:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tlsi_attacker.yaml
       Parameters:
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3Key: !Ref QSS3KeyPrefix
         targetURL: !GetAtt Agent.Outputs.PublicDNS
