@@ -326,18 +326,18 @@ Resources:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_invoke_attack_container_state_matchine.template.yaml'
 
 # Wait 60 seconds for c1cs_invoke_attack_container_state_matchine.template.yaml to finish invoking: Deployc1csAttackContainerstateMachine
-  deployC1csAttackWaitHandle:
-    Type: AWS::CloudFormation::WaitConditionHandle
-  deployC1csAttackWaitCondition:
-    DependsOn: invokeAttackContainerStateMatchine
-    Type: AWS::CloudFormation::WaitCondition
-    Properties:
-      Handle: !Ref deployC1csAttackWaitHandle
-      Timeout: '60'
-      Count: 1
+#  deployC1csAttackWaitHandle:
+#    Type: AWS::CloudFormation::WaitConditionHandle
+#  deployC1csAttackWaitCondition:
+#    DependsOn: invokeAttackContainerStateMatchine
+#    Type: AWS::CloudFormation::WaitCondition
+#    Properties:
+#      Handle: !Ref deployC1csAttackWaitHandle
+#      Timeout: '60'
+#      Count: 1
   getC1csAttackAlb:
     Type: AWS::CloudFormation::Stack
-    DependsOn: deployC1csAttackWaitCondition
+    DependsOn: invokeAttackContainerStateMatchine
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_get_alb_hostname.yaml'
 
