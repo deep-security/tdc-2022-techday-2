@@ -2,11 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >
   Tech Day C1WS day1 main Template
 Parameters:
-  # Service Catalog related
-  PlayerServiceCatalogPortfolio:
-    Type: String
-  ServiceCatalogLaunchRoleArn:
-    Type: String
   # Bucket path related
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
@@ -129,31 +124,6 @@ Resources:
       Parameters:
         SnsTopicArn: !GetAtt SNStopic.Outputs.SNSTopicARN
         StateS3BucketcArn: !GetAtt S3Bucket.Arn
-      
-  ############################################ 
-  ############# Service Catalog ############## 
-  ############################################
-  NewServiceCatalogProduct:
-    Type: AWS::ServiceCatalog::CloudFormationProduct
-    Properties:
-      Description: Be sure to expand this before tryng Cloud One Workload Challenges
-      Name: C1WS Initial preparation
-      Owner: Trend Micro
-      ProvisioningArtifactParameters:
-        - Info:
-            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onbording_servicecatalog.yaml
-  NewServicePorfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref NewServiceCatalogProduct
-  NewServiceLaunchRoleConstraint:
-    DependsOn: NewServicePorfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref NewServiceCatalogProduct
-      RoleArn: !Ref ServiceCatalogLaunchRoleArn
 
 Outputs:
   S3BucketName:
