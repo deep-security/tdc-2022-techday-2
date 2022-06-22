@@ -1,6 +1,13 @@
-$domainName = "trendtechday.com"
-$password = "TrendMicro123!"
-$securePassword = ConvertTo-SecureString $password -AsPlainText -Force
+[CmdletBinding()]
+param (
+    [Parameter(Mandatory=$true)]
+    [string]$SafeModeAdministratorPassword,
+
+    [Parameter(Mandatory=$true)]
+    [string]$DomainDNSName
+)
+
+$securePassword = ConvertTo-SecureString $SafeModeAdministratorPassword -AsPlainText -Force
  
 Install-WindowsFeature -Name AD-Domain-Services -IncludeManagementTools
-Install-ADDSForest -DomainName $domainName -SafeModeAdministratorPassword $securepassword -Force
+Install-ADDSForest -DomainName $DomainDNSName -SafeModeAdministratorPassword $securepassword -Force

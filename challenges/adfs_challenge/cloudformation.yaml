@@ -1,11 +1,10 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: CloudFormation Template to deploy an EC2 instance and then install ADDS
-Parameters: 
+Parameters:
   Hostname: 
     Type: String
     Description: Hostname - maximum 15 characters
-    MaxLength: '15'
-    Default: techdayadfs    
+    MaxLength: '15'    
   OS: 
     Type: String
     Description: OS Version
@@ -16,6 +15,8 @@ Parameters:
     Type: String
     Description: Instance Size
     Default: t2.medium
+    AllowedValues:
+      - "t2.medium"
   DomainDNSName:
     Type: String
     Description: Fully Qualified Domain Name
@@ -24,19 +25,21 @@ Parameters:
     Type: String
     Description: NETBIOS Domain Name
     Default: techday
+  TechDayAdminUser:
+    Type: String
+    Description: RDP user for player
+    Default: tdadmin  
   SafeModeAdministratorPassword:
     MinLength: '8'
     NoEcho: 'true'
     Type: String
-    Description: SafeModeAdministrator Password (may use later, just a place holder)
-    Default: testing123
+    Description: SafeModeAdministrator Password - used when creating ADDS
+    Default: testing123!
   Environment: 
     Type: String
-    Description:  AD group creation & OU location for server objects
-    Default: Dev
+    Description: Specific Environment - leveraged for AD group creation as well as OU location for server objects
     AllowedValues:
-      - Dev 
-      - Test    
+      - Dev    
   AvailabilityZone:
     Type: String
     Description: Default AZ
@@ -44,13 +47,27 @@ Parameters:
       - us-east-1a
       - us-east-1b
     Default: us-east-1a
+  Owner:
+    Description: Resource Owner - defaults to Niv
+    Type: String
+    Default: Niv
+  Project:
+    Type: String
+    Description: Tag Value for Project
+    Default: Niv
+  Application:
+    Type: String
+    Description: Tag value for Application - leveraged for Active Directory Group creation.
+    Default: techday
+    AllowedValues: 
+      - techday
   KeyPair: 
     Type: String
     Description: KeyPair Name
     Default: w10p
   S3BucketName:
     Default: c1as-demo-bucket
-    Description: S3 bucket for PS scripts
+    Description: S3 bucket for boot artefacts
     Type: String
 Mappings:
   AMIMap:
@@ -61,30 +78,8 @@ Mappings:
       Dev: "subnet-02b06c3be07039439"
     us-east-1c:
       Dev: "subnet-09832fef26595c7bd"
+
 Resources:
-  ADFSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupName: adfs-techday-sg
-      GroupDescription: "Allow HTTP/HTTPS and SSH inbound and outbound traffic"
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 80
-          ToPort: 80
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 443
-          ToPort: 443
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
-          FromPort: 3389
-          ToPort: 3389
-          CidrIp: 0.0.0.0/0
-      VpcId: vpc-7bfdcf01
   Profile:
     Type: 'AWS::IAM::InstanceProfile'
     Properties:
@@ -124,7 +119,30 @@ Resources:
               Service:
                 - ec2.amazonaws.com
             Effect: Allow
-        Version: 2012-10-17    
+        Version: 2012-10-17
+  ADFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: adfs-techday-sg
+      GroupDescription: "Allow HTTP/HTTPS and SSH inbound and outbound traffic"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0
+      VpcId: vpc-7bfdcf01    
   Instance:
     Type: 'AWS::EC2::Instance'
     Metadata:
@@ -141,6 +159,12 @@ Resources:
             - configure-instance
         get-files:
           files:
+            'c:\s3-downloads\scripts\rdp_user.ps1':
+              source: https://c1as-demo-bucket.s3.amazonaws.com/rdp_user.ps1
+              authentication: S3AccessCreds
+            'c:\s3-downloads\scripts\ad_cert.ps1':
+              source: https://c1as-demo-bucket.s3.amazonaws.com/ad_cert.ps1
+              authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adds_install.ps1':
               source: https://c1as-demo-bucket.s3.amazonaws.com/adds_install.ps1
               authentication: S3AccessCreds
@@ -156,25 +180,40 @@ Resources:
             2-rename-computer:
               command: !Join
                 - ''
-                - - >-
-                  -  powershell.exe -Command "Rename-Computer -Restart -NewName "
-                  -  !Ref Hostname
+                - - powershell.exe -Command "Rename-Computer -Restart -NewName "
+                  - Ref: Hostname
               waitAfterCompletion: forever  
-            3-install-windows-components:
-              command: >-
-                powershell.exe -Command "c:\s3-downloads\scripts\adds_install.ps1"
-              waitAfterCompletion: '0'
-            4-install-ADForest:
+            3-install-rdp-user:
               command: !Join
                 - ''
-                - - >-
-                  - powershell.exe -Command "c:\s3-downloads\scripts\adfs_install.ps1 -DomainName '
-                  - !Ref DomainDNSName
-                  - ''' -DomainNetBiosName '''
-                  - !Ref DomainNetBiosName
-                  - ''' -SafeModeAdministratorPassword ''' 
-                  - !Ref SafeModeAdministratorPassword
-                  - '''"'
+                - - 'powershell.exe -Command c:\s3-downloads\scripts\rdp_user.ps1 -SafeModeAdministratorPassword '
+                  - Ref: SafeModeAdministratorPassword
+                  - " -TechDayAdminUser "
+                  - Ref: TechDayAdminUser
+              waitAfterCompletion: forever
+            4-install-ADcert:
+              command: !Join
+              - ''
+              - - 'powershell.exe -Command c:\s3-downloads\scripts\ad_cert.ps1 -SafeModeAdministratorPassword '
+                - Ref: SafeModeAdministratorPassword
+              waitAfterCompletion: forever
+            5-install-ADDS:
+              command: !Join
+              - ''
+              - - 'powershell.exe -Command c:\s3-downloads\scripts\adds_install.ps1 -SafeModeAdministratorPassword '
+                - Ref: SafeModeAdministratorPassword
+                - " -DomainDNSName "
+                - Ref: DomainDNSName
+              waitAfterCompletion: forever
+            6-install-ADFS:
+              command: !Join 
+              - ''
+              - - 'powershell.exe -Command c:\s3-downloads\scripts\adfs_install.ps1 -SafeModeAdministratorPassword '
+              - Ref: SafeModeAdministratorPassword
+              - " -DomainNetBiosName "
+              - Ref: DomainNetBiosName
+              - " -TechDayAdminUser "
+              - Ref: TechDayAdminUser
               waitAfterCompletion: forever
     Properties:
       DisableApiTermination: 'false'
@@ -205,6 +244,19 @@ Resources:
             - "Ref": "AWS::StackName"
             - "\n"           
             - "</powershell>\n"
+      Tags:
+        - Key: Environment
+          Value: !Sub "${Environment}"
+        - Key: Application
+          Value: !Sub "${Application}"
+        - Key: Name
+          Value: !Sub "${Hostname}"
+        - Key: Owner
+          Value: !Sub "${Owner}"
+        - Key: OS
+          Value: !Sub "${OS}"
+        - Key: Project
+          Value: !Sub "${Project}"
       NetworkInterfaces:
         - DeleteOnTermination: 'true'
           Description: Primary network interface
@@ -218,8 +270,8 @@ Outputs:
     Value: !Ref Instance
     Export:
       Name: !Sub '${Hostname}-${Environment}-InstanceId'
-  InstancePublicIP:
-    Description: 'InstancePublicIp'
-    Value: !GetAtt Instance.PublicIp
+  InstancePrivateIP:
+    Description: 'InstancePrivateIP'
+    Value: !GetAtt Instance.PrivateIp
     Export:
-      Name: !Sub '${Hostname}-${Environment}-InstancePublicIp'
+      Name: !Sub '${Hostname}-${Environment}-InstancePrivateIP'
