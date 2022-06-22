@@ -102,7 +102,35 @@ Resources:
                   - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
                   # REQUIRED FOR SCAN-ON-GET PRESIGNED URLs
                   - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
-
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+  GetPresignedPutLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: GetPresignedPutLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - 'arn:aws:logs:*:*:*'
+                Effect: Allow
+              - Action:
+                  - "s3:PutObject"
+                Effect: Allow
+                Resource: 
+                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -230,7 +258,7 @@ Resources:
                   logger.info("Exception: {}".format(e))
                   return {"statusCode": 404}
 
-      Role: !GetAtt LambdaRole.Arn
+      Role: !GetAtt GetPresignedPutLambdaRole.Arn
       Timeout: 30
   WebsiteLambda:
     Type: AWS::Lambda::Function
