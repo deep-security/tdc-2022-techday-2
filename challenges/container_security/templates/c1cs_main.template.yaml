@@ -39,6 +39,11 @@ Resources:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_deploy.template.yaml'
     DependsOn: c1csssmparameters
 
+  c1csCodeBuild:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_codepipeline.yaml'
+
   PlayerC1csServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
