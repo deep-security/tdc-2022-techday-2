@@ -24,7 +24,6 @@ Parameters:
       forward slash (/).
     Type: String
 
-
 Resources:
 
   V1SOCopyZipsStack:
