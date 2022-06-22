@@ -99,10 +99,8 @@ Resources:
                   - "s3:GetObjectTagging"
                 Effect: Allow
                 Resource: 
-                  - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:*ScannerLambda*TM-FSS-MANAGED"
-                  - !Sub "arn:${AWS::Partition}:s3-object-lambda:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
                   - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
-                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}"
+                  # REQUIRED FOR SCAN-ON-GET PRESIGNED URLs
                   - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
 
       AssumeRolePolicyDocument:
