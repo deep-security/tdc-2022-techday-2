@@ -184,7 +184,7 @@ Resources:
             - "echo 'apiVersion: v1' > /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo 'kind: Service' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo 'metadata:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
-            - "echo -e '  name: nginx-service-loadbalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  name: c1cs-attack-loadbalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo 'spec:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo -e '  type: LoadBalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo -e '  selector:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
