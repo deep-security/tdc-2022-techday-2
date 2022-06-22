@@ -5,13 +5,13 @@ import os
 import logging
 from botocore.config import Config
 
-# Get bucket name
-bucket = "techdaydev-fssstack-hanrcwm-imageuploaders3bucket-1q1hwobw2xeiv"
+# Values passed in from cfn
+bucket = "${ImageUploaderS3Bucket}"
+region = "${AWS::Region}"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-region = "us-east-1"
 s3_client = boto3.client(
     "s3",
     config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),

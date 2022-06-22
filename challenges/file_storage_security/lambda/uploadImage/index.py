@@ -4,8 +4,9 @@ import os
 import logging
 from botocore.config import Config
 
-# Get bucket name
-bucket = "<BUCKET>"
+# Values passed in from cfn
+bucket = "${ImageUploaderS3Bucket}"
+region = "${AWS::Region}"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -16,7 +17,6 @@ def handler(event, context):
     logger.info("event: {}".format(event))
 
     try:
-        region = "us-east-1"
         key = event["pathParameters"]["name"]
         logger.info(key)
         ttl = 120
