@@ -62,7 +62,6 @@ Resources:
   WSAgentActivateLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: WSAgentActivateLambda
       Code: 
         ZipFile: |
           import json, boto3, requests, os, logging
