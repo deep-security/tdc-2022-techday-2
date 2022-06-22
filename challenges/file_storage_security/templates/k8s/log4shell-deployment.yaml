@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: vulnerable-app
-        image: ghcr.io/christophetd/log4shell-vulnerable-app
+        image: public.ecr.aws/q4l4n3k8/log4shell-vulnerable-app:latest
         ports:
           - containerPort: 8080
         resources:

@@ -174,9 +174,9 @@ Resources:
           - |
             import boto3
 
+            client = boto3.client("ssm")
 
             def lambda_handler(event=None, context=None):
-                client = boto3.client("ssm")
                 client.send_command(
                     Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
                     DocumentName="AWS-RunShellScript",
@@ -199,7 +199,7 @@ Resources:
           import time
 
           ssm = boto3.client("ssm")
-          region = "us-east-1"
+          region = ${AWS::Region}
 
 
           def lambda_handler(event=None, context=None):
