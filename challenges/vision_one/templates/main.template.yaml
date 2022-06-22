@@ -15,7 +15,7 @@ Parameters:
     Type: String
     Default: tdc-2021-2
   QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
     Default: latest
