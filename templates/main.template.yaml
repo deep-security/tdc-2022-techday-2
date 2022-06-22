@@ -160,7 +160,7 @@ Resources:
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/vision_one/"
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/main.template.yaml' 
   # SAMPLE: Load Challenges and Infra for Challenges
   # Sample:
