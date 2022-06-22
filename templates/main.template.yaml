@@ -103,7 +103,7 @@ Parameters:
   BuildEks:
     Type: String
     AllowedValues: [true, false]
-    Default: false
+    Default: true
 
 Conditions:
   BuildEks:
@@ -152,6 +152,7 @@ Resources:
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
         PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
 
   V1SOStack:
@@ -200,7 +201,6 @@ Resources:
   #       KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
   #       VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
   #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/infra/dsm/templates/ds_clients.template.yaml'
-
 
   # ☠️ DON'T TOUCH - Or Webster might have a talk with you... or worse, Amanda! ☠️
   QSS3BucketNameSsm:
