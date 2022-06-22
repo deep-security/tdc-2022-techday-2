@@ -103,8 +103,6 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}templates/
         VPCID: !Ref VPCID
         PublicSubnet1ID: !Ref PublicSubnet1ID
-        #BucketName: nemoseax
-        #BucketARN: arn:aws:s3:::nemoseax
         AMIID:
           !FindInMap
           - AMZN
