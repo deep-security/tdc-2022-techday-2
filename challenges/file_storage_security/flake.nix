@@ -34,6 +34,12 @@
             # shell development
             shellcheck
 
+            # node development
+            nodejs-slim-14_x
+            (yarn.override {
+              nodejs = nodejs-slim-14_x;
+            })
+
             # python development
             python39
             black
