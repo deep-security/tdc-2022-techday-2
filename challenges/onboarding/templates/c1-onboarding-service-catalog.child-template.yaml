@@ -177,7 +177,7 @@ Resources:
                   - "ssm:PutParameter"
               - Effect: Allow
                 Resource: 
-                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${PostOnboardFunctionName}
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${C1PostOnboardFunctionName}
                 Action:
                   - "lambda:InvokeFunction"
       Path: /
