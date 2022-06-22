@@ -1,2 +1,3 @@
 .idea/
+**/.DS_Store
 challenges/file_storage_security/lambda/**/node_modules

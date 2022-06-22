@@ -1,0 +1,181 @@
+Parameters:
+  BucketName:
+    Type: String
+  ObjectNames:
+    Type: String
+    Default: obj1,obj2,obj3
+  ObjectPrefixes:
+    Type: String
+    Default: path1/,path2/,path3/
+  ExpectedValues:
+    Type: String
+    Default: value,abcxyz,anothervaluehere
+  FunctionName:
+    Type: String
+    Description: A name that is negotiated with Amanda.
+  Encoding:
+    Type: String
+    Description: File encoding
+    Default: utf-8
+Resources:
+  AVCCheckerServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  AVCCheckerServiceRoleDefaultPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - s3:GetObject*
+              - s3:GetBucket*
+              - s3:List*
+            Effect: Allow
+            Resource:
+              - Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - ":s3:::"
+                    - Ref: BucketName
+              - Fn::Join:
+                  - ""
+                  - - "arn:"
+                    - Ref: AWS::Partition
+                    - ":s3:::"
+                    - Ref: BucketName
+                    - /*
+        Version: "2012-10-17"
+      PolicyName: AVCCheckerServiceRoleDefaultPolicy
+      Roles:
+        - Ref: AVCCheckerServiceRole
+  AVCCheckerFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: "
+
+          const aws = require('aws-sdk');
+
+          const s3 = new aws.S3();
+
+
+          const bucket = process.env.BUCKET_NAME;
+
+          const answerObject = process.env.ANSWER_OBJECTS.split(\",\");
+
+          const answerPrefix = process.env.ANSWER_PREFIXES.split(\",\");
+
+          const expectedValues = process.env.EXPECTED_VALUES.split(\",\");
+
+          const encoding = process.env.ENCODING
+
+          let content = ''
+
+          exports.handler = async (event, context) => {
+
+          \ \
+
+          \  if (answerObject.length !== answerPrefix.length && answerObject.length !== expectedValues.length && expectedValues.length !== answerPrefix.length){
+
+          \    context.fail('You should have same number of prefixes and objects!');
+
+          \    return;
+
+          \  }
+
+          \  console.log(answerObject);
+
+          \  console.log(answerPrefix);
+
+          \  console.log(expectedValues);
+
+          \  try {
+
+          \    for (let i = 0; i < answerObject.length; i++){
+
+          \      const params = {
+
+          \        Bucket: bucket,
+
+          \        Key: answerPrefix[i] + answerObject[i]
+
+          \      };
+
+          \      const data = await s3.getObject(params).promise();
+
+          \      if( answerObject[i] == 'Client3.txt') {
+
+          \         content = data.Body.toString(\"utf8\");
+
+          \      }
+
+          \      else {
+
+          \         content = data.Body.toString(encoding);
+
+          \      }
+
+                   \      console.log(\"Found: \", content);
+
+          \      console.log(\"Expected: \", expectedValues[i]);
+
+          \      if (!content.includes(expectedValues[i])){
+
+          \        context.fail('Not there yet...');
+
+          \        return;
+
+          \      }
+
+          \    }
+
+          \    context.succeed('success!');
+
+          \  } catch (error) {
+
+          \    context.fail('File cannot be found!');
+
+          \  }
+
+          \  return;
+
+          };
+
+          \      "
+      Handler: index.handler
+      Role:
+        Fn::GetAtt:
+          - AVCCheckerServiceRole
+          - Arn
+      Runtime: nodejs16.x
+      Environment:
+        Variables:
+          BUCKET_NAME:
+            Ref: BucketName
+          ANSWER_OBJECTS:
+            Ref: ObjectNames
+          ANSWER_PREFIXES:
+            Ref: ObjectPrefixes
+          EXPECTED_VALUES:
+            Ref: ExpectedValues
+          ENCODING:
+            Ref: Encoding
+      FunctionName:
+        Ref: FunctionName
+    DependsOn:
+      - AVCCheckerServiceRoleDefaultPolicy
+      - AVCCheckerServiceRole
