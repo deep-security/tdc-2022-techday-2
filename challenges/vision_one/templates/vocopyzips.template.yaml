@@ -13,6 +13,26 @@ Resources:
   DestinationBucket:
     Type: AWS::S3::Bucket
 
+
+#Bucket Policy - needs ref/sub for bucket name
+
+  DestinationBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: !Ref DestinationBucket
+      PolicyDocument: Json
+        Version: 2012-10-17
+        Statement:
+          - Action:
+            - 's3:GetObject'
+            Effect: Allow
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref DestinationBucket
+                - /*
+            Principal: '*'
+
   CopyZipsFunction:
     Type: AWS::Lambda::Function
     Properties:
