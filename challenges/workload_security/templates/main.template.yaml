@@ -2,11 +2,6 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: >
   Tech Day C1WS day1 main Template
 Parameters:
-  # Service Catalog related
-  PlayerServiceCatalogPortfolio:
-    Type: String
-  ServiceCatalogLaunchRoleArn:
-    Type: String
   # Bucket path related
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
@@ -88,8 +83,6 @@ Resources:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}templates/
-        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
-        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn 
 
   ############################################ 
   ############## TLS Inspection ############## 
