@@ -186,7 +186,7 @@ Resources:
       ProvisioningArtifactParameters:
         - Info:
             LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/onbording_servicecatalog.yaml
-  C1WSewServicePorfolioProductAssociation:
+  C1WSNewServicePorfolioProductAssociation:
     Type: AWS::ServiceCatalog::PortfolioProductAssociation
     Properties:
       PortfolioId: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
