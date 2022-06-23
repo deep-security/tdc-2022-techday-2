@@ -67,50 +67,59 @@ Resources:
           import json, boto3, requests, os, logging
           import cfnresponse
           
-          status = cfnresponse.SUCCESS
           logger = logging.getLogger(__name__)
           logging.basicConfig(format='%(asctime)s %(message)s',level=logging.DEBUG)        
           
           def lambda_handler(event, context):
               logger.debug(event)
-              
-              tlsi_instance = os.environ['TLSI_INSTANCE']
-              container_instance = os.environ['CONTAINER_INSTANCE']
-              ec2_instance_id_list = [tlsi_instance, container_instance]
+              try:
+                  if event['RequestType'] == 'Create':              
+                      tlsi_instance = os.environ['TLSI_INSTANCE']
+                      container_instance = os.environ['CONTAINER_INSTANCE']
+                      ec2_instance_id_list = [tlsi_instance, container_instance]
           
-              ssmcliant = boto3.client('ssm')
-              api_key = ssmcliant.get_parameter(Name='/player/C1/c1ApiKey')["Parameter"]["Value"]
-              region = ssmcliant.get_parameter(Name='/player/C1/c1Region')["Parameter"]["Value"]
+                      ssmcliant = boto3.client('ssm')
+                      api_key = ssmcliant.get_parameter(Name='/player/C1/c1ApiKey')["Parameter"]["Value"]
+                      region = ssmcliant.get_parameter(Name='/player/C1/c1Region')["Parameter"]["Value"]
               
-              authorization = "ApiKey " + api_key
-              BaseURL = "https://workload." + region + ".cloudone.trendmicro.com/api/agentdeploymentscripts"
+                      authorization = "ApiKey " + api_key
+                      BaseURL = "https://workload." + region + ".cloudone.trendmicro.com/api/agentdeploymentscripts"
               
-              json_data = {
-                  "platform": "linux",
-                  "validateCertificateRequired": "true",
-                  "validateDigitalSignatureRequired": "false",
-                  "activationRequired": "true"
-              }
+                      json_data = {
+                          "platform": "linux",
+                          "validateCertificateRequired": "true",
+                          "validateDigitalSignatureRequired": "false",
+                          "activationRequired": "true"
+                      }
               
-              headers = {'Content-Type': 'application/json', 'api-version': 'v1', 'Authorization': authorization}
-              result = requests.post(BaseURL, headers=headers, data = json.dumps(json_data))
-              dict_result = json.loads(result.text)
-              script = dict_result['scriptBody']
+                      headers = {'Content-Type': 'application/json', 'api-version': 'v1', 'Authorization': authorization}
+                      result = requests.post(BaseURL, headers=headers, data = json.dumps(json_data))
+                      dict_result = json.loads(result.text)
+                      script = dict_result['scriptBody']
               
-              activate_comand = "/opt/ds_agent/dsa_control -a dsm://agents.workload.trend-us-1.cloudone.trendmicro.com:443/ "
-              tenantid_and_token = script.split()
-              tenantid = tenantid_and_token[-2]
-              token = tenantid_and_token[-1]
-              activationcode = activate_comand + tenantid + " " + token
+                      activate_comand = "/opt/ds_agent/dsa_control -a dsm://agents.workload.trend-us-1.cloudone.trendmicro.com:443/ "
+                      tenantid_and_token = script.split()
+                      tenantid = tenantid_and_token[-2]
+                      token = tenantid_and_token[-1]
+                      activationcode = activate_comand + tenantid + " " + token
               
-              response = ssmcliant.send_command(
-                  InstanceIds = ec2_instance_id_list,
-                  DocumentName = "AWS-RunShellScript",
-                  Parameters = {
-                      "commands": [activationcode]
-                  },
-              )
-              cfnresponse.send(event, context, status, {}, None)              
+                      response = ssmcliant.send_command(
+                          InstanceIds = ec2_instance_id_list,
+                          DocumentName = "AWS-RunShellScript",
+                          Parameters = {
+                              "commands": [activationcode]
+                          },
+                      )
+                  sendResponseCfn(event, context, cfnresponse.SUCCESS)
+
+              except Exception as e:
+                  print(e)
+                  sendResponseCfn(event, context, cfnresponse.FAILED)
+
+          def sendResponseCfn(event, context, responseStatus):
+              responseData = {}
+              responseData['Data'] = {}
+              cfnresponse.send(event, context, responseStatus, responseData, "CustomResourcePhysicalID")                         
       Handler: index.lambda_handler
       Role: !GetAtt WSAgentActivateLambdaRole.Arn
       Runtime: python3.7
