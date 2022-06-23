@@ -1,0 +1,41 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3Key:
+    AllowedPattern: ^[0-9a-zA-Z-/_]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Description: Update to where you hold the scripts. S3 bucket name for the Tech Day assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), and
+      forward slash (/).
+    Type: String
+  bucketName:
+    Type: String
+  S3VerifyLambdaRole:
+    Type: String
+
+Resources:
+
+  C1WSVerifyLambdatask2:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: C1WSVerifyLambdatask2
+      Code:
+        S3Bucket: !Ref QSS3BucketName
+        S3Key: !Sub ${QSS3Key}scripts/task2_verify.zip
+      Handler: task2_verify.lambda_handler
+      Environment:
+        Variables:
+          bucketName: !Ref bucketName
+      Role: !Ref S3VerifyLambdaRole
+      Runtime: python3.8
+      Timeout: 30
