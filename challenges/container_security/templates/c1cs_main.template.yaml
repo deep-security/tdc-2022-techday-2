@@ -104,5 +104,5 @@ Resources:
   ScoreLambdaDAY1Task3:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/score/c1cs-day1task3.yaml
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}score/c1cs-day1task3.yaml
     DependsOn: ContainerSecurityScoreLambdaRoleSsm
