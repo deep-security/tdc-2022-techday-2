@@ -75,7 +75,7 @@ Resources:
               - s3:GetBucketAcl
               - s3:GetBucketLocation
             Resource:
-              - !Sub "arn:aws:s3:::${QSS3BucketName}*"
+              - !Sub "arn:aws:s3:::${QSS3BucketName}/${QSS3KeyPrefix}*"
           - Effect: Allow
             Action:
               - codecommit:GitPull
@@ -199,7 +199,7 @@ Resources:
             Value: !Ref ServiceName
       Source:
         Type: S3
-        Location: !Sub ${QSS3BucketName}/${QSS3KeyPrefix}challenges/container_security/templates/dockerFiles.zip
+        Location: !Sub ${QSS3BucketName}/${QSS3KeyPrefix}templates/dockerFiles.zip
       TimeoutInMinutes: 10
     DependsOn: c1csECR
 

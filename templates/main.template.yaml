@@ -128,6 +128,17 @@ Resources:
         - PlayerStack
         - ServiceCatalogPortfolioStack
         - OnboardingStack #Added for throttling IAM role creation
+  deployC1csAttacks:
+    Type: AWS::CloudFormation::Stack
+    Condition: BuildEks
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/container_security/'
+        awsAccountID: !Ref "AWS::AccountId"
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_deploy_attack_container.template.yaml'
+    DependsOn:
+      - EKSStack
 
   c1wsAVCStack:
       Type: AWS::CloudFormation::Stack
@@ -176,6 +187,44 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/vision_one/"
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/main.template.yaml' 
+      
+  WorkloadSecurityStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/workload_security/
+        VPCID: !GetAtt VPCStack.Outputs.VPCID
+        PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/main.template.yaml'
+    DependsOn: 
+      - ServiceCatalogPortfolioStack
+      - VPCStack
+  ############################################ 
+  ########## C1WS Service Catalog ########### 
+  ############################################
+  C1WSNewServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: Be sure to expand this before tryng Cloud One Workload Security Challenges
+      Name: C1WS Initial preparation
+      Owner: Trend Micro
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/onbording_servicecatalog.yaml
+  C1WSNewServicePorfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+      ProductId: !Ref C1WSNewServiceCatalogProduct
+  C1WSNewServiceLaunchRoleConstraint:
+    DependsOn: C1WSNewServicePorfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+      ProductId: !Ref C1WSNewServiceCatalogProduct
+      RoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+ 
   # SAMPLE: Load Challenges and Infra for Challenges
   # Sample:
   #   Type: AWS::CloudFormation::Stack
@@ -439,3 +488,6 @@ Outputs:
   V1SOtaskBucketURL:
     Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
     Description: Bucket for V1 SO task information (player access required)
+  c1csAlbHostname:
+    Description: ALB Hostname that the player uses to access the c1cs attack container
+    Value: !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname  

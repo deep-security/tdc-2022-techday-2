@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Template for filter lambda
+Parameters:
+  SnsTopicArn:
+    Type: String
+  StateS3BucketcArn:
+    Type: String
+
+Resources:
+  eventCheckerTLSILambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+      Policies: 
+        - PolicyName: eventCheckerTLSIPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action:
+                  - s3:DeleteObject*
+                  - s3:PutObject*
+                  - s3:Abort*
+                Effect: Allow
+                Resource:
+                  - Ref: StateS3BucketcArn
+                  - Fn::Join:
+                      - ""
+                      - - Ref: StateS3BucketcArn
+                        - /*  
+
+  eventCheckerTLSILambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code:
+        ZipFile: |
+          import boto3
+          #Print when loading function
+          print('Loading function')
+          def lambda_handler(event, context):
+              s3 = boto3.client("s3")
+              tls_answer = "1000763 - URI Length And Depth Restriction"
+              print(event)
+              keyword = event["Records"][0]["Sns"]["Message"]
+              print(keyword)
+              key = json.loads(keyword)
+              for answer in key:
+                  print(answer)
+                  if answer["Reason"] == tls_answer:
+                      response = s3.put_object(
+                      Bucket = os.environ['BUCKET_NAME'],
+                      Key="tls_correct"
+                      )
+                  else:
+                      print("do it again")
+      Handler: index.lambda_handler
+      Role: !GetAtt eventCheckerTLSILambdaRole.Arn
+      Runtime: python3.7
+      Environment:
+        Variables:
+          BUCKET_NAME:
+            Fn::Select:
+              - 0
+              - Fn::Split:
+                  - /
+                  - Fn::Select:
+                      - 5
+                      - Fn::Split:
+                          - ":"
+                          - Ref: StateS3BucketcArn
+
+  eventCheckerTLSIAllowInvokeCheckForSecurityEventSnsTopic:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt eventCheckerTLSILambda.Arn
+      Principal: sns.amazonaws.com
+      SourceArn:
+        Ref: SnsTopicArn
+
+  eventCheckerTLSISnsTopic:
+    Type: AWS::SNS::Subscription
+    Properties:
+      Protocol: lambda
+      TopicArn:
+        Ref: SnsTopicArn
+      Endpoint: !GetAtt eventCheckerTLSILambda.Arn
+      Region:
+        Fn::Select:
+          - 3
+          - Fn::Split:
+              - ":"
+              - Ref: SnsTopicArn
