@@ -28,18 +28,27 @@ Parameters:
     ConstraintDescription:
       Quick Start key prefix can include numbers, lowercase letters, uppercase
       letters, hyphens (-), and forward slash (/).
-    # REFERENCE (tdc-2022-2): Value in this file ↓
-    Default: "latest/challenges/file_storage_security/"
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/
+    Default: ""
     Description:
       Update to where you hold the scripts. S3 bucket name for the Tech Day
       assets. Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slash (/).
     Type: String
 
+  PlayerPassword:
+    Description: The Player's password
+    Type: String
+
   # Service Catalog related
   PlayerServiceCatalogPortfolio:
     Type: String
   ServiceCatalogLaunchRoleArn:
+    Type: String
+
+  # Zips for CopyZips
+  WebsiteCodeZip:
+    Default: ""
     Type: String
 
 Resources:
@@ -52,3 +61,43 @@ Resources:
         PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_service_catalog_integration.template.yaml"
+
+  ImageUpload:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        CopyZipsS3Bucket: !GetAtt CopyZipsStack.Outputs.DestinationBucket
+        CopyZipsPrefix: !Sub "${QSS3KeyPrefix}lambda/"
+        WebsiteCodeZip: "imageUpload/imageUpload.zip"
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/imageUpload.template.yaml"
+      
+  AttackerMachine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+          ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
+          PlayerPassword: !Ref PlayerPassword
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/attackerMachine.template.yaml"
+
+  # CopyZips
+  CopyZipsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        SourceBucket: !Ref QSS3BucketName
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
+      TimeoutInMinutes: 10
+  CopyZips:
+    Type: Custom::CopyZips
+    Properties:
+      ServiceToken: !GetAtt 'CopyZipsStack.Outputs.FunctionArn'
+      DestBucket: !GetAtt 'CopyZipsStack.Outputs.DestinationBucket'
+      SourceBucket: !Ref QSS3BucketName
+      Prefix: !Sub "${QSS3KeyPrefix}lambda/"
+      Objects:
+      - "imageUpload/imageUpload.zip"
+

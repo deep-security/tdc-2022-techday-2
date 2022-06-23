@@ -103,7 +103,7 @@ Parameters:
   BuildEks:
     Type: String
     AllowedValues: [true, false]
-    Default: false
+    Default: true
 
 Conditions:
   BuildEks:
@@ -160,15 +160,22 @@ Resources:
         
   FSSStack:
     Type: AWS::CloudFormation::Stack
-    Condition: BuildEks
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
         PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
 
+  V1SOStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/vision_one/"
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/main.template.yaml' 
   # SAMPLE: Load Challenges and Infra for Challenges
   # Sample:
   #   Type: AWS::CloudFormation::Stack
@@ -208,7 +215,6 @@ Resources:
   #       KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
   #       VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
   #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/infra/dsm/templates/ds_clients.template.yaml'
-
 
   # ☠️ DON'T TOUCH - Or Webster might have a talk with you... or worse, Amanda! ☠️
   QSS3BucketNameSsm:
@@ -304,18 +310,32 @@ Resources:
       - VPCStack
       - KeyPairStack
 
-  PostOnboardTrigger:
+  C1PostOnboardTrigger:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         MainStackId: !Ref AWS::StackId
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/postonboard_trigger.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1_postonboard_trigger.template.yaml'
 
-  PostOnboardFunctionNameSsmParameter:
+  C1PostOnboardFunctionNameSsmParameter:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: "PostOnboardFunctionName"
-      Value: !GetAtt PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
+      Name: "C1PostOnboardFunctionName"
+      Value: !GetAtt C1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
+      Type: String
+  
+  V1PostOnboardTrigger:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        MainStackId: !Ref AWS::StackId
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/v1_postonboard_trigger.template.yaml'
+
+  V1PostOnboardFunctionNameSsmParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "V1PostOnboardFunctionName"
+      Value: !GetAtt V1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
       Type: String
 
   LockoutInfraStack:
@@ -415,3 +435,7 @@ Outputs:
 # #Sample Challenge Outputs
 #   SampleChallengeBucket:
 #     Value: !GetAtt Sample.Outputs.CoolBucketName
+
+  V1SOtaskBucketURL:
+    Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
+    Description: Bucket for V1 SO task information (player access required)
