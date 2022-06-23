@@ -41,21 +41,20 @@ Resources:
         ZipFile: |
           import json, os
           import boto3
-          #Print when loading function
-          print('Loading function')
+          import os
+          target_bucket = os.environ['TARGETBucket']
+          s3 = boto3.resource('s3')
+          answer = "tls_correct"
           def lambda_handler(event, context):
-              s3 = boto3.client("s3")
-              correct_answer_TLS = "1000763 - URI Length And Depth Restriction"
-              print(event)
-              keyword = event[0]["Reason"]
-              print(keyword)
-              if keyword == correct_answer_tls:
-                  response = s3.put_object(
-                  Bucket = os.environ['TARGETBucket'],
-                  Key="tls_correct",  
-                   )
-              else:
-                  print("do it again")
+              my_bucket = s3.Bucket(target_bucket)
+              files = []
+              for object in my_bucket.objects.all():
+                  files.append(object.key)
+              print(files)
+              for x in files:
+                  if answer in x:
+                      return("True")
+              return("False")
       Handler: index.lambda_handler
       Role: !GetAtt scoreTLSIC1WS.Arn
       Runtime: python3.7
