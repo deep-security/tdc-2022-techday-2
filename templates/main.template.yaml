@@ -431,3 +431,6 @@ Outputs:
   V1SOtaskBucketURL:
     Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
     Description: Bucket for V1 SO task information (player access required)
+  c1csAlbHostname:
+    Description: ALB Hostname that the player uses to access the c1cs attack container
+    Value: !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname  
