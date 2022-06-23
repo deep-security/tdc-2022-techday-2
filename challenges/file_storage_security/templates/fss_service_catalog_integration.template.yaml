@@ -1,0 +1,102 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Adds FSS CloudFormation templates to the Player's Service Catalog.
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase letters, uppercase
+      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Default: none
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start bucket name can include numbers, lowercase letters,
+      uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), and forward slash (/).
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates/
+    Default: ""
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Type: String
+  # Service Catalog related
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+
+Resources:
+  # FSS AIO Stack
+  FSSAllInOneServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description:
+        This template create the All in One FSS stack deployment for the service
+        catalog.
+      Name: File Storage Security All in One Template
+      Owner: Trend Micro
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: "https://raw.githubusercontent.com/trendmicro/cloudone-filestorage-deployment-templates/master/aws/FSS-All-In-One.template"
+  FSSAllInOneProductID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "FSSAllInOneProductID"
+      Value: !Ref FSSAllInOneServiceCatalogProduct
+      Type: String
+  FSSAllInOneProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref FSSAllInOneServiceCatalogProduct
+  FSSAllInOneLaunchRoleConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    DependsOn: FSSAllInOneProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref FSSAllInOneServiceCatalogProduct
+      RoleArn: !Ref ServiceCatalogLaunchRoleArn
+
+  # AttackerEnv
+  AttackerEnvServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: "Hacker environment for FSS Challenge"
+      Name: "FSS Environment"
+      Owner: "Trend Micro"
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}invokeAttackerStateMachine.template.yaml"
+  AttackerEnvProductID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "AttackerEnvProductID"
+      Value: !Ref AttackerEnvServiceCatalogProduct
+      Type: String
+  AttackerEnvProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref AttackerEnvServiceCatalogProduct
+  AttackerEnvLaunchRoleConstraint:
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    DependsOn: AttackerEnvProductAssociation
+    Properties:
+      PortfolioId: !Ref PlayerServiceCatalogPortfolio
+      ProductId: !Ref AttackerEnvServiceCatalogProduct
+      RoleArn: !Ref ServiceCatalogLaunchRoleArn

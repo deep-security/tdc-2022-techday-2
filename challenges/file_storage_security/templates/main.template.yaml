@@ -1,0 +1,103 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description:
+  tdc-2022-techday-2 Cloud One File Storage Security and Conformity main
+  template
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase letters, uppercase
+      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Default: none
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start bucket name can include numbers, lowercase letters,
+      uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), and forward slash (/).
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/
+    Default: ""
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Type: String
+
+  PlayerPassword:
+    Description: The Player's password
+    Type: String
+
+  # Service Catalog related
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+
+  # Zips for CopyZips
+  WebsiteCodeZip:
+    Default: ""
+    Type: String
+
+Resources:
+  FssServiceCatalogIntegration:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_service_catalog_integration.template.yaml"
+
+  ImageUpload:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        CopyZipsS3Bucket: !GetAtt CopyZipsStack.Outputs.DestinationBucket
+        CopyZipsPrefix: !Sub "${QSS3KeyPrefix}lambda/"
+        WebsiteCodeZip: "imageUpload/imageUpload.zip"
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/imageUpload.template.yaml"
+      
+  AttackerMachine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+          ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
+          PlayerPassword: !Ref PlayerPassword
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/attackerMachine.template.yaml"
+
+  # CopyZips
+  CopyZipsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        SourceBucket: !Ref QSS3BucketName
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
+      TimeoutInMinutes: 10
+  CopyZips:
+    Type: Custom::CopyZips
+    Properties:
+      ServiceToken: !GetAtt 'CopyZipsStack.Outputs.FunctionArn'
+      DestBucket: !GetAtt 'CopyZipsStack.Outputs.DestinationBucket'
+      SourceBucket: !Ref QSS3BucketName
+      Prefix: !Sub "${QSS3KeyPrefix}lambda/"
+      Objects:
+      - "imageUpload/imageUpload.zip"
+

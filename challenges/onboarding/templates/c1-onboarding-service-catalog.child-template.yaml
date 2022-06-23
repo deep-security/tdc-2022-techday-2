@@ -76,6 +76,10 @@ Parameters:
     Default: QSS3KeyPrefix
     AllowedValues: ["QSS3KeyPrefix"]
     Description: DO NOT CHANGE THIS VALUE
+  QSS3BucketNameSSMValue:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3BucketName
+    Description: DO NOT CHANGE THIS VALUE
   QSS3KeyPrefixSSMValue:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: QSS3KeyPrefix
@@ -111,6 +115,10 @@ Parameters:
   LambdaFunctionTimeout:
     Type: Number
     Default: 900
+  C1PostOnboardFunctionName:
+    Default: "C1PostOnboardFunctionName"
+    Description: DO NOT MODIFY. Expected value of the SSM Parameter Value for the Post Onboard function name.
+    Type: 'AWS::SSM::Parameter::Value<String>'
 
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
@@ -167,6 +175,11 @@ Resources:
                 Action:
                   - "ssm:GetParameter"
                   - "ssm:PutParameter"
+              - Effect: Allow
+                Resource: 
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${C1PostOnboardFunctionName}
+                Action:
+                  - "lambda:InvokeFunction"
       Path: /
       Tags:
         - Key: BusinessCase
@@ -399,6 +412,13 @@ Resources:
 
                                   # Stores onboarding success as an SSM Parameter "c1Onboarding" for Mission Control verification.
                                   setC1SsmParameter(ssmClient, "c1OnboardingStatus", "Success")
+
+                                  # Since task was successful, we will kick of the Post Onboarding(AKA Wrinkler) lambda
+                                  lambdaClient = boto3.client('lambda')
+                                  lambdaClient.invoke(
+                                    FunctionName=str(os.environ.get("C1_POST_ONBOARD_LAMBDA_NAME")),
+                                    InvocationType="Event"
+                                  )
               except Exception as e:
                   logger.info("Exception: {}".format(e))
                   status = cfnresponse.FAILED
@@ -417,7 +437,8 @@ Resources:
           awsRegion: !Ref AWS::Region
           c1ApiKey: !Ref c1ApiKey
           c1UsersList: !Ref c1UsersList
-          c1LicenseValidationDayCount: 3         
+          c1LicenseValidationDayCount: 3      
+          C1_POST_ONBOARD_LAMBDA_NAME: !Ref C1PostOnboardFunctionName
       Role: !GetAtt TechDayC1onboardingLambdaRole.Arn
   
   # Task 1 - Creates an AWS Lambda function with the Cloud One Onboarding verification module.
@@ -490,8 +511,6 @@ Resources:
     Properties:
       ServiceToken: !GetAtt C1OnboardingLambdaFunction.Arn
 
-  # Service Catalog associations
-
   # ExampleChallengePortfolioProductAssociation:
   #   Type: AWS::ServiceCatalog::PortfolioProductAssociation
   #   Properties:
@@ -505,7 +524,20 @@ Resources:
   #     PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
   #     ProductId: '{{resolve:ssm:ExampleProductID:1}}'
   #     RoleArn: '{{resolve:ssm:RoleArn:1}}'
-  
+  C1WSAVCDeployPortfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:C1WSAVCProductID:1}}'
+
+  C1WSAVCDeployLaunchRoleConstraint:
+    DependsOn: C1WSAVCDeployPortfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
+      ProductId: '{{resolve:ssm:C1WSAVCProductID:1}}'
+      RoleArn: '{{resolve:ssm:RoleArn:1}}'  
+
 Outputs:
   # Returns the AWS Lambda Function ARN of the Cloud One Onboarding module.
   C1OnboardingLambdaFunctionArn:

@@ -36,6 +36,19 @@ Resources:
       PrincipalARN: !Ref GroupAssociationPrincipalArn
       PrincipalType: "IAM"
 
+  PortfolioId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Value: !Ref PlayerServiceCatalogPortfolio
+      Type: String
+      Name: "PortfolioId"
+  RoleArn:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Value: !GetAtt ServiceCatalogLaunchRole.Arn
+      Type: String
+      Name: "RoleArn"
+
 Outputs:
   PlayerServiceCatalogPortfolio:
     Value: !Ref PlayerServiceCatalogPortfolio
