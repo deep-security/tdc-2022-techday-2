@@ -45,76 +45,74 @@ Resources:
           import cfnresponse
 
           print('Loading function')
-          status = cfnresponse.SUCCESS
-
-          def get_ssm_params(*keys):
-              result = {}
-              ssm = boto3.client('ssm')
-              response = ssm.get_parameters(
-                  Names=keys,
-                  WithDecryption=True,
-              )
-              for p in response['Parameters']:
-                  result[p['Name']] = p['Value']
-              return result
     
           def lambda_handler(event, context):
-              parameter = get_ssm_params("/player/C1/c1ApiKey")
-              parameter_region = get_ssm_params("/player/C1/c1Region")
-              region = parameter_region["/player/C1/c1Region"]
-              URL_policy = "https://workload." + region + ".cloudone.trendmicro.com/api/policies"
-              URL_sns = "https://workload." + region + ".cloudone.trendmicro.com/api/systemsettings"
-              key = parameter["/player/C1/c1ApiKey"]
-              APIkey = "Apikey " + key     
-              policyname = "usethispolicy"
-              #SNS keys
-              SNS_access_key = os.environ['ACCESS_KEY']
-              SNS_secret_key = os.environ['SECRET_KEY']
-              SNS_Topic_ARN = os.environ['TOPICARN']
+              try:
+                  if event['RequestType'] == 'Create':
+                      ssmcliant = boto3.client('ssm')
+                      api_key = ssmcliant.get_parameter(Name='/player/C1/c1ApiKey')["Parameter"]["Value"]
+                      region = ssmcliant.get_parameter(Name='/player/C1/c1Region')["Parameter"]["Value"]
+                      URL_policy = "https://workload." + region + ".cloudone.trendmicro.com/api/policies"
+                      URL_sns = "https://workload." + region + ".cloudone.trendmicro.com/api/systemsettings"
+                      APIkey = "Apikey " + api_key     
+                      policyname = "usethispolicy"
+                      #SNS keys
+                      SNS_access_key = os.environ['ACCESS_KEY']
+                      SNS_secret_key = os.environ['SECRET_KEY']
+                      SNS_Topic_ARN = os.environ['TOPICARN']
 
-              header = {
-                  "Content-Type": "application/json",
-                  "Authorization" : APIkey,
-                  "api-version": "v1"
-              }    
+                      header = {
+                          "Content-Type": "application/json",
+                          "Authorization" : APIkey,
+                          "api-version": "v1"
+                      }    
 
-              json_data_policy = {
-                  "parentID": 0,
-                  "name": policyname,   
-                  "policySettings": { 
-                      "intrusionPreventionSettingVirtualAndContainerNetworkScanEnabled": {"value": "false"}, 
-                      "intrusionPreventionSettingInspectTlsTrafficEnabled": {"value": "false"}
-                  }
-              }
+                      json_data_policy = {
+                          "parentID": 0,
+                          "name": policyname,   
+                          "policySettings": { 
+                              "intrusionPreventionSettingVirtualAndContainerNetworkScanEnabled": {"value": "false"}, 
+                              "intrusionPreventionSettingInspectTlsTrafficEnabled": {"value": "false"}
+                          }
+                      }
     
-              json_data_sns = {
-                  "platformSettingEventForwardingSnsEnabled": {"value": "true"},
-                  'platformSettingEventForwardingSnsAdvancedConfigEnabled': {'value': 'true'},
-                  'platformSettingEventForwardingSnsConfigJson': {'value': '{\r\n  "Version": "2014-09-24",\r\n  "Statement": [\r\n    {\r\n      "Topic": "' + SNS_Topic_ARN + '",\r\n      "Condition": {\r\n        "StringEquals" : {\r\n          "EventType" : ["SystemEvent", "AntiMalwareEvent", "WebReputationEvent", "DeviceControlEvent", "AppControlEvent", "IntegrityEvent", "LogInspectionEvent", "PacketLog", "PayloadLog"]\r\n        }\r\n      }\r\n    }\r\n  ]\r\n}'},
-                  "platformSettingEventForwardingSnsTopicArn": {"value": SNS_Topic_ARN},
-                  "platformSettingEventForwardingSnsSecretKey": {"value": SNS_secret_key},
-                  "platformSettingEventForwardingSnsAccessKey": {"value": SNS_access_key }
-              }
+                      json_data_sns = {
+                          "platformSettingEventForwardingSnsEnabled": {"value": "true"},
+                          'platformSettingEventForwardingSnsAdvancedConfigEnabled': {'value': 'true'},
+                          'platformSettingEventForwardingSnsConfigJson': {'value': '{\r\n  "Version": "2014-09-24",\r\n  "Statement": [\r\n    {\r\n      "Topic": "' + SNS_Topic_ARN + '",\r\n      "Condition": {\r\n        "StringEquals" : {\r\n          "EventType" : ["SystemEvent", "AntiMalwareEvent", "WebReputationEvent", "DeviceControlEvent", "AppControlEvent", "IntegrityEvent", "LogInspectionEvent", "PacketLog", "PayloadLog"]\r\n        }\r\n      }\r\n    }\r\n  ]\r\n}'},
+                          "platformSettingEventForwardingSnsTopicArn": {"value": SNS_Topic_ARN},
+                          "platformSettingEventForwardingSnsSecretKey": {"value": SNS_secret_key},
+                          "platformSettingEventForwardingSnsAccessKey": {"value": SNS_access_key }
+                      }
     
-              response = rq.post(URL_policy,headers=header, data=js.dumps(json_data_policy))
+                      response = rq.post(URL_policy,headers=header, data=js.dumps(json_data_policy))
     
-              print(response.status_code) 
-              status_code = response.status_code
-              if status_code == 200:
-                  print("Policy Configured")
-              else:
-                  print("Policy error")
+                      print(response.status_code) 
+                      status_code = response.status_code
+                      if status_code == 200:
+                          print("Policy Configured")
+                      else:
+                          print("Policy error")
     
-              response = rq.post(URL_sns,headers=header, data=js.dumps(json_data_sns))
+                      response = rq.post(URL_sns,headers=header, data=js.dumps(json_data_sns))
     
-              print(response.status_code) 
-              status_code = response.status_code
-              if status_code == 200:
-                  print("SNS Configured")
-              else:
-                  print("SNS error")  
-              cfnresponse.send(event, context, status, {}, None)   
-              
+                      print(response.status_code) 
+                      status_code = response.status_code
+                      if status_code == 200:
+                          print("SNS Configured")
+                      else:
+                          print("SNS error")  
+                  
+                  sendResponseCfn(event, context, cfnresponse.SUCCESS)
+
+              except Exception as e:
+                  print(e)
+                  sendResponseCfn(event, context, cfnresponse.FAILED)
+
+          def sendResponseCfn(event, context, responseStatus):
+              responseData = {}
+              responseData['Data'] = {}
+              cfnresponse.send(event, context, responseStatus, responseData, "CustomResourcePhysicalID")                       
       Handler: index.lambda_handler
       Role: !GetAtt SetSNSandPolicyconfigLambdaRole.Arn
       Runtime: python3.7
