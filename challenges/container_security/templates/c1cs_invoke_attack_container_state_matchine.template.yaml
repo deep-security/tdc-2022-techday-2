@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+
+# Iam Role
+
+  Deployc1csAttackContainerstateMachineLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: LambdaFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+              - states:StartExecution
+            Resource:
+              - arn:aws:states:*:*:stateMachine:Deployc1csAttackContainerstateMachine
+              - arn:aws:ssm:*:*:parameter/player/C1CS/Deployc1csAttackContainerstateMachine
+
+# Lambda Functions
+  lambdaFunctionInvokeDeployc1csAttackContainerstateMachine:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 20
+        Handler: index.lambda_handler
+        Role: !GetAtt Deployc1csAttackContainerstateMachineLambdaRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import boto3
+                import json
+                import random
+                import string
+                import cfnresponse
+
+                client = boto3.client('stepfunctions')
+                clientssm = boto3.client('ssm')
+
+                def id_generator(size, chars=string.ascii_lowercase + string.digits):
+                  return ''.join(random.choice(chars) for _ in range(size))
+
+                def lambda_handler(event, context):
+                    parameter = clientssm.get_parameter(Name='/player/C1CS/Deployc1csAttackContainerstateMachine', WithDecryption=True)
+                    stateMachineArnParameter = parameter ['Parameter']['Value']
+                    
+                    # Add Random number to the end of the name of the statemachine
+                    randomString = ("%s.%s" % (id_generator(6), id_generator(16)))
+                    stateMachineName = 'DeployC1CSStateMachine-' + randomString
+                    
+                    
+                    response = client.start_execution(
+                      stateMachineArn=stateMachineArnParameter,
+                      name=stateMachineName,
+                    )
+                    
+                    #physicalResourceId = random_string(string_length) + "a^1B" 
+                    #response_data = { "RandomString": physicalResourceId }
+                    cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeDeployC1CSStateMachineLambda")
+              -
+                lambda_function_role_arn: !Ref Deployc1csAttackContainerstateMachineLambdaRole
+
+# Custom Resources
+  InvokeDeployc1csAttackContainerstateMachine:
+    Type: Custom::Deployc1csAttackContainerstateMachine
+    Properties:
+      ServiceToken: !GetAtt lambdaFunctionInvokeDeployc1csAttackContainerstateMachine.Arn
+      Timeout: 120
