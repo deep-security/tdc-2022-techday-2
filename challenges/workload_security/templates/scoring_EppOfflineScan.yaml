@@ -44,25 +44,13 @@ Resources:
           import boto3
           
           print('Loading function')
-          
-          def get_ssm_params(*keys):
-              result = {}
-              ssm = boto3.client('ssm')
-              response = ssm.get_parameters(
-                  Names=keys,
-                  WithDecryption=True,
-              )
-              for p in response['Parameters']:
-                  result[p['Name']] = p['Value']
-              return result
-          
+                    
           def lambda_handler(event, context):
-              parameter = get_ssm_params("/player/C1/c1ApiKey")
-              parameter_region = get_ssm_params("/player/C1/c1Region")
-              region = parameter_region["/player/C1/c1Region"]
+              ssmcliant = boto3.client('ssm')
+              api_key = ssmcliant.get_parameter(Name='/player/C1/c1ApiKey')["Parameter"]["Value"]
+              region = ssmcliant.get_parameter(Name='/player/C1/c1Region')["Parameter"]["Value"]
               URL_search_policy = "https://workload." + region +".cloudone.trendmicro.com/api/policies"
-              key = parameter["/player/C1/c1ApiKey"]
-              APIkey = "Apikey " + key
+              APIkey = "Apikey " + api_key
               header = {
               "Content-Type": "application/json",
               "Authorization" : APIkey,
