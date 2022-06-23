@@ -351,3 +351,6 @@ Outputs:
   Deployc1csAttackContainerstateMachine:
     Description: Step function that deploys C1CS in EKS
     Value: !GetAtt Deployc1csAttackContainerstateMachine.Arn
+  c1csAttackAlbHostname:
+    Description: ALB Hostname that the player uses to access the c1cs attack container
+    Value: !GetAtt getC1csAttackAlb.Outputs.c1csAttackAlbHostname
