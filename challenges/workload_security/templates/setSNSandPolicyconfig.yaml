@@ -90,7 +90,7 @@ Resources:
               json_data_sns = {
                   "platformSettingEventForwardingSnsEnabled": {"value": "true"},
                   'platformSettingEventForwardingSnsAdvancedConfigEnabled': {'value': 'true'},
-                  'platformSettingEventForwardingSnsConfigJson': {'value': '{\r\n  "Version": "2014-09-24",\r\n  "Statement": [\r\n    {\r\n      "Topic": SNS_Topic_ARN,\r\n      "Condition": {\r\n        "StringEquals" : {\r\n          "EventType" : ["SystemEvent", "AntiMalwareEvent", "WebReputationEvent", "DeviceControlEvent", "AppControlEvent", "IntegrityEvent", "LogInspectionEvent", "PacketLog", "PayloadLog"]\r\n        }\r\n      }\r\n    }\r\n  ]\r\n}'},
+                  'platformSettingEventForwardingSnsConfigJson': {'value': '{\r\n  "Version": "2014-09-24",\r\n  "Statement": [\r\n    {\r\n      "Topic": ' + SNS_Topic_ARN + ',\r\n      "Condition": {\r\n        "StringEquals" : {\r\n          "EventType" : ["SystemEvent", "AntiMalwareEvent", "WebReputationEvent", "DeviceControlEvent", "AppControlEvent", "IntegrityEvent", "LogInspectionEvent", "PacketLog", "PayloadLog"]\r\n        }\r\n      }\r\n    }\r\n  ]\r\n}'},
                   "platformSettingEventForwardingSnsTopicArn": {"value": SNS_Topic_ARN},
                   "platformSettingEventForwardingSnsSecretKey": {"value": SNS_secret_key},
                   "platformSettingEventForwardingSnsAccessKey": {"value": SNS_access_key }
