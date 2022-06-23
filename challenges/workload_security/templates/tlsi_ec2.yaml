@@ -1,0 +1,104 @@
+AWSTemplateFormatVersion: 2010-09-09
+Parameters:
+  AllowIP:
+    Type: String
+  VPC:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnet1:
+    Type: AWS::EC2::Subnet::Id
+  #BucketName:
+  #  Type: String
+  #  Description: bucket name
+  #BucketARN:
+  #  Type: String
+  #  Description: bucket arn
+  AMIID:
+    Type: String
+
+Resources:
+  WebSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+        GroupDescription: "Web Security Group"
+        VpcId: !Ref VPC
+        Tags:
+        - Key: Name
+          Value: webSecGroup
+  WebAppSGBaseIngress:
+    Type: 'AWS::EC2::SecurityGroupIngress'
+    Properties:
+      GroupId: !Ref WebSecurityGroup
+      IpProtocol: -1
+      FromPort: 0
+      ToPort: 0
+      CidrIp: !Ref AllowIP
+
+  DSAkeysRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  DSAkeysProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - !Ref DSAkeysRole
+
+  DSA:
+    Type: AWS::EC2::Instance
+    Properties:
+      IamInstanceProfile: !Ref DSAkeysProfile
+      ImageId: !Ref AMIID
+      InstanceType: m6a.large
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: "0"
+          GroupSet:
+            - Ref: WebSecurityGroup
+          SubnetId:
+            Ref: PublicSubnet1
+      Tags:
+      - Key: Name
+        Value: TLS-DSA
+      - Key: PlayerSsmAccess
+        Value: "false"
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+          echo "Hello World from user data" > /var/www/html/index.html
+          sudo yum install -y mod_ssl
+          cd /etc/pki/tls/certs
+          sudo ./make-dummy-cert localhost.crt
+          sed -i 's/SSLProtocol\s/all\s/-SSLv3/SSLProtocol\s/-all\s/+TLSv1.2/g' /etc/httpd/conf.d/ssl.conf
+          sed -i 's/SSLCertificateKeyFile\s\/etc\/pki\/tls\/private\/localhost.key/#SSLCertificateKeyFile\s\/etc\/pki\/tls\/private\/localhost.key/g' /etc/httpd/conf.d/ssl.conf
+          public_host_name=`curl http://169.254.169.254/latest/meta-data/public-hostname`
+          sed -i "7i ServerName $public_host_name" /etc/httpd/conf.d/ssl.conf
+          sudo systemctl restart httpd
+          curl -OL https://workload.trend-us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/20.0.0.3770/agent.rpm
+          sudo rpm -i agent.rpm
+
+  WSTLSIInstanceARN:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "WS_TLSI_INSTANCE"
+      Value: !Ref DSA
+      Type: String
+
+Outputs:
+  PublicDNS:
+    Description: Public DNSName of the newly created EC2 instance
+    Value: !GetAtt DSA.PublicDnsName

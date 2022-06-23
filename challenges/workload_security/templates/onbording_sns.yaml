@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Resources:
+  user:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/"
+      Policies:
+      - PolicyName: giveaccesstoqueueonly
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - sns:Publish
+            Resource:
+            - !Ref SNSTopic
+  accesskey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref user
+  SNSTopic:
+    Type: AWS::SNS::Topic
+
+# Parameters set
+  WSAccessKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "WSAccessKey"
+      Value: !Ref accesskey
+      Type: String
+  WSSecretKey:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "WSSecretKey"
+      Value: !GetAtt accesskey.SecretAccessKey
+      Type: String      
+  WSSNSTopicARN:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "WSSNSTopicARN"
+      Value: !Ref SNSTopic
+      Type: String
+      
+Outputs:
+  AccessKey:
+    Value: !Ref accesskey
+  SecretKey:
+    Value: !GetAtt accesskey.SecretAccessKey
+  SNSTopicARN:
+    Value: !Ref SNSTopic
