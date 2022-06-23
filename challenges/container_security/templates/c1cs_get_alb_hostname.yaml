@@ -4,7 +4,7 @@ Resources:
 
 # Iam Role
 
-  c1csAttackRole:
+  c1csGetAlbHostnameRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -18,7 +18,7 @@ Resources:
             - sts:AssumeRole
       Path: "/"
       Policies:
-      - PolicyName: c1csAttackRole
+      - PolicyName: c1csGetAlbHostnameRole
         PolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -42,6 +42,7 @@ Resources:
           - Effect: Allow
             Action:
               - ssm:GetCommandInvocation
+              - ssm:ListCommandInvocations
             Resource:
               - arn:aws:ssm:*:*:*
 
@@ -50,9 +51,9 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
-      Timeout: 20
+      Timeout: 60
       Handler: index.lambda_handler
-      Role: !GetAtt c1csAttackRole.Arn
+      Role: !GetAtt c1csGetAlbHostnameRole.Arn
       Code:
         ZipFile:
           !Sub
@@ -64,6 +65,7 @@ Resources:
               import cfnresponse
 
               def lambda_handler(event=None, context=None):
+                  time.sleep(1)
                   response_data = {}
                   physicalResourceId = None
                   if event["RequestType"] == "Create":
@@ -111,7 +113,7 @@ Resources:
                   cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
                   return output
             -
-              lambda_function_role_arn: !Ref c1csAttackRole
+              lambda_function_role_arn: !Ref c1csGetAlbHostnameRole
 
  #CustomResources
   InvokeGetC1csAlbAttackHostname:
