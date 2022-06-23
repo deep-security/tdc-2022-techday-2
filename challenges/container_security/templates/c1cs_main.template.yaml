@@ -92,3 +92,9 @@ Resources:
       Name: "ContainerSecurityScoreLambdaRole"
       Value: !GetAtt ContainerSecurityScoreLambdaRole.Arn
       Type: String
+  
+  ScoreLambdaDAY1Task1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/score/c1cs-day1task1.yaml
+    DependsOn: ContainerSecurityScoreLambdaRoleSsm
