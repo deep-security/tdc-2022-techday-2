@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Resources:
-  scoreroleday1task2C1CS:
+  scoreroleday1task1C1CS:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -12,7 +12,7 @@ Resources:
               Service: lambda.amazonaws.com
         Version: "2012-10-17"
       Policies: 
-        - PolicyName: scoreroleday1task2C1CS
+        - PolicyName: scoreroleday1task1C1CS
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -25,10 +25,10 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
-  C1CSScoreLambdarday1task2:
+  C1CSScoreLambdarday1task1:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: C1CSScoreLambdarday1task2
+      FunctionName: C1CSScoreLambdarday1task1
       Code: 
         ZipFile: |
           import json
@@ -165,13 +165,13 @@ Resources:
       Handler: index.lambda_handler
       Role:
         Fn::GetAtt:
-          - scoreroleday1task2C1CS
+          - scoreroleday1task1C1CS
           - Arn
       Runtime: python3.8
       Timeout: 30
     DependsOn:
-      - scoreroleday1task2C1CS
+      - scoreroleday1task1C1CS
 Outputs:
-  C1CSScoreLambdarday1task2:
+  C1CSScoreLambdarday1task1:
     Value:
-      Ref: C1CSScoreLambdarday1task2
+      Ref: C1CSScoreLambdarday1task1
