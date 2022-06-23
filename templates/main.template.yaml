@@ -128,6 +128,17 @@ Resources:
         - PlayerStack
         - ServiceCatalogPortfolioStack
         - OnboardingStack #Added for throttling IAM role creation
+  deployC1csAttacks:
+    Type: AWS::CloudFormation::Stack
+    Condition: BuildEks
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/container_security/'
+        awsAccountID: !Ref "AWS::AccountId"
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_deploy_attack_container.template.yaml'
+    DependsOn:
+      - EKSStack
 
   c1wsAVCStack:
       Type: AWS::CloudFormation::Stack
@@ -420,3 +431,6 @@ Outputs:
   V1SOtaskBucketURL:
     Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
     Description: Bucket for V1 SO task information (player access required)
+  c1csAlbHostname:
+    Description: ALB Hostname that the player uses to access the c1cs attack container
+    Value: !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname  
