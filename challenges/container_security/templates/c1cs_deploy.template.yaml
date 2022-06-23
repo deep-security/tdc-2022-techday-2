@@ -149,7 +149,7 @@ Resources:
             - "echo -e '    runtimeSecurity:' >> /tmp/overrides_cs.yaml"
             - "echo -e '        enabled: true' >> /tmp/overrides_cs.yaml"
             - "echo -e '    exclusion:' >> /tmp/overrides_cs.yaml"
-            - "echo -e '        namespaces: [ kube-system, calico-system, fss-log4shell-attacker-env ]' >> /tmp/overrides_cs.yaml"
+            - "echo -e '        namespaces: [ kube-system, calico-system, fss-log4shell-attacker-env, tigera-operator ]' >> /tmp/overrides_cs.yaml"
       DocumentType: Command
       Name: 'c1csCreateOverridesFile'
   HelmInstallC1CS: 
