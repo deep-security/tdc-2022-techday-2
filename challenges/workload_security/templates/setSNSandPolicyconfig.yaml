@@ -37,7 +37,6 @@ Resources:
   SetSNSandPolicyconfigLambda:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: SetSNSandPolicyconfigLambda
       Code: 
         ZipFile: |
           import boto3, os
