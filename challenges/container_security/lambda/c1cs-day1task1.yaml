@@ -33,6 +33,7 @@ Resources:
         ZipFile: |
           import json
           import urllib3
+          import sys
           import boto3
           from urllib.parse import urlparse
 
@@ -87,7 +88,12 @@ Resources:
               
               #print(policyEvalResponse.data.decode("utf-8"))
               policyEval = json.loads(policyEvalResponse.data.decode("utf-8"))
-              rulesetID = policyEval["runtime"]["default"]["rulesets"]
+              try:
+                  rulesetID = policyEval["runtime"]["default"]["rulesets"]
+              except:
+                  print("Policy may not have a runtime ruleset assigned.")
+                  sys.exit(1)
+
               
               # Loop through rulesets in case player assinged multiple rulesets. Output should be rulesetID so that we can query each rulesetID for the correct rules.
               passingScore = 6
@@ -110,7 +116,13 @@ Resources:
                   
                   #print(policyEvalResponse.data.decode("utf-8"))
                   rulesetEval = json.loads(rulesetEvalResponse.data.decode("utf-8"))
-                  rules = rulesetEval["rules"]
+                  
+                  try:
+                      rules = rulesetEval["rules"]
+                  except:
+                      print("Runtime Ruleset may not have any rules assigned.")
+                      sys.exit(1)
+                      
                   #print(rules)
                   ruleEvalScore = 0
                   for rule in rules:
@@ -149,6 +161,7 @@ Resources:
                   print(message)
                   raise Exception(message)
               #print(message)
+
       Handler: index.lambda_handler
       Role:
         Fn::GetAtt:
