@@ -140,7 +140,7 @@ Resources:
                           ruleEvalScore = ruleEvalScore + 1
                       if ruleID == "TM-00000014" and ruleMitigation == "log": # (T1068)Packet socket created in container
                           ruleEvalScore = ruleEvalScore + 1
-                      if ruleID == "TM-00000048" and ruleMitigation == "log": # Out-of-namespace network access attempts
+                      if ruleID == "TM-00000046" and ruleMitigation == "log": # Out-of-namespace network access attempts
                           ruleEvalScore = ruleEvalScore + 1
 
                   if ruleEvalScore == passingScore:
