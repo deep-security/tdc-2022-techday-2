@@ -172,6 +172,10 @@ def handler(event, context):
                     # Stores global Trend V1 API Base URL as an SSM Parameter  "v1ApiBaseUrl".
                     setV1SsmParameter(ssmClient, "v1ApiBaseUrl", v1ApiEndpointBaseUrl(v1TrendRegion))
 
+                    # Stores global Trend V1 API Base URL as an SSM Parameter  "v1SOApiBaseUrl".
+                    #create new parameter for use in V1 SO score lambda envar
+                    setV1SsmParameter(ssmClient, "v1SOApiBaseUrl", "https://" + v1ApiEndpointBaseUrls[v1TrendRegion])
+
                     # Stores global Trend V1 API Key as an SSM Parameter  "v1ApiKey".
                     setV1SsmParameter(ssmClient, "v1ApiKey", v1AuthToken)
 
