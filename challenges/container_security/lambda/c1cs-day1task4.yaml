@@ -69,7 +69,7 @@ Resources:
                       
                       # Correct answer example:
                           #2022-06-23T02:22:24.687877Z
-                          #log
+                          #isolate
                           #TM-00000010
                           #yum /usr/bin/yum install nmap
                           #tdc_2022_2_c1csAttack
