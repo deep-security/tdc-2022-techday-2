@@ -65,7 +65,7 @@ Resources:
           # Check if any of the 25 events match the correct answer
               taskComplete = "NotComplete"
               for event in events:
-                  if ((event["proc.cmdline"] == "yum /usr/bin/yum install nmap" or event["proc.cmdline"] == "yum /usr/bin/yum install nmap -y") and event["mitigation"] == "Isolate" and event["ruleID"] == "TM-00000010") and event["container.image.tag"] == "tdc_2022_2_c1csAttack":
+                  if ((event["proc.cmdline"] == "yum /usr/bin/yum install nmap" or event["proc.cmdline"] == "yum /usr/bin/yum install nmap -y") and event["mitigation"] == "isolate" and event["ruleID"] == "TM-00000010") and event["container.image.tag"] == "tdc_2022_2_c1csAttack":
                       
                       # Correct answer example:
                           #2022-06-23T02:22:24.687877Z
