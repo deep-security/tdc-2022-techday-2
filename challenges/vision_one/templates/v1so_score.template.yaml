@@ -58,7 +58,7 @@ Resources:
             import os
 
             url_path = '/beta/xdr/threatintel/suspiciousObjects'
-            v1AuthToken = os.environ['v1AuthToken']
+            token = os.environ['v1AuthToken']
             url_base = os.environ['v1ApiBaseURL']
             # Contains a list of Vision One supported regions for ctf.
             v1SupportedRegions = ["United States", "Europe", "Singapore", "Japan", "Australia", "India"]
