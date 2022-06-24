@@ -27,28 +27,11 @@
       text-align: center;
     }
 
+    .loading,
     #loading {
-      width: 50px;
-      height: 50px;
-      border: 3px solid rgb(219, 217, 227);
-      border-radius: 50%;
-      border-top-color: #173957;
-      animation: spin 1s ease-in-out infinite;
-      -webkit-animation: spin 1s ease-in-out infinite;
-      margin: auto;
-      margin-top: 1em;
-    }
-
-    @keyframes spin {
-      to {
-        -webkit-transform: rotate(360deg);
-      }
-    }
-
-    @-webkit-keyframes spin {
-      to {
-        -webkit-transform: rotate(360deg);
-      }
+      width: 150px;
+      height: 150px;
+      background: white url(https://icons8.com/preloaders/preloaders/1488/Iphone-spinner-2.gif) no-repeat scroll center center;
     }
 
     .myGallery {
@@ -58,7 +41,11 @@
     }
 
     .myGallery img {
-      width: 100%;
+      width: 150px;
+      height: 150px;
+      background: white;
+      object-fit: cover;
+      object-position: 50% 40%;
     }
 
     .myGallery .item {
@@ -118,97 +105,71 @@
   </form>
 
   <br>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
   <div class="myGallery">
-    <img src="https://picsum.photos/190/190?1" />
-    <img src="https://picsum.photos/190/190?2" />
-    <img src="https://picsum.photos/190/190?3" />
-    <img src="https://picsum.photos/190/190?4" />
-    <img src="https://picsum.photos/190/190?5" />
-    <img src="https://picsum.photos/190/190?6" />
-    <img src="https://picsum.photos/190/190?7" />
-    <img src="https://picsum.photos/190/190?8" />
-    <img src="https://picsum.photos/190/190?9" />
-    <img src="https://picsum.photos/190/190?10" />
-    <div class="item">
-      <img src="https://picsum.photos/190/190?11" />
-      <span class="caption">This is an image caption for image 11</span>
-    </div>
-    <div class="item">
-      <img src="https://picsum.photos/190/190?12" />
-      <span class="caption">This is an image caption for image 12</span>
-    </div>
-    <div class="item">
-      <img src="https://picsum.photos/190/190?13" />
-      <span class="caption">This is an image caption for image 13</span>
-    </div>
-    <div class="item">
-      <img src="https://picsum.photos/190/190?14" />
-      <span class="caption">This is an image caption for image 14</span>
-    </div>
-    <div class="item">
-      <img src="https://picsum.photos/190/190?15" />
-      <span class="caption">This is an image caption for image 15</span>
-    </div>
-  </div>
+    <img src="/profile/getimg/peep-2.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-6.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-11.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-17.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-19.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-6.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-64.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-6.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-64.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-33.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-64.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-48.png" class="loading" onload="this.classList.remove('loading')" />
+    <img src="/profile/getimg/peep-21.png" class="loading" onload="this.classList.remove('loading')" />
+
+    <script type="module" src="/profile/connectioncheck"></script>
+    <script type="module">
+      const apiEndpoint = "/profile/";
+
+      // init
+      const imageForm = document.querySelector("#imageForm");
+      const imageInput = document.querySelector("#imageInput");
+
+      const imageLogic = async (wrapperElement) => {
+        const file = imageInput.files[0];
+        let imageName = crypto.randomUUID();
+
+        const putUrl = await axios.get(`${apiEndpoint}upload/${imageName}`)
+          .then((response) => {
+            console.log(response);
+            return response.data;
+          })
+          .catch(function (error) {
+            console.log(error);
+          });
+        await axios.put(putUrl, file)
+          .catch(function (error) {
+            console.log(error);
+          });
 
 
+        const img = document.createElement("img");
+        img.src = `${apiEndpoint}getimg/${imageName}`;
+        img.classList.add('loading');
+        img.onload = "this.classList.remove('loading')";
 
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-  <script type="module">
-    const apiEndpoint = "/profile/";
+        while (wrapperElement.firstChild) {
+          wrapperElement.removeChild(wrapperElement.firstChild);
+        };
 
-    // init
-    const imageForm = document.querySelector("#imageForm");
-    const imageInput = document.querySelector("#imageInput");
+        wrapperElement.appendChild(img);
+      }
 
-    const imageLogic = async (wrapperElement) => {
-      const file = imageInput.files[0];
-      let imageName = crypto.randomUUID();
+      const gallery = document.querySelector(".myGallery");
 
-      const putUrl = await axios.get(`${apiEndpoint}upload/${imageName}`)
-        .then((response) => {
-          console.log(response);
-          return response.data;
-        })
-        .catch(function (error) {
-          console.log(error);
-        });
-      await axios.put(putUrl, file)
-        .catch(function (error) {
-          console.log(error);
-        });
-
-      let url = `${apiEndpoint}getimg/${imageName}`;
-
-      const img = document.createElement("img");
-      const imgb64 = await axios.get(url)
-        .then((response) => {
-          // handle success
-          console.log(response)
-          return response.data
-        });
-
-      img.src = `data:image/png;base64,${imgb64}`;
-      console.log(img)
-
-      while (wrapperElement.firstChild) {
-        wrapperElement.removeChild(wrapperElement.firstChild);
-      };
-
-      wrapperElement.appendChild(img);
-    }
-
-    const gallery = document.querySelector(".myGallery");
-
-    imageForm.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const div = document.createElement("div");
-      div.innerHTML = `<div id="loading"></div>`
-      gallery.appendChild(div)
-      imageLogic(div);
-    });
-  </script>
+      imageForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const div = document.createElement("div");
+        div.innerHTML = `<div id="loading"></div>`
+        gallery.appendChild(div)
+        imageLogic(div);
+      });
+    </script>
 </body>
 
 </html>
