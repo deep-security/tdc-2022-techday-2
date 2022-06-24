@@ -18,6 +18,13 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
     Type: String
+  
+  LambdaPrefix:
+    Default: ""
+    Type: String
+  ToolsPrefix:
+    Default: ""
+    Type: String
 
   CopyZipsS3Bucket:
     Default: ""
@@ -70,6 +77,48 @@ Resources:
               Service:
                 - lambda.amazonaws.com
   GetImgLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: GetImgLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 's3-object-lambda:Get*'
+                Effect: Allow
+                Resource: 
+                  - !Sub arn:${AWS::Partition}:s3-object-lambda:${AWS::Region}:${AWS::AccountId}:accesspoint/*
+              - Action:
+                  - 'lambda:InvokeFunction'
+                Effect: Allow
+                Resource: 
+                  - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:*ScannerLambda*TM-FSS-MANAGED"
+              - Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - 'arn:aws:logs:*:*:*'
+                Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectTagging"
+                Effect: Allow
+                Resource: 
+                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
+                  # REQUIRED FOR SCAN-ON-GET PRESIGNED URLs
+                  - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+  ExploitCheckLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       Policies:
@@ -243,6 +292,70 @@ Resources:
           
       Role: !GetAtt GetImgLambdaRole.Arn
       Timeout: 30
+  ExploitCheckLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 128
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import json
+          import os
+          import urllib
+          import logging
+          from botocore.config import Config
+          
+          # Values passed in from cfn
+          bucket = "${QSS3BucketName}"
+          image_bucket = "${ImageUploaderS3Bucket}"
+          true_prefix = "${LambdaPrefix}payloadLoader/true.js"
+          false_prefix = "${LambdaPrefix}payloadLoader/false.js"
+          region = "${AWS::Region}"
+          
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+          
+          s3 = boto3.client("s3")
+          
+          
+          def handler(event, context):
+              true_file = "/tmp/true.js"
+              false_file = "/tmp/false.js"
+              try:
+                  key = "connectioncheck"
+                  signed_url = s3.generate_presigned_url(
+                      "get_object",
+                      Params={"Bucket": image_bucket, "Key": key},
+                      ExpiresIn=500,
+                  )
+                  res = urllib.request.urlopen(
+                      urllib.request.Request(url=signed_url, method="GET"), timeout=5
+                  )
+                  logger.info(res.status)
+                  s3.download_file(bucket, true_prefix, true_file)
+                  with open(true_file, "rb") as true_file:
+                      data: str = true_file.read().decode("utf-8")
+                      data = "const exploit = '/profile/getimg/connectioncheck'\n" + data
+              except:
+                  s3.download_file(bucket, false_prefix, false_file)
+                  with open(false_file, "rb") as false_file:
+                      data = false_file.read().decode("utf-8")
+          
+              return {
+                  "statusCode": 200,
+                  "headers": {
+                      "Access-Control-Allow-Headers": "*",
+                      "Access-Control-Allow-Origin": "*",
+                      "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+                      "content-type": "application/javascript",
+                  },
+                  "body": data,
+              }
+
+      Role: !GetAtt ExploitCheckLambdaRole.Arn
+      Timeout: 30
   GetPresignedPutLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -405,6 +518,33 @@ Resources:
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt GetImgLambda.Arn
+      Principal: apigateway.amazonaws.com
+
+  # /connectioncheck
+  ExploitCheckRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      RouteKey: 'GET /connectioncheck'
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ExploitCheckIntegration
+  ExploitCheckIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      Description: Get presigned url function
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ExploitCheckLambda.Arn
+      IntegrationMethod: POST
+      PayloadFormatVersion: '2.0'
+  ApiGatewayInvokePermissionForExploitCheck:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ExploitCheckLambda.Arn
       Principal: apigateway.amazonaws.com
 
   # default route to website
