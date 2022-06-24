@@ -12,7 +12,6 @@ Parameters:
     Default: /player/V1/v1SOApiBaseUrl
     Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One Region.
     Type: 'AWS::SSM::Parameter::Value<String>'
-#This Base URL seems to be incorrect - need to fix in V1Onboarding
 Resources:
 
 #Lambda Execution Role
