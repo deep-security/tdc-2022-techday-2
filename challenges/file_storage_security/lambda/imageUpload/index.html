@@ -7,6 +7,7 @@
 
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" type="text/css" href="https://necolas.github.io/normalize.css/8.0.1/normalize.css">
   <link rel="stylesheet" href="https://igoradamenko.github.io/awsm.css/css/awsm_theme_pastel-pink.min.css">
   <style>
     * {
@@ -49,6 +50,52 @@
         -webkit-transform: rotate(360deg);
       }
     }
+
+    .myGallery {
+      display: grid;
+      grid-gap: 10px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    }
+
+    .myGallery img {
+      width: 100%;
+    }
+
+    .myGallery .item {
+      position: relative;
+      overflow: hidden;
+    }
+
+    .myGallery .item img {
+      vertical-align: middle;
+      border: 0;
+      height: 100%;
+      left: 0;
+      position: absolute;
+      top: 0;
+      width: 100%;
+    }
+
+    .myGallery .caption {
+      margin: 0;
+      padding: 1em;
+      position: absolute;
+      z-index: 1;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      max-height: 100%;
+      overflow: auto;
+      box-sizing: border-box;
+      transition: transform .5s;
+      transform: translateY(100%);
+      background: rgba(0, 0, 0, .7);
+      color: rgb(255, 255, 255);
+    }
+
+    .myGallery .item:hover .caption {
+      transform: translateY(0%);
+    }
   </style>
 
   <link rel="icon"
@@ -70,6 +117,43 @@
     </fieldset>
   </form>
 
+  <br>
+
+  <div class="myGallery">
+    <img src="https://picsum.photos/190/190?1" />
+    <img src="https://picsum.photos/190/190?2" />
+    <img src="https://picsum.photos/190/190?3" />
+    <img src="https://picsum.photos/190/190?4" />
+    <img src="https://picsum.photos/190/190?5" />
+    <img src="https://picsum.photos/190/190?6" />
+    <img src="https://picsum.photos/190/190?7" />
+    <img src="https://picsum.photos/190/190?8" />
+    <img src="https://picsum.photos/190/190?9" />
+    <img src="https://picsum.photos/190/190?10" />
+    <div class="item">
+      <img src="https://picsum.photos/190/190?11" />
+      <span class="caption">This is an image caption for image 11</span>
+    </div>
+    <div class="item">
+      <img src="https://picsum.photos/190/190?12" />
+      <span class="caption">This is an image caption for image 12</span>
+    </div>
+    <div class="item">
+      <img src="https://picsum.photos/190/190?13" />
+      <span class="caption">This is an image caption for image 13</span>
+    </div>
+    <div class="item">
+      <img src="https://picsum.photos/190/190?14" />
+      <span class="caption">This is an image caption for image 14</span>
+    </div>
+    <div class="item">
+      <img src="https://picsum.photos/190/190?15" />
+      <span class="caption">This is an image caption for image 15</span>
+    </div>
+  </div>
+
+
+
   <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <script type="module">
     const apiEndpoint = "/profile/";
@@ -77,13 +161,6 @@
     // init
     const imageForm = document.querySelector("#imageForm");
     const imageInput = document.querySelector("#imageInput");
-
-    const toBase64 = file => new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = error => reject(error);
-    });
 
     const imageLogic = async (wrapperElement) => {
       const file = imageInput.files[0];
@@ -104,28 +181,31 @@
 
       let url = `${apiEndpoint}getimg/${imageName}`;
 
-
-
       const img = document.createElement("img");
-      img.src = await axios.get(url)
+      const imgb64 = await axios.get(url)
         .then((response) => {
           // handle success
           console.log(response)
           return response.data
         });
-      console.log(img);
+
+      img.src = `data:image/png;base64,${imgb64}`;
+      console.log(img)
 
       while (wrapperElement.firstChild) {
         wrapperElement.removeChild(wrapperElement.firstChild);
-      }
+      };
+
       wrapperElement.appendChild(img);
     }
+
+    const gallery = document.querySelector(".myGallery");
 
     imageForm.addEventListener("submit", (event) => {
       event.preventDefault();
       const div = document.createElement("div");
       div.innerHTML = `<div id="loading"></div>`
-      document.body.appendChild(div)
+      gallery.appendChild(div)
       imageLogic(div);
     });
   </script>
