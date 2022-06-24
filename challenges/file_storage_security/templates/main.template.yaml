@@ -68,6 +68,8 @@ Resources:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        LambdaPrefix: !Sub "${QSS3KeyPrefix}lambda/"
+        ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
         CopyZipsS3Bucket: !GetAtt CopyZipsStack.Outputs.DestinationBucket
         CopyZipsPrefix: !Sub "${QSS3KeyPrefix}lambda/"
         WebsiteCodeZip: "imageUpload/imageUpload.zip"
