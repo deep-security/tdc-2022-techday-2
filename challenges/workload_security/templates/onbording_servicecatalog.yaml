@@ -1,0 +1,26 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  AgentActivation:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 
+        Fn::Join:
+        - ""
+        - - "https://"
+          - "{{resolve:ssm:QSS3BucketName:1}}"
+          - ".s3.amazonaws.com/"
+          - "{{resolve:ssm:QSS3KeyPrefix:1}}"
+          - "challenges/workload_security/templates/agent_activation.yaml"
+
+  SetSNSandPolicyconfig:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: 
+        Fn::Join:
+        - ""
+        - - "https://"
+          - "{{resolve:ssm:QSS3BucketName:1}}"
+          - ".s3.amazonaws.com/"
+          - "{{resolve:ssm:QSS3KeyPrefix:1}}"
+          - "challenges/workload_security/templates/setSNSandPolicyconfig.yaml"
