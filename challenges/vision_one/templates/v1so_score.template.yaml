@@ -12,7 +12,7 @@ Parameters:
     Default: /player/V1/v1ApiBaseUrl
     Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One Region.
     Type: 'AWS::SSM::Parameter::Value<String>'
-
+#This Base URL seems to be incorrect - need to fix in V1Onboarding
 Resources:
 
 #Lambda Execution Role
@@ -57,7 +57,9 @@ Resources:
             import json
             import os
 
-            url_path = '/v2.0/xdr/threatintel/suspiciousObjects'
+            url_path = '/beta/xdr/threatintel/suspiciousObjects'
+            v1AuthToken = os.environ['v1AuthToken']
+            url_base = os.environ['v1ApiBaseURL']
             # Contains a list of Vision One supported regions for ctf.
             v1SupportedRegions = ["United States", "Europe", "Singapore", "Japan", "Australia", "India"]
             region = {'Australia': 'https://api.au.xdr.trendmicro.com', 'Europe': 'https://api.eu.xdr.trendmicro.com',
@@ -70,7 +72,6 @@ Resources:
                                     'limit': 200,
                                     'type': type
                                 }
-
                 headers = {'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json;charset=utf-8'}
 
                 r = requests.get(url_base + url_path, params=query_params, headers=headers)
@@ -95,10 +96,7 @@ Resources:
 
             # Main
             def lambda_handler(event, context):
-
-                v1AuthToken = os.environ['v1AuthToken']
-                url_base = os.environ['v1ApiBaseURL']
-
+                #need to move these to the top?
 
                 res = checkSO('domain')
                 # initializing Values list
