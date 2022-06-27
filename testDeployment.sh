@@ -57,6 +57,8 @@ echo 'Deploying Stack...'
 aws cloudformation create-stack --stack-name ${STACK_NAME} \
     --template-url ${TEMPLATE_URL} \
     --parameters ParameterKey=QSS3BucketName,ParameterValue=${BUCKET_NAME} \
+                 ParameterKey=QSS3KeyPrefix,ParameterValue="" \
+                 # ParameterKey=BuildEks,ParameterValue="false" \
     --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM CAPABILITY_AUTO_EXPAND \
     --profile ${AWS_PROFILE}
 
