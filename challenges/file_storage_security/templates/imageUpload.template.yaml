@@ -75,7 +75,7 @@ Resources:
               - "lambda:UpdateFunctionCode"
               - "lambda:GetFunction"
               - "lambda:PublishVersion"
-            Resource: !Ref GetImgLambda
+            Resource: !GetAtt GetImgLambda.Arn
             Effect: Allow
 
   LambdaRole:
