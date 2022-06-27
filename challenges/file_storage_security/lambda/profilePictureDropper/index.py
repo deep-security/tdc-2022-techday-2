@@ -6,7 +6,7 @@ import logging
 from botocore.config import Config
 
 
-bucket = os.environ.get("BUCKET")
+bucket = os.environ["BUCKET"]
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
