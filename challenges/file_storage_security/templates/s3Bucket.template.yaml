@@ -27,6 +27,17 @@ Parameters:
       forward slash (/).
     Type: String
 
+  CopyZipsS3Bucket:
+    Default: ""
+    Type: String
+  CopyZipsPrefix:
+    Default: ""
+    Type: String
+
+  ProfilePictureDropperCodeZip:
+    Default: ""
+    Type: String
+
 Resources:
   ImageUploaderS3Bucket:
     Type: 'AWS::S3::Bucket'
@@ -41,6 +52,59 @@ Resources:
               - PUT
             AllowedOrigins:
               - '*'
+  ProfilePictureDropperLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 128
+      Code:
+        S3Bucket: !Ref CopyZipsS3Bucket
+        S3Key: !Sub '${CopyZipsPrefix}${ProfilePictureDropperCodeZip}' # Make sure to set S3Key like this.
+      Environment:
+        Variables:
+          BUCKET: !Ref ImageUploaderS3Bucket
+      Role: !GetAtt ProfilePictureDropperLambdaRole.Arn
+      Timeout: 60
+  ProfilePictureDropperLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  - 'arn:aws:logs:*:*:*'
+                Effect: Allow
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
+  ProfilePictureDropper:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt ProfilePictureDropperLambda.Arn
+    DependsOn: ImageUploaderS3Bucket
 
 Outputs:
   ImageUploaderS3BucketName:
