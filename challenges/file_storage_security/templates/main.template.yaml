@@ -55,6 +55,16 @@ Parameters:
     Type: String
 
 Resources:
+  FssServiceCatalogIntegration:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_service_catalog_integration.template.yaml"
+
   ImageUpload:
     Type: AWS::CloudFormation::Stack
     Properties:
