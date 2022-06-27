@@ -3,6 +3,7 @@ import boto3
 import json
 import os
 import logging
+import cfnresponse
 from botocore.config import Config
 
 
@@ -31,34 +32,29 @@ def upload_file(file_name, bucket, object_name=None):
         response = s3.upload_file(file_name, bucket, object_name)
     except ClientError as e:
         logging.error(e)
-        return False
+        raise
     return True
 
 
 def handler(event, context):
+    response_data = {}
     path = "/tmp/pics"
 
     with zipfile.ZipFile("./malicious-peeps.zip", "r") as zip_ref:
         zip_ref.extractall(path=path, pwd=b"novirus")
 
-    # files = [f"{path}/malicious-peeps/{f}" for f in os.listdir(path) if isfile(f"{path}/{f}")]
     files = [
         f"{path}/malicious-peeps/{f}" for f in os.listdir(f"{path}/malicious-peeps")
     ]
-    print(files)
+    response_data = {"files": files}
+
     try:
         # Upload the image
         for file in files:
             upload_file(file, bucket)
-
+        status = cfnresponse.SUCCESS
     except Exception as e:
         logging.error(e)
+        status = cfnresponse.FAILED
     finally:
-        return {
-            "statusCode": 200,
-            "headers": {
-                "Access-Control-Allow-Headers": "*",
-                "Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
-            },
-        }
+        cfnresponse.send(event, context, status, response_data)
