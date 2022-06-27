@@ -1,6 +1,13 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: ImageUploaderApplication
 
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
 Parameters:
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
@@ -13,7 +20,8 @@ Parameters:
       or end with a hyphen (-).
     Type: String
   QSS3KeyPrefix:
-    Default: challenge/fss/lambdas/
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates
+    Default: ""
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
