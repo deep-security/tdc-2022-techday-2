@@ -608,5 +608,5 @@ Outputs:
     Value: !GetAtt S3BucketResources.Outputs.ImageUploaderS3BucketName
     Description: The bucket to protect with FSS
   FSSLambdaToProtect:
-    Value: !Sub https://${AWS::Region}.console.aws.amazon.${AWS::URLSuffix}/lambda/home?region=${AWS::Region}#/functions/${GetImgLambda}?tab=code"
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${GetImgLambda}?tab=code"
     Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
