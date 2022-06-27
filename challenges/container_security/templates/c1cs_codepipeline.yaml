@@ -251,7 +251,7 @@ Resources:
                           elif event['RequestType'] == "Delete":
                               # TODO: Remove the created images in the Repositories
                               print("Delete event remove container images")
-                              response['PhysicalResourceId'] = "1233244324"
+                              #response['PhysicalResourceId'] = "1233244324"
                               try:
                                   resources = event['ResourceProperties']
                                   #repository = resources['c1cs-attack']
