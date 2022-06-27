@@ -450,14 +450,6 @@ Resources:
                 Resource:
                   - 'arn:aws:logs:*:*:*'
                 Effect: Allow
-              # - Effect: Allow
-              #   Principal:
-              #     Service: "cloudformation.amazonaws.com"
-              #   Action:
-              #     - s3:ListBucket
-              #     - s3:PutObject
-              #   Resource:
-              #     - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
