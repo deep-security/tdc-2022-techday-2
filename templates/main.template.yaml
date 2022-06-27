@@ -492,3 +492,13 @@ Outputs:
   c1csAlbHostname:
     Description: ALB Hostname that the player uses to access the c1cs attack container
     Value: !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname  
+
+  FSSWebsite:
+    Value: !GetAtt ImageUpload.Outputs.FSSWebsite
+    Description: URL of SudoSingles, the vulnerable application to protect
+  FSSBucketToProtect:
+    Value: !GetAtt ImageUpload.Outputs.FSSBucketToProtect
+    Description: The bucket to protect with FSS
+  FSSLambdaToProtect:
+    Value: !GetAtt ImageUpload.Outputs.FSSLambdaToProtect
+    Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get

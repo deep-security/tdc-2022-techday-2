@@ -607,3 +607,14 @@ Resources:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt GetPresignedPutLambda.Arn
       Principal: apigateway.amazonaws.com
+
+Outputs:
+  FSSWebsite:
+    Description: URL of SudoSingles, the vulnerable application to protect
+    Value: !Sub "https://${ImageUploaderApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/profile"
+  FSSBucketToProtect:
+    Value: !GetAtt S3BucketResources.Outputs.ImageUploaderS3BucketName
+    Description: The bucket to protect with FSS
+  FSSLambdaToProtect:
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.${AWS::URLSuffix}/lambda/home?region=${AWS::Region}#/functions/${GetImgLambda}?tab=code"
+    Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
