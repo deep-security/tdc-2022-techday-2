@@ -14,9 +14,7 @@ Parameters:
   InstanceSize: 
     Type: String
     Description: Instance Size
-    Default: t2.medium
-    AllowedValues:
-      - "t2.medium"
+    Default: m5.large
   DomainDNSName:
     Type: String
     Description: Fully Qualified Domain Name
@@ -33,7 +31,7 @@ Parameters:
     MinLength: '8'
     NoEcho: 'true'
     Type: String
-    Description: SafeModeAdministrator Password - used when creating ADDS
+    Description: SafeModeAdministrator
     Default: testing123!   
   AvailabilityZone:
     Type: String
@@ -42,10 +40,6 @@ Parameters:
       - us-east-1a
       - us-east-1b
     Default: us-east-1a
-  KeyPair: 
-    Type: String
-    Description: KeyPair Name
-    Default: w10p
   S3BucketName:
     Default: c1as-demo-bucket
     Description: S3 bucket for boot artefacts
@@ -115,10 +109,6 @@ Resources:
           ToPort: 443
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
-          FromPort: 22
-          ToPort: 22
-          CidrIp: 0.0.0.0/0
-        - IpProtocol: tcp
           FromPort: 3389
           ToPort: 3389
           CidrIp: 0.0.0.0/0
@@ -158,8 +148,7 @@ Resources:
                 powershell.exe -Command "Set-ExecutionPolicy UnRestricted -Force"
               waitAfterCompletion: '0'
             2-rename-computer:
-              command: !Join
-                - ''
+              command:
                 - - powershell.exe -Command "Rename-Computer -Restart -NewName "
                   - Ref: Hostname
               waitAfterCompletion: forever  
@@ -172,7 +161,7 @@ Resources:
                   - Ref: TechDayAdminUser
               waitAfterCompletion: forever
             4-install-ADcert:
-              command: !Join
+              command:
               - ''
               - - 'powershell.exe -Command c:\s3-downloads\scripts\ad_cert.ps1 -SafeModeAdministratorPassword '
                 - Ref: SafeModeAdministratorPassword
@@ -189,11 +178,11 @@ Resources:
               command: !Join 
               - ''
               - - 'powershell.exe -Command c:\s3-downloads\scripts\adfs_install.ps1 -SafeModeAdministratorPassword '
-              - Ref: SafeModeAdministratorPassword
-              - " -DomainNetBiosName "
-              - Ref: DomainNetBiosName
-              - " -TechDayAdminUser "
-              - Ref: TechDayAdminUser
+                - Ref: SafeModeAdministratorPassword
+                - " -DomainNetBiosName "
+                - Ref: DomainNetBiosName
+                - " -TechDayAdminUser "
+                - Ref: TechDayAdminUser
               waitAfterCompletion: forever
     Properties:
       DisableApiTermination: 'false'
@@ -202,7 +191,6 @@ Resources:
       IamInstanceProfile: !Ref Profile
       ImageId: !FindInMap [ AMIMap, !Ref OS, ImageId ]
       InstanceType: !Sub "${InstanceSize}"
-      KeyName: !Sub "${KeyPair}"
       UserData: !Base64
         'Fn::Join': 
           - ''
@@ -224,24 +212,10 @@ Resources:
             - "Ref": "AWS::StackName"
             - "\n"           
             - "</powershell>\n"
-      Tags:
-        - Key: Environment
-          Value: !Sub "${Environment}"
-        - Key: Application
-          Value: !Sub "${Application}"
-        - Key: Name
-          Value: !Sub "${Hostname}"
-        - Key: Owner
-          Value: !Sub "${Owner}"
-        - Key: OS
-          Value: !Sub "${OS}"
-        - Key: Project
-          Value: !Sub "${Project}"
       NetworkInterfaces:
         - DeleteOnTermination: 'true'
           Description: Primary network interface
           DeviceIndex: 0
-          SubnetId: !FindInMap [SubnetMap, !Ref AvailabilityZone, !Ref Environment]
           GroupSet:
           - !Ref ADFSSecurityGroup
 Outputs:
@@ -249,9 +223,9 @@ Outputs:
     Description: 'InstanceId'
     Value: !Ref Instance
     Export:
-      Name: !Sub '${Hostname}-${Environment}-InstanceId'
-  InstancePrivateIP:
-    Description: 'InstancePrivateIP'
-    Value: !GetAtt Instance.PrivateIp
+      Name: !Sub '${Hostname}-InstanceId'
+  PublicIp:
+    Description: Server Public IP
+    Value: !GetAtt Instance.PublicIp
     Export:
-      Name: !Sub '${Hostname}-${Environment}-InstancePrivateIP'
+      Name: !Sub "{$AWS:StackName}-PublicIp"
