@@ -1,0 +1,51 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: S3Bucket and related resources for the FSS challenge
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2021-2
+    Description: S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
+      or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+Resources:
+  ImageUploaderS3Bucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - '*'
+            AllowedMethods:
+              - GET
+              - HEAD
+              - PUT
+            AllowedOrigins:
+              - '*'
+
+Outputs:
+  ImageUploaderS3BucketName:
+    Value: !Ref ImageUploaderS3Bucket
+    Description: Image Uploader S3 Bucket Name
+  ImageUploaderS3BucketARN:
+    Value: !GetAtt ImageUploaderS3Bucket.Arn
+    Description: Image Uploader S3 Bucket arn
