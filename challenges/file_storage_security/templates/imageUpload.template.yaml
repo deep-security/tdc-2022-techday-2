@@ -47,19 +47,14 @@ Parameters:
 
 Resources:
   # Resources + Lambda Functions
-  ImageUploaderS3Bucket:
-    Type: 'AWS::S3::Bucket'
+  S3BucketResources:
+    Type: AWS::CloudFormation::Stack
     Properties:
-      CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - '*'
-            AllowedMethods:
-              - GET
-              - HEAD
-              - PUT
-            AllowedOrigins:
-              - '*'
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Ref QSS3KeyPrefix
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}s3Bucket.template.yaml"
+
   LambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -114,7 +109,7 @@ Resources:
                   - "s3:GetObjectTagging"
                 Effect: Allow
                 Resource: 
-                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
+                  - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
                   # REQUIRED FOR SCAN-ON-GET PRESIGNED URLs
                   - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
       AssumeRolePolicyDocument:
@@ -156,7 +151,7 @@ Resources:
                   - "s3:GetObjectTagging"
                 Effect: Allow
                 Resource: 
-                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
+                  - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
                   # REQUIRED FOR SCAN-ON-GET PRESIGNED URLs
                   - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
       AssumeRolePolicyDocument:
@@ -187,7 +182,7 @@ Resources:
                   - "s3:PutObject"
                 Effect: Allow
                 Resource: 
-                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
+                  - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -215,7 +210,7 @@ Resources:
           from botocore.config import Config
           
           # Values passed in from cfn
-          bucket = "${ImageUploaderS3Bucket}"
+          bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
           region = "${AWS::Region}"
           
           logger = logging.getLogger()
@@ -317,7 +312,7 @@ Resources:
           
           # Values passed in from cfn
           bucket = "${QSS3BucketName}"
-          image_bucket = "${ImageUploaderS3Bucket}"
+          image_bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
           true_prefix = "${LambdaPrefix}payloadLoader/true.js"
           false_prefix = "${LambdaPrefix}payloadLoader/false.js"
           region = "${AWS::Region}"
@@ -379,7 +374,7 @@ Resources:
           from botocore.config import Config
 
           # Set params from cfn
-          bucket = "${ImageUploaderS3Bucket}"
+          bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
           region = "${AWS::Region}"
 
           logger = logging.getLogger()
@@ -458,7 +453,7 @@ Resources:
               #     - s3:ListBucket
               #     - s3:PutObject
               #   Resource:
-              #     - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
+              #     - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
