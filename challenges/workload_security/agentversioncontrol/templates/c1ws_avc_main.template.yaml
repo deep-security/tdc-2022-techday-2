@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This template defines a the main stack for a challenge.
+
+Parameters:
+  # Service Catalog Related
+  PlayerServiceCatalogPortfolio:
+    Type: String
+  ServiceCatalogLaunchRoleArn:
+    Type: String
+  # Bucket path related
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+    Default: techday-2022-2
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: "latest/"
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+Resources:
+  # Everything that needs to be created even before player starts playing.
+
+  ######################
+  # IF your challenge requires you to have the player "deploy a cloudformation template",
+  # you need to use Service Catalog instead. This sample would create an entry in Service
+  # catalog for the player:
+  ######################
+  C1WSAVCServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: This is an EC2 instance with a DSA installed for the Agent Version Control challenge.
+      Name: AVC DSA
+      Owner: Trend Micro
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1ws_avc_service_catalog.template.yaml
+
+  ######################
+  # The Service Catalog Association is locked behind the Onboarding Challenge Service Catalog. This forces players to play onboarding challenge first.
+  # Create your association like below, and add a Service Catalog association in challenges/onboarding/templates/c1-onboarding-service-catalog.child-template.yaml for C1
+  # Or challenges/onboarding/templates/v1-onboarding-service-catalog.child-template.yaml for V1. There are examples in those templates.
+  ######################
+  C1WSAVCServiceCatalogProductID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "C1WSAVCProductID"
+      Value: !Ref C1WSAVCServiceCatalogProduct
+      Type: String
+
+#Outputs:

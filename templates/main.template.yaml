@@ -103,7 +103,7 @@ Parameters:
   BuildEks:
     Type: String
     AllowedValues: [true, false]
-    Default: false
+    Default: true
 
 Conditions:
   BuildEks:
@@ -128,7 +128,103 @@ Resources:
         - PlayerStack
         - ServiceCatalogPortfolioStack
         - OnboardingStack #Added for throttling IAM role creation
+  deployC1csAttacks:
+    Type: AWS::CloudFormation::Stack
+    Condition: BuildEks
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/container_security/'
+        awsAccountID: !Ref "AWS::AccountId"
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_deploy_attack_container.template.yaml'
+    DependsOn:
+      - EKSStack
 
+  c1wsAVCStack:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+          ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/'
+        TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/c1ws_avc_main.template.yaml'
+      DependsOn: 
+        - PlayerStack
+        - ServiceCatalogPortfolioStack
+        - OnboardingStack #Added for throttling IAM role creation
+
+  c1wsLog4ShellStack:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/workload_security/log4shell/'
+          VPCID: !GetAtt VPCStack.Outputs.VPCID
+          PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+          SNSTopicArn: !GetAtt WorkloadSecurityStack.Outputs.SNSTopicARN
+        TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/log4shell/templates/c1ws_log4shell_main.template.yaml'
+      DependsOn: 
+        - PlayerStack
+        - ServiceCatalogPortfolioStack
+        - OnboardingStack #Added for throttling IAM role creation
+        
+  FSSStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+        PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
+
+  V1SOStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/vision_one/"
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/main.template.yaml' 
+      
+  WorkloadSecurityStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/workload_security/
+        VPCID: !GetAtt VPCStack.Outputs.VPCID
+        PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/main.template.yaml'
+    DependsOn: 
+      - ServiceCatalogPortfolioStack
+      - VPCStack
+  ############################################ 
+  ########## C1WS Service Catalog ########### 
+  ############################################
+  C1WSNewServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description: Be sure to expand this before tryng Cloud One Workload Security Challenges
+      Name: C1WS Initial preparation
+      Owner: Trend Micro
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/onbording_servicecatalog.yaml
+  C1WSNewServicePorfolioProductAssociation:
+    Type: AWS::ServiceCatalog::PortfolioProductAssociation
+    Properties:
+      PortfolioId: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+      ProductId: !Ref C1WSNewServiceCatalogProduct
+  C1WSNewServiceLaunchRoleConstraint:
+    DependsOn: C1WSNewServicePorfolioProductAssociation
+    Type: AWS::ServiceCatalog::LaunchRoleConstraint
+    Properties:
+      PortfolioId: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+      ProductId: !Ref C1WSNewServiceCatalogProduct
+      RoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+ 
   # SAMPLE: Load Challenges and Infra for Challenges
   # Sample:
   #   Type: AWS::CloudFormation::Stack
@@ -169,7 +265,7 @@ Resources:
   #       VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
   #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/infra/dsm/templates/ds_clients.template.yaml'
 
-  # ☠️ DON'T TOUCH - Or Webster might have a tak with you... or worse, Amanda! ☠️
+  # ☠️ DON'T TOUCH - Or Webster might have a talk with you... or worse, Amanda! ☠️
   QSS3BucketNameSsm:
     Type: AWS::SSM::Parameter
     Properties:
@@ -263,12 +359,33 @@ Resources:
       - VPCStack
       - KeyPairStack
 
-  Wrinkles:
+  C1PostOnboardTrigger:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         MainStackId: !Ref AWS::StackId
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/wrinkles_trigger.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1_postonboard_trigger.template.yaml'
+
+  C1PostOnboardFunctionNameSsmParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "C1PostOnboardFunctionName"
+      Value: !GetAtt C1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
+      Type: String
+  
+  V1PostOnboardTrigger:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        MainStackId: !Ref AWS::StackId
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/v1_postonboard_trigger.template.yaml'
+
+  V1PostOnboardFunctionNameSsmParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "V1PostOnboardFunctionName"
+      Value: !GetAtt V1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
+      Type: String
 
   LockoutInfraStack:
     Type: AWS::CloudFormation::Stack
@@ -360,6 +477,17 @@ Outputs:
     Value: !Sub 'https://${AWS::AccountId}.signin.aws.amazon.com/console?region=${AWS::Region}'
     Description: URL to access this AWS Account dashboard
 
+  C1WSLog4ShellSite:
+    Value: !GetAtt c1wsLog4ShellStack.Outputs.Log4ShellSite
+    Description: Tomcat Web App with Log4Shell Vulnerability.
+
 # #Sample Challenge Outputs
 #   SampleChallengeBucket:
 #     Value: !GetAtt Sample.Outputs.CoolBucketName
+
+  V1SOtaskBucketURL:
+    Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
+    Description: Bucket for V1 SO task information (player access required)
+  c1csAlbHostname:
+    Description: ALB Hostname that the player uses to access the c1cs attack container
+    Value: !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname  
