@@ -70,6 +70,7 @@ Resources:
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
         CopyZipsS3Bucket: !GetAtt CopyZipsStack.Outputs.DestinationBucket
         CopyZipsPrefix: !Sub "${QSS3KeyPrefix}lambda/"
+        ProfilePictureDropperCodeZip: "profilePictureDropper/profilePictureDropper.zip"
         WebsiteCodeZip: "imageUpload/imageUpload.zip"
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/imageUpload.template.yaml"
       
@@ -100,4 +101,5 @@ Resources:
       Prefix: !Sub "${QSS3KeyPrefix}lambda/"
       Objects:
       - "imageUpload/imageUpload.zip"
+      - "profilePictureDropper/profilePictureDropper.zip"
 
