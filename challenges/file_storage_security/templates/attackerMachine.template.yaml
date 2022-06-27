@@ -452,39 +452,6 @@ Resources:
                   - logs:CreateLogStream
                   - logs:PutLogEvents
                 Resource: arn:aws:logs:*:*:*
-  #
-  InitAttackerEnvLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
-      Policies:
-        - PolicyName: LambdaFunctionPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ssm:GetParameter
-                  - states:StartExecution
-                Resource:
-                  - arn:aws:states:*:*:stateMachine:DeployAttackerEnvStateMachine
-                  - arn:aws:ssm:*:*:parameter/player/FSS/DeployAttackerEnvStateMachineArn
-              # Uncomment for deubg logs
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
 
 Outputs:
   DeployAttackerEnvStateMachine:
