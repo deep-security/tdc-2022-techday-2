@@ -7,7 +7,7 @@ import logging
 from botocore.config import Config
 
 # Values passed in from cfn
-bucket = "${ImageUploaderS3Bucket}"
+bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
 region = "${AWS::Region}"
 
 logger = logging.getLogger()

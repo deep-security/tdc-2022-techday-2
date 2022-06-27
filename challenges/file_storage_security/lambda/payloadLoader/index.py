@@ -7,7 +7,7 @@ from botocore.config import Config
 
 # Values passed in from cfn
 bucket = "${QSS3BucketName}"
-image_bucket = "${ImageUploaderS3Bucket}"
+image_bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
 true_prefix = "${LambdaPrefix}payloadLoader/true.js"
 false_prefix = "${LambdaPrefix}payloadLoader/false.js"
 region = "${AWS::Region}"
