@@ -63,6 +63,20 @@ Resources:
           CopyZipsPrefix: !Ref CopyZipsPrefix
           ProfilePictureDropperCodeZip: !Ref ProfilePictureDropperCodeZip
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}s3Bucket.template.yaml"
+  PlayerAccessGetImgPolicy:
+    Type: 'AWS::IAM::Policy'
+    Properties:
+      PolicyName: "AccessGetImgLambda"
+      Groups:
+        - !Ref PlayerGroupName
+      PolicyDocument:
+        Statement:
+          - Action:
+              - "lambda:UpdateFunctionCode"
+              - "lambda:GetFunction"
+              - "lambda:PublishVersion"
+            Resource: !Ref GetImgLambda
+            Effect: Allow
 
   LambdaRole:
     Type: AWS::IAM::Role
