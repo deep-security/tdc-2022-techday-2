@@ -75,8 +75,8 @@ Resources:
               - "lambda:UpdateFunctionCode"
               - "lambda:GetFunction"
               - "lambda:PublishVersion"
-            Resource: !GetAtt GetImgLambda.Arn
             Effect: Allow
+            Resource: !GetAtt GetImgLambda.Arn
 
   LambdaRole:
     Type: AWS::IAM::Role
