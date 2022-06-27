@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Service Catalog for Network Security. Creates cross-account IAM role for Network Security.
+
+Parameters:
+  QSS3BucketName:
+    Type: String
+  QSS3KeyPrefix:
+    Type: String
+Resources:
+  # Create IAM Role
+  IamRole:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          ExternalID: '{{resolve:ssm:/player/C1/c1AccountId:1}}'
+          NSaaSAccountId: "852329647234"
+          NetworkSecurityAwsAccountId: "737318609257"
+        TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/network_security_connector_cft.yaml'
+  BasicLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+              - lambda.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      Path: /
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'logs:CreateLogGroup'
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource: '*'
+  NetSecAwsConnectorCreator:
+    Type: 'AWS::Lambda::Function'
+    Properties:
+      Handler: "index.handler"
+      Runtime: python3.7
+      Role: !GetAtt BasicLambdaRole.Arn
+      Timeout: 30
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          from botocore.vendored import requests
+          import traceback
+          import urllib3
+          import cfnresponse
+          import time
+
+          iamc = boto3.client('iam')
+          PNAME = "NetworkSecurityPolicy"
+
+
+          def handler(event, context):
+            print("executed")
+            print(str(event))
+            print(str(context))
+            print("")
+            try:
+              data = run(event.get("ResourceProperties", {}), event, context)
+              print(data)
+              cfnresponse.send(event, context, cfnresponse.SUCCESS, data, str(data.get("id", "-1")))
+            except Exception as e:
+              print("type error: " + str(e))
+              print(traceback.format_exc())
+              cfnresponse.send(event, context, cfnresponse.FAILED, {})
+            return
+
+
+          def run(p, event, context):
+            url = "network.{}.cloudone.trendmicro.com".format(p["env"])
+            requests = urllib3.HTTPSConnectionPool(url, port=443)
+            ApiHeaders = {
+                'Authorization': 'ApiKey {}'.format(p['apiKey']),
+                'api-version': 'v1',
+            }
+            e = getExistingConnector(p, url, requests, ApiHeaders)
+            if e:
+              if event["RequestType"] == "Delete" and str(e["id"]) == event.get("PhysicalResourceId", ""):
+                r = requests.request('DELETE', '/api/awsconnectors/{}'.format(e["id"], headers=ApiHeaders))
+              return e
+            time.sleep(2)
+            r = requests.request('POST', '/api/awsconnectors', headers={**ApiHeaders, **{'Content-Type': 'application/json'}}, body=json.dumps({"accountName": "TDC-{}".format(p["accountId"]), "crossAccountRole": p["roleArn"]}))
+            if not r.status == 200:
+              print(r.data)
+              msg = "Failed to call createAccountUsingPOST from Cloud One Network Security ({} error)".format(r.status)
+              print(msg)
+              # This endpoint seems to be giving 400 error despite successfully creating?
+              time.sleep(2)
+              e = getExistingConnector(p, url, requests, ApiHeaders)
+              if e:
+                return e
+              else:
+                raise Exception(msg)
+            return json.loads(r.data)
+
+
+          def getExistingConnector(p, url, requests, ApiHeaders):
+            r = requests.request('GET', '/api/awsconnectors', headers=ApiHeaders)
+            if not r.status == 200:
+              raise Exception("Failed to call AWS-Connectors-API from Cloud One Network Security ({} error)".format(r.status))
+            for role in json.loads(r.data).get("crossAccountRoles", []):
+              if str(role.get("accountId")) == p["accountId"]:
+                return role
+            return None
+  CreateConnector:
+    Type: 'Custom::LambdaInvoker'
+    Properties:
+      ServiceToken: !GetAtt NetSecAwsConnectorCreator.Arn
+      Region: !Ref AWS::Region
+      env: '{{resolve:ssm:/player/C1/c1Region:1}}'
+      accountId: !Ref AWS::AccountId
+      apiKey: '{{resolve:ssm:/player/C1/c1ApiKey:1}}'
+      roleArn: !GetAtt IamRole.Outputs.NetworkSecurityRoleArn

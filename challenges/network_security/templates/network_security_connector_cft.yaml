@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: cross account IAM role info that customer needs to create
+Parameters:
+  ExternalID:
+    Type: String
+    Description: Customer Cloud One ID
+  NSaaSAccountId:
+    Type: String
+    Description: Cloud One Network Security NSaaS Account ID
+  NetworkSecurityAwsAccountId:
+    Type: String
+    Description: Cloud One Network Security Account ID
+Resources:
+  NetworkSecurityPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Description: Network Security Custom Policy
+    Properties:
+      ManagedPolicyName: NetworkSecurityPolicy
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid : cloudconnectorEc2
+            Effect: Allow
+            Action:
+              - "ec2:CreateSubnet"
+              - "ec2:CreateVpcEndpoint"
+              - "ec2:CreateTags"
+              - "ec2:DeleteSubnet"
+              - "ec2:DeleteVpcEndpoints"
+              - "ec2:DescribeImages"
+              - "ec2:DescribeInternetGateways"
+              - "ec2:DescribeInstances"
+              - "ec2:DescribeNetworkInterfaces"
+              - "ec2:DescribeAvailabilityZones"
+              - "ec2:DescribeVpcs"
+              - "ec2:DescribeRegions"
+              - "ec2:DescribeNatGateways"
+              - "ec2:DescribeSubnets"
+              - "ec2:DescribeKeyPairs"
+              - "ec2:DescribeRouteTables"
+              - "ec2:DescribeSecurityGroups"
+              - "ec2:DescribeVpcEndpoints"
+              - "logs:CreateLogGroup"
+              - "logs:CreateLogStream"
+              - "logs:PutLogEvents"
+              - "logs:DescribeLogStreams"
+            Resource: '*'
+          - Sid: cloudconnectorCF
+            Effect: Allow
+            Action:
+              - "cloudformation:CreateStack"
+              - "cloudformation:DeleteStack"
+              - "cloudformation:DescribeStacks"
+              - "cloudformation:DescribeStackEvents"
+            Resource: '*'
+          - Sid: cloudconnectorElb
+            Effect: Allow
+            Action:
+              - "elasticloadbalancing:DescribeLoadBalancers"
+              - "elasticloadbalancing:DescribeTargetGroups"
+              - "elasticloadbalancing:DescribeTargetHealth"
+            Resource: '*'
+          - Sid: cloudconnectorIamPolicy
+            Effect: Allow
+            Action:
+              - "iam:GetPolicyVersion"
+              - "iam:GetPolicy"
+            Resource: "arn:aws:iam::*:policy/NetworkSecurityPolicy"
+          - Sid: cloudconnectorIamRole
+            Effect: Allow
+            Action:
+              - "iam:GetRole"
+              - "iam:ListAttachedRolePolicies"
+            Resource: "arn:aws:iam::*:role/NetworkSecurityRole"
+  NetworkSecurityRole:
+    Type: AWS::IAM::Role
+    Description: Network Security Role
+    Properties:
+      RoleName: NetworkSecurityRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: "sts:AssumeRole"
+            Principal:
+              AWS:
+                - !Ref NetworkSecurityAwsAccountId
+                - !Ref NSaaSAccountId
+            Condition:
+              StringEquals:
+                sts:ExternalId: !Ref ExternalID
+      ManagedPolicyArns:
+        - !Ref NetworkSecurityPolicy
+Outputs:
+  NetworkSecurityRoleArn:
+    Description: Arn of NetworkSecurityRole
+    Value: !GetAtt NetworkSecurityRole.Arn

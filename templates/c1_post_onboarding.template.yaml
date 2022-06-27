@@ -142,6 +142,16 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_service_catalog.template.yaml'
 
+  # Network Security setup -- Create Cross Account IAM Role and connect this with Network Security
+  NSOnboardingStackResources:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/network_security/'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/network_security/templates/network_security_xaccountiamrole.yaml'
+
+
 # SamplePostOnboard:
 #     Type: AWS::CloudFormation::Stack
 #     Properties:

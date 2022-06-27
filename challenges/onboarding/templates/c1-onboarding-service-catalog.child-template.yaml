@@ -120,6 +120,11 @@ Parameters:
     Description: DO NOT MODIFY. Expected value of the SSM Parameter Value for the Post Onboard function name.
     Type: 'AWS::SSM::Parameter::Value<String>'
 
+Conditions:
+  IsQSS3KeyPrefixSSMValueNone: !Equals 
+    - !Ref QSS3KeyPrefixSSMValue
+    - 'None'
+
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
   TechDayC1onboardingLambdaRole:
@@ -177,7 +182,7 @@ Resources:
                   - "ssm:PutParameter"
               - Effect: Allow
                 Resource: 
-                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${PostOnboardFunctionName}
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${C1PostOnboardFunctionName}
                 Action:
                   - "lambda:InvokeFunction"
       Path: /

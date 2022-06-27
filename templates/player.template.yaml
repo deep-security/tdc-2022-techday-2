@@ -74,6 +74,27 @@ Resources:
           - Action: ssm:TerminateSession
             Resource: arn:aws:ssm:*:*:session/${aws:username}-*
             Effect: Allow
+          - Action:  # Network Security requirement
+              - ec2:DescribeRouteTables
+              - ec2:DescribeInternetGateways
+              - ec2:DescribeNetworkInterfaces
+              - ec2:DescribeVpcs
+              - ec2:DescribeSubnets
+              - ec2:DescribeNatGateways
+              - ec2:DescribeVpnGateways
+              - ec2:DescribeVpcEndpoints
+              - ec2:DescribeVpcEndpointConnections
+            Resource: "*"
+            Effect: Allow
+          - Action:  # Network Security
+              - ec2:DeleteRoute
+              - ec2:CreateRoute
+              - ec2:ReplaceRoute
+            Resource: "*"
+            Effect: Allow
+            Condition:
+              StringEquals:
+                ec2:ResourceTag/challenge: networksecurity
 
 
 Outputs:
