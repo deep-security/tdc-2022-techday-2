@@ -63,13 +63,6 @@ Resources:
               - PUT
             AllowedOrigins:
               - '*'
-      Parameters:
-          QSS3BucketName: !Ref QSS3BucketName
-          QSS3KeyPrefix: !Ref QSS3KeyPrefix
-          CopyZipsS3Bucket: !Ref CopyZipsS3Bucket
-          CopyZipsPrefix: !Ref CopyZipsPrefix
-          ProfilePictureDropperCodeZip: !Ref ProfilePictureDropperCodeZip
-      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}s3Bucket.template.yaml"
   PlayerAccessGetImgPolicy:
     Type: 'AWS::IAM::Policy'
     Properties:
