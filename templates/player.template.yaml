@@ -57,6 +57,8 @@ Resources:
               - ssm:ListAssociations
               - ssm:DescribeAssociation
               - ssm:DeleteAssociation
+              - ssm:ListCommands
+              - ssm:ListCommandInvocations
             Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:*'
             Effect: Allow
           - Condition:
@@ -68,11 +70,20 @@ Resources:
             Effect: Allow
           - Action:
               - ssm:GetDocument
+              - ssm:SendCommand
             Resource:
               - arn:aws:ssm:::document/SSM-SessionManagerRunShell
+              - !Sub 'arn:aws:ssm:${AWS::Region}::document/AWS-ConfigureAWSPackage'
             Effect: Allow
           - Action: ssm:TerminateSession
             Resource: arn:aws:ssm:*:*:session/${aws:username}-*
+            Effect: Allow
+          - Condition:
+              StringLike:
+                ssm:resourceTag/PlayerSsmDistributorAccess: 'true'
+            Action:
+              - ssm:SendCommand
+            Resource: "*"
             Effect: Allow
           - Action:  # Network Security requirement
               - ec2:DescribeRouteTables
@@ -95,7 +106,6 @@ Resources:
             Condition:
               StringEquals:
                 ec2:ResourceTag/challenge: networksecurity
-
 
 Outputs:
   PlayerUserArn:

@@ -42,6 +42,9 @@ Resources:
   c1csCodeBuild:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}'
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_codepipeline.yaml'
 
   PlayerC1csServiceCatalogProduct:
@@ -92,3 +95,43 @@ Resources:
       Name: "ContainerSecurityScoreLambdaRole"
       Value: !GetAtt ContainerSecurityScoreLambdaRole.Arn
       Type: String
+
+  
+  ScoreLambdaDAY1Task1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task1.yaml
+
+
+
+
+
+
+
+
+  ScoreLambdaDAY1Task3:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task3.yaml
+
+
+
+
+
+
+
+
+
+
+
+
+  ScoreLambdaDAY1Task4:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task4.yaml
+    DependsOn: ContainerSecurityScoreLambdaRoleSsm
+  ScoreLambdaDAY1Task2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task2.yaml
+    DependsOn: ContainerSecurityScoreLambdaRoleSsm
