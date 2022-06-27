@@ -39,6 +39,9 @@ Parameters:
   PlayerPassword:
     Description: The Player's password
     Type: String
+  PlayerGroupName:
+    Description: The Player's group name
+    Type: String
 
   # Service Catalog related
   PlayerServiceCatalogPortfolio:
@@ -68,6 +71,7 @@ Resources:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        PlayerGroupName: !Ref PlayerGroupName
         LambdaPrefix: !Sub "${QSS3KeyPrefix}lambda/"
         ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
         CopyZipsS3Bucket: !GetAtt CopyZipsStack.Outputs.DestinationBucket
