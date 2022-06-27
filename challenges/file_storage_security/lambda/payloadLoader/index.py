@@ -20,27 +20,20 @@ s3 = boto3.client("s3")
 
 def handler(event, context):
     true_file = "/tmp/true.js"
-    false_file = "/tmp/false.js"
-    try:
-        key = "connectioncheck"
-        signed_url = s3.generate_presigned_url(
-            "get_object",
-            Params={"Bucket": image_bucket, "Key": key},
-            ExpiresIn=500,
-        )
-        res = urllib.request.urlopen(
-            urllib.request.Request(url=signed_url, method="GET"), timeout=5
-        )
-        logger.info(res.status)
-        s3.download_file(bucket, true_prefix, true_file)
-        with open(true_file, "rb") as true_file:
-            data: str = true_file.read().decode("utf-8")
-            data = "const exploit = '/profile/getimg/connectioncheck'\n" + data
-    except:
-        s3.download_file(bucket, false_prefix, false_file)
-        with open(false_file, "rb") as false_file:
-            data = false_file.read().decode("utf-8")
-
+    key = "connectioncheck"
+    signed_url = s3.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": image_bucket, "Key": key},
+        ExpiresIn=500,
+    )
+    res = urllib.request.urlopen(
+        urllib.request.Request(url=signed_url, method="GET"), timeout=5
+    )
+    logger.info(res.status)
+    s3.download_file(bucket, true_prefix, true_file)
+    with open(true_file, "rb") as true_file:
+        data: str = true_file.read().decode("utf-8")
+        data = "const exploit = '/profile/getimg/connectioncheck'\n" + data
     return {
         "statusCode": 200,
         "headers": {
