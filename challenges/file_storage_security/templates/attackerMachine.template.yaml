@@ -134,14 +134,19 @@ Resources:
             inputs:
               timeoutSeconds: "180"
               runCommand:
+                - |
+                  wget https://github.com/mikefarah/yq/releases/download/v4.25.1/yq_linux_amd64.tar.gz -O - | \
+                  tar xz && mv yq_linux_amd64 /usr/local/bin/yq && \
                 - !Sub |
-                  NAMESPACE=fss-log4shell-attacker-env \
+                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
                 - !Sub |
                   sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
                   mkdir -p /tmp/manifests-$NAMESPACE && \
                   aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-$NAMESPACE && \
-                  sudo /usr/local/bin/kubectl create secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix} --from-literal=PLAYERPASSWORD="${PlayerPassword}" --dry-run=client -o yaml > /tmp/manifests-$NAMESPACE/secrets.yaml && \
+                  for file in $(grep -lR deployment /tmp/manifests-$NAMESPACE); do \
+                  /usr/local/bin/yq -i '.spec.template.spec.containers[].env += [{"name":"TOOLSURL", "value":"https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix}"}, {"name": "PLAYERPASSWORD", "value":"${PlayerPassword}"}]' $file; \
+                  done && \
                   sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f /tmp/manifests-$NAMESPACE
       DocumentType: Command
 
@@ -181,11 +186,12 @@ Resources:
                     Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
                     DocumentName="AWS-RunShellScript",
                     Parameters={
-                        "commands": ["""${commands}"""]
+                        "commands": [
+                            "${commands}"
                     },
                 )
           - commands: !Sub |
-              sudo /usr/local/bin/kubectl delete namespace fss-log4shell-attacker-env --ignore-not-found=true
+              sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) --ignore-not-found=true
   LaunchK8sManifestsLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -255,7 +261,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl get services --namespace fss-log4shell-attacker-env attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                          "sudo /usr/local/bin/kubectl get services --namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
                       ]
                   },
               )
@@ -339,8 +345,7 @@ Resources:
                   "ErrorEquals": [
                     "Lambda.ServiceException",
                     "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                    "States.TaskFailed"
+                    "Lambda.SdkClientException"
                   ],
                   "IntervalSeconds": 2,
                   "MaxAttempts": 6,
@@ -353,105 +358,6 @@ Resources:
           "Comment": "Idempotent state machine that deploys an attacker environment to EKS through an EKS bastion.\nNOTE: The EKS bastion(s) in question must have be tagged: \"Name:EKSBastion\"."
         }
       RoleArn: !GetAtt [DeployAttackerEnvStateMachineRole, Arn]
-
-  # Custom Resources
-  InitAttackerEnv:
-    Type: Custom::InitAttackerEnv
-    Properties:
-      ServiceToken: !GetAtt InitAttackerEnvLambda.Arn
-      Timeout: 5
-
-  # Custom Resource Lambda Functions
-  InitAttackerEnvLambda:
-    Type: AWS::Lambda::Function
-    DependsOn:
-    - DeployAttackerEnvStateMachine
-    - DeployAttackerEnvStateMachineArn
-    Properties:
-      Runtime: python3.8
-      Timeout: 20
-      Handler: index.lambda_handler
-      Role: !GetAtt InitAttackerEnvLambdaRole.Arn
-      Code:
-        ZipFile: |
-          import boto3
-          import random
-          import string
-          import cfnresponse
-          import logging
-
-          logger = logging.getLogger()
-          logger.setLevel(logging.INFO)
-          client = boto3.client("stepfunctions")
-          clientssm = boto3.client('ssm')
-
-
-          def id_generator(size, chars=string.ascii_lowercase + string.digits):
-              return "".join(random.choice(chars) for _ in range(size))
-
-          def lambda_handler(event, context):
-              logger.info("event: {}".format(event))
-
-              try:
-                  parameter = clientssm.get_parameter(Name="/player/FSS/DeployAttackerEnvStateMachineArn", WithDecryption=True)
-                  stateMachineArn = parameter["Parameter"]["Value"]
-              
-                  # Add Random number to the end of the name of the statemachine
-                  randomString = "%s.%s" % (id_generator(6), id_generator(16))
-                  stateMachineName = "DeployAttackerEnv" + randomString
-              
-                  response = client.start_execution(
-                      stateMachineArn=stateMachineArn,
-                      name=stateMachineName,
-                  )
-
-                  cfn_status = cfnresponse.SUCCESS
-
-              except Exception as e:
-                  logger.info("Exception: {}".format(e))
-                  cfn_status = cfnresponse.FAILED
-
-              cfnresponse.send(
-                  event,
-                  context,
-                  cfn_status,
-                  {},
-                  "InitAttackerEnv",
-              )
-
-  # Custom resource IAM
-  InitAttackerEnvLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: "2012-10-17"
-        Statement:
-          - Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-            Action:
-              - sts:AssumeRole
-      Path: "/"
-      Policies:
-        - PolicyName: LambdaFunctionPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: Allow
-                Action:
-                  - ssm:GetParameter
-                  - states:StartExecution
-                Resource:
-                  - arn:aws:states:*:*:stateMachine:DeployAttackerEnvStateMachine
-                  - arn:aws:ssm:*:*:parameter/player/FSS/DeployAttackerEnvStateMachineArn
-              # Uncomment for deubg logs
-              - Effect: Allow
-                Action:
-                  - logs:CreateLogGroup
-                  - logs:CreateLogStream
-                  - logs:PutLogEvents
-                Resource: arn:aws:logs:*:*:*
 
 Outputs:
   DeployAttackerEnvStateMachine:
