@@ -1,16 +1,39 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: CloudFormation Template to deploy an EC2 instance and then install ADDS
 Parameters:
+  # Bucket path related
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+    Default: techday-2022-2
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: "latest/"
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  LatestAmiId: 
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-windows-latest/Windows_Server-2016-English-Full-Base'
+    Description: DO NOT CHANGE THIS VALUE
+  PublicSubnet1SSMParameter:
+    Default: "PublicSubnet1"
+    Description: DO NOT CHANGE THIS VALUE
+    Type: 'AWS::SSM::Parameter::Value<String>'
   Hostname: 
     Type: String
-    Description: Hostname - maximum 15 characters
-    MaxLength: '15'    
-  OS: 
-    Type: String
-    Description: OS Version
-    Default: WindowsServer2019Base
-    AllowedValues: 
-      - "WindowsServer2019Base"
+    Description: Hostname 
+    MaxLength: '15' 
+    Default: ADFS-SERVER   
   InstanceSize: 
     Type: String
     Description: Instance Size
@@ -26,33 +49,17 @@ Parameters:
   TechDayAdminUser:
     Type: String
     Description: RDP user for player
-    Default: tdadmin  
+    Default: tdplayer 
   SafeModeAdministratorPassword:
     MinLength: '8'
     NoEcho: 'true'
     Type: String
     Description: SafeModeAdministrator
-    Default: testing123!   
-  AvailabilityZone:
-    Type: String
-    Description: Default AZ
-    AllowedValues: 
-      - us-east-1a
-      - us-east-1b
-    Default: us-east-1a
+    Default: TechDay2022!
   S3BucketName:
-    Default: c1as-demo-bucket
-    Description: S3 bucket for boot artefacts
+    Default: !Ref QSS3BucketName
+    Description: S3 bucket for windows bootstrap
     Type: String
-Mappings:
-  AMIMap:
-    WindowsServer2019Base:
-      "ImageId": "ami-033594f8862b03bb2"
-  SubnetMap: 
-    us-east-1a:
-      Dev: "subnet-02b06c3be07039439"
-    us-east-1c:
-      Dev: "subnet-09832fef26595c7bd"
 Resources:
   Profile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -63,7 +70,7 @@ Resources:
       InstanceProfileName: !Join
         - ''
         - - 'instance-profile-'
-          - !Ref S3BucketName
+          - !Ref QSS3BucketName
   HostRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -80,7 +87,7 @@ Resources:
                 Resource: !Join
                   - ''
                   - - 'arn:aws:s3:::'
-                    - !Ref S3BucketName
+                    - !Ref QSS3BucketName
                     - '/*'
                 Effect: Allow
           PolicyName: s3-policy-read
@@ -112,7 +119,7 @@ Resources:
           FromPort: 3389
           ToPort: 3389
           CidrIp: 0.0.0.0/0
-      VpcId: vpc-7bfdcf01    
+      VpcId: !GetAtt VPCStack.Outputs.VPCID    
   Instance:
     Type: 'AWS::EC2::Instance'
     Metadata:
@@ -130,16 +137,16 @@ Resources:
         get-files:
           files:
             'c:\s3-downloads\scripts\rdp_user.ps1':
-              source: https://c1as-demo-bucket.s3.amazonaws.com/rdp_user.ps1
+              source: https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/rdp_user.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\ad_cert.ps1':
-              source: https://c1as-demo-bucket.s3.amazonaws.com/ad_cert.ps1
+              source: https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/ad_cert.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adds_install.ps1':
-              source: https://c1as-demo-bucket.s3.amazonaws.com/adds_install.ps1
+              source: https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/adds_install.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adfs_install.ps1':
-              source: https://c1as-demo-bucket.s3.amazonaws.com/adfs_install.ps1
+              source: https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/adfs_install.ps1
               authentication: S3AccessCreds
         configure-instance:
           commands:
@@ -159,13 +166,11 @@ Resources:
                   - Ref: SafeModeAdministratorPassword
                   - " -TechDayAdminUser "
                   - Ref: TechDayAdminUser
-              waitAfterCompletion: forever
             4-install-ADcert:
-              command:
+              command: !Join
               - ''
               - - 'powershell.exe -Command c:\s3-downloads\scripts\ad_cert.ps1 -SafeModeAdministratorPassword '
                 - Ref: SafeModeAdministratorPassword
-              waitAfterCompletion: forever
             5-install-ADDS:
               command: !Join
               - ''
@@ -185,12 +190,14 @@ Resources:
                 - Ref: TechDayAdminUser
               waitAfterCompletion: forever
     Properties:
-      DisableApiTermination: 'false'
-      AvailabilityZone: !Sub "${AvailabilityZone}"
+      AvailabilityZone:
+        Fn::Select: 
+          - 0
+          - Fn::GetAZs: ""
       InstanceInitiatedShutdownBehavior: stop
       IamInstanceProfile: !Ref Profile
-      ImageId: !FindInMap [ AMIMap, !Ref OS, ImageId ]
-      InstanceType: !Sub "${InstanceSize}"
+      ImageId: !Ref 'LatestAmiId'
+      InstanceType: !Ref InstanceSize
       UserData: !Base64
         'Fn::Join': 
           - ''
@@ -213,19 +220,19 @@ Resources:
             - "\n"           
             - "</powershell>\n"
       NetworkInterfaces:
-        - DeleteOnTermination: 'true'
-          Description: Primary network interface
-          DeviceIndex: 0
-          GroupSet:
-          - !Ref ADFSSecurityGroup
+          - DeleteOnTermination: true
+            DeviceIndex: 0
+          - AssociatePublicIpAddress: true
+            DeviceIndex: 0
+            Description: Primary network interface
+            SubnetId:
+              Ref: PublicSubnet1SSMParameter
+            GroupSet:
+            - !Ref ADFSSecurityGroup
 Outputs:
   InstanceId:
     Description: 'InstanceId'
     Value: !Ref Instance
-    Export:
-      Name: !Sub '${Hostname}-InstanceId'
   PublicIp:
     Description: Server Public IP
-    Value: !GetAtt Instance.PublicIp
-    Export:
-      Name: !Sub "{$AWS:StackName}-PublicIp"
+    Value: !GetAtt Instance.PublicDnsName
