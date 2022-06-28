@@ -11,7 +11,7 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
     Type: String
-    Default: tdc-techday-2022-2
+    Default: techday-2022-2
   QSS3KeyPrefix:
     AllowedPattern: ^[0-9a-zA-Z-/._]*
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
@@ -25,10 +25,8 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-windows-latest/Windows_Server-2016-English-Full-Base'
     Description: DO NOT CHANGE THIS VALUE
-  PublicSubnet1SSMParameter:
-    Default: "PublicSubnet1"
-    Description: DO NOT CHANGE THIS VALUE
-    Type: 'AWS::SSM::Parameter::Value<String>'
+  PublicSubnet1ID:
+    Type: AWS::EC2::Subnet::Id
   VPCID:
     Type: AWS::EC2::VPC::Id
   Hostname: 
@@ -224,7 +222,7 @@ Resources:
             DeviceIndex: 0
             Description: Primary network interface
             SubnetId:
-              Ref: PublicSubnet1SSMParameter
+              Ref: PublicSubnet1ID
             GroupSet:
             - !Ref ADFSSecurityGroup
 Outputs:
