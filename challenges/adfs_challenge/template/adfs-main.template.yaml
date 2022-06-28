@@ -77,7 +77,7 @@ Resources:
       RoleName: !Join
         - ''
         - - 'role-s3-read-'
-          - !Ref S3BucketName
+          - !Ref QSS3BucketName
       Policies:
         - PolicyDocument:
             Version: 2012-10-17
@@ -127,7 +127,7 @@ Resources:
         S3AccessCreds:
           type: S3
           buckets:
-            - !Ref S3BucketName
+            - !Ref QSS3BucketName
           roleName: !Ref HostRole
       'AWS::CloudFormation::Init':
         configSets: 
