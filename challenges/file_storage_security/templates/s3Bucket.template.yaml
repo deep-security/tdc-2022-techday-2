@@ -223,7 +223,7 @@ Resources:
                   - !Sub "arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
             Version: "2012-10-17"
           PolicyName: !Sub ${AWS::StackName}-${AWS::Region}-AWSLambda-S3
-      RoleName: !Sub ${AWS::StackName}-${AWS::Region}-CleanBucketLambdaRole
+      RoleName: "CleanBucketLambdaRole"
 
 Outputs:
   ImageUploaderS3BucketName:
