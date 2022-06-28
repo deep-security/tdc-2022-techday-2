@@ -10,3 +10,5 @@ profilePictureDropper
 # Notes
 
 Don't edit `malicious-peeps.zip`. The compression is pretty weird, and the lambda expects it to stay how it is.
+
+Password for `malicious-peeps.zip` is `novirus`.
