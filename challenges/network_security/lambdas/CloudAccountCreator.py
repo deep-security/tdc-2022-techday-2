@@ -1,6 +1,5 @@
 import boto3
 import json
-from botocore.vendored import requests
 import traceback
 import urllib3
 import cfnresponse
