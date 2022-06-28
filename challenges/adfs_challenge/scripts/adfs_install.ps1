@@ -17,4 +17,4 @@ $user  = "$DomainNetBiosName\$TechDayAdminUser"
 $password = ConvertTo-SecureString -String $SafeModeAdministratorPassword -AsPlainText -Force
 $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $user, $password
 
-Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $fqdn  -ServiceAccountCredential $credential
+Install-AdfsFarm -CertificateThumbprint -FederationServiceName $fqdn  -ServiceAccountCredential $credential
