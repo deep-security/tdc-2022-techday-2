@@ -29,6 +29,8 @@ Parameters:
     Default: "PublicSubnet1"
     Description: DO NOT CHANGE THIS VALUE
     Type: 'AWS::SSM::Parameter::Value<String>'
+  VPCID:
+    Type: AWS::EC2::VPC::Id
   Hostname: 
     Type: String
     Description: Hostname 
@@ -115,7 +117,7 @@ Resources:
           FromPort: 3389
           ToPort: 3389
           CidrIp: 0.0.0.0/0
-      VpcId: !GetAtt VPCStack.Outputs.VPCID    
+      VpcId: Ref! VPCID   
   Instance:
     Type: 'AWS::EC2::Instance'
     Metadata:
