@@ -120,7 +120,6 @@ Resources:
   CleanBucketLambda:
     Type: "AWS::Lambda::Function"
     Properties:
-      FunctionName: !Sub "${AWS::StackName}-${AWS::Region}-CleanBucketLambda"
       Handler: index.handler
       Role: !GetAtt CleanBucketLambdaRole.Arn
       Timeout: 360
@@ -196,7 +195,7 @@ Resources:
                 Effect: Allow
                 Resource: arn:aws:logs:*:*:*
             Version: "2012-10-17"
-          PolicyName: !Sub ${AWS::StackName}-${AWS::Region}-AWSLambda-CW
+          PolicyName: "debuglogs"
         - PolicyDocument:
             Statement:
               - Action:
@@ -222,7 +221,7 @@ Resources:
                 Resource:
                   - !Sub "arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
             Version: "2012-10-17"
-          PolicyName: !Sub ${AWS::StackName}-${AWS::Region}-AWSLambda-S3
+          PolicyName: "s3Actions"
       RoleName: "CleanBucketLambdaRole"
 
 Outputs:
