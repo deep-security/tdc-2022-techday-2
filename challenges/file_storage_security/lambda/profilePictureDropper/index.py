@@ -40,18 +40,20 @@ def handler(event, context):
     response_data = {}
     path = "/tmp/pics"
 
-    with zipfile.ZipFile("./malicious-peeps.zip", "r") as zip_ref:
-        zip_ref.extractall(path=path, pwd=b"novirus")
-
-    files = [
-        f"{path}/malicious-peeps/{f}" for f in os.listdir(f"{path}/malicious-peeps")
-    ]
-    response_data = {"files": files}
-
     try:
-        # Upload the image
-        for file in files:
-            upload_file(file, bucket)
+        if event["RequestType"] == "Create":
+            with zipfile.ZipFile("./malicious-peeps.zip", "r") as zip_ref:
+                zip_ref.extractall(path=path, pwd=b"novirus")
+
+            files = [
+                f"{path}/malicious-peeps/{f}"
+                for f in os.listdir(f"{path}/malicious-peeps")
+            ]
+            response_data = {"files": files}
+
+            # Upload the image
+            for file in files:
+                upload_file(file, bucket)
         status = cfnresponse.SUCCESS
     except Exception as e:
         logging.error(e)
