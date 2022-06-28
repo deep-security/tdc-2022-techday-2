@@ -52,7 +52,7 @@ Parameters:
     Type: String
 
 Resources:
-  # Resources + Lambda Functions
+  # S3 Bucket
   S3BucketResources:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -63,20 +63,6 @@ Resources:
           CopyZipsPrefix: !Ref CopyZipsPrefix
           ProfilePictureDropperCodeZip: !Ref ProfilePictureDropperCodeZip
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}s3Bucket.template.yaml"
-  PlayerAccessGetImgPolicy:
-    Type: 'AWS::IAM::Policy'
-    Properties:
-      PolicyName: "AccessGetImgLambda"
-      Groups:
-        - !Ref PlayerGroupName
-      PolicyDocument:
-        Statement:
-          - Action:
-              - "lambda:UpdateFunctionCode"
-              - "lambda:GetFunction"
-              - "lambda:PublishVersion"
-            Effect: Allow
-            Resource: !GetAtt GetImgLambda.Arn
 
   LambdaRole:
     Type: AWS::IAM::Role
