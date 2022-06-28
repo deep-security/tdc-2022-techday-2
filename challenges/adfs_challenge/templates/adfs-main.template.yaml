@@ -56,10 +56,6 @@ Parameters:
     Type: String
     Description: SafeModeAdministrator
     Default: TechDay2022!
-  S3BucketName:
-    Default: !Ref QSS3BucketName
-    Description: S3 bucket for windows bootstrap
-    Type: String
 Resources:
   Profile:
     Type: 'AWS::IAM::InstanceProfile'
