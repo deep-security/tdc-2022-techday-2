@@ -135,16 +135,16 @@ Resources:
         get-files:
           files:
             'c:\s3-downloads\scripts\rdp_user.ps1':
-              source: https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/rdp_user.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/rdp_user.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\ad_cert.ps1':
-              source: https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/ad_cert.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/ad_cert.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adds_install.ps1':
-              source: https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/adds_install.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/adds_install.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adfs_install.ps1':
-              source: https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/adfs_install.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/adfs_install.ps1
               authentication: S3AccessCreds
         configure-instance:
           commands:
