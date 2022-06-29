@@ -332,6 +332,8 @@ Resources:
   GetFSSALBHostname:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters: 
+        Namespace: "fss-log4shell-attacker-env"
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/getALBHostname.template.yaml'
     DependsOn: InvokeAttackerEnvStateMachine
 
