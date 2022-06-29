@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Resources:
-  scoreroleday1task2C1CS:
+  scoreroleday1task4C1CS:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -12,7 +12,7 @@ Resources:
               Service: lambda.amazonaws.com
         Version: "2012-10-17"
       Policies: 
-        - PolicyName: scoreroleday1task2C1CS
+        - PolicyName: scoreroleday1task4C1CS
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -24,10 +24,10 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
-  C1CSScoreLambdarday1task2:
+  C1CSScoreLambdarday1task4:
     Type: AWS::Lambda::Function
     Properties:
-      FunctionName: C1CSScoreLambdarday1task2
+      FunctionName: C1CSScoreLambdarday1task4
       Code: 
         ZipFile: |
           import json
@@ -46,7 +46,7 @@ Resources:
               playerC1Region = parameter ['Parameter']['Value']
               
           # Get latest 25 runtime events from c1cs api
-              url = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/events/sensors?limit=25'
+              url = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/events/sensors?limit=50'
               payloadEvent = json.dumps({
               })
               headers = {
@@ -65,11 +65,11 @@ Resources:
           # Check if any of the 25 events match the correct answer
               taskComplete = "NotComplete"
               for event in events:
-                  if (event["proc.cmdline"] == "yum /usr/bin/yum install nmap" and event["mitigation"] == "log" and event["ruleID"] == "TM-00000010") and event["container.image.tag"] == "tdc_2022_2_c1csAttack":
+                  if ((event["proc.cmdline"] == "yum /usr/bin/yum install nmap" or event["proc.cmdline"] == "yum /usr/bin/yum install nmap -y") and event["mitigation"] == "isolate" and event["ruleID"] == "TM-00000010") and event["container.image.tag"] == "tdc_2022_2_c1csAttack":
                       
                       # Correct answer example:
                           #2022-06-23T02:22:24.687877Z
-                          #log
+                          #isolate
                           #TM-00000010
                           #yum /usr/bin/yum install nmap
                           #tdc_2022_2_c1csAttack
@@ -94,13 +94,13 @@ Resources:
       Handler: index.lambda_handler
       Role:
         Fn::GetAtt:
-          - scoreroleday1task2C1CS
+          - scoreroleday1task4C1CS
           - Arn
       Runtime: python3.8
       Timeout: 60
     DependsOn:
-      - scoreroleday1task2C1CS
+      - scoreroleday1task4C1CS
 Outputs:
-  C1CSScoreLambdarday1task2:
+  C1CSScoreLambdarday1task4:
     Value:
-      Ref: C1CSScoreLambdarday1task2
+      Ref: C1CSScoreLambdarday1task4

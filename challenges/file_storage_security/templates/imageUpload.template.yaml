@@ -1,22 +1,43 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: ImageUploaderApplication
 
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
 Parameters:
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
-    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase
       letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
       (-).
     Default: techday-2021-2
-    Description: S3 bucket name for the Quick Start assets. This string can include
+    Description:
+      S3 bucket name for the Quick Start assets. This string can include
       numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
       or end with a hyphen (-).
     Type: String
   QSS3KeyPrefix:
-    Default: challenge/fss/lambdas/
-    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates
+    Default: ""
+    Description:
+      S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
+    Type: String
+
+  PlayerGroupName:
+    Default: ""
+    Type: String
+  LambdaPrefix:
+    Default: ""
+    Type: String
+  ToolsPrefix:
+    Default: ""
     Type: String
 
   CopyZipsS3Bucket:
@@ -26,26 +47,73 @@ Parameters:
     Default: ""
     Type: String
 
+  ProfilePictureDropperCodeZip:
+    Default: ""
+    Type: String
   WebsiteCodeZip:
     Default: ""
     Type: String
 
 Resources:
-  # Resources + Lambda Functions
-  ImageUploaderS3Bucket:
-    Type: 'AWS::S3::Bucket'
+  #### PREREQS ####
+  # S3 Bucket
+  S3BucketResources:
+    Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        CopyZipsS3Bucket: !Ref CopyZipsS3Bucket
+        CopyZipsPrefix: !Ref CopyZipsPrefix
+        ProfilePictureDropperCodeZip: !Ref ProfilePictureDropperCodeZip
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}s3Bucket.template.yaml"
+
+  #### API GATEWAY ####
+  ImageUploaderApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: !Sub ImageUploader-${AWS::StackId}
+      Description: !Sub ImageUploader-${AWS::StackId}
+      ProtocolType: HTTP
       CorsConfiguration:
-        CorsRules:
-          - AllowedHeaders:
-              - '*'
-            AllowedMethods:
-              - GET
-              - HEAD
-              - PUT
-            AllowedOrigins:
-              - '*'
-  LambdaRole:
+        AllowHeaders:
+          - Authorization
+        AllowMethods:
+          - GET
+          - PUT
+          - OPTIONS
+        AllowOrigins:
+          - "*"
+  ImageUploaderApiDeployment:
+    Type: AWS::ApiGatewayV2::Deployment
+    DependsOn:
+      - ExploitCheckRoute
+      - GetImgRoute
+      - WebsiteRoute
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+  ProfileDeploymentStage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      StageName: profile
+      AutoDeploy: true
+      Description: v1 Stage
+      DeploymentId: !Ref ImageUploaderApiDeployment
+      ApiId: !Ref ImageUploaderApi
+
+  # ENDPOINT: $default
+  WebsiteLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: nodejs14.x
+      MemorySize: 128
+      Code:
+        S3Bucket: !Ref CopyZipsS3Bucket
+        S3Key: !Sub "${CopyZipsPrefix}${WebsiteCodeZip}" # Make sure to set S3Key like this.
+      Role: !GetAtt WebsiteLambdaRole.Arn
+      Timeout: 30
+  WebsiteLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       Policies:
@@ -54,11 +122,11 @@ Resources:
             Version: 2012-10-17
             Statement:
               - Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
                 Resource:
-                  - 'arn:aws:logs:*:*:*'
+                  - "arn:aws:logs:*:*:*"
                 Effect: Allow
       AssumeRolePolicyDocument:
         Version: 2012-10-17
@@ -69,136 +137,33 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
-  GetImgLambdaRole:
-    Type: AWS::IAM::Role
+  WebsiteRoute:
+    Type: AWS::ApiGatewayV2::Route
     Properties:
-      Policies:
-        - PolicyName: GetImgLambdaPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Action:
-                  - 's3-object-lambda:Get*'
-                Effect: Allow
-                Resource: 
-                  - !Sub arn:${AWS::Partition}:s3-object-lambda:${AWS::Region}:${AWS::AccountId}:accesspoint/*
-              - Action:
-                  - 'lambda:InvokeFunction'
-                Effect: Allow
-                Resource: 
-                  - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:*ScannerLambda*TM-FSS-MANAGED"
-              - Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                Resource:
-                  - 'arn:aws:logs:*:*:*'
-                Effect: Allow
-              - Action:
-                  - "s3:GetObject"
-                  - "s3:GetObjectTagging"
-                Effect: Allow
-                Resource: 
-                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
-                  # REQUIRED FOR SCAN-ON-GET PRESIGNED URLs
-                  - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-  GetPresignedPutLambdaRole:
-    Type: AWS::IAM::Role
+      ApiId: !Ref ImageUploaderApi
+      RouteKey: "$default"
+      AuthorizationType: "NONE"
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref WebsiteIntegration
+  WebsiteIntegration:
+    Type: AWS::ApiGatewayV2::Integration
     Properties:
-      Policies:
-        - PolicyName: GetPresignedPutLambdaPolicy
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
-                Resource:
-                  - 'arn:aws:logs:*:*:*'
-                Effect: Allow
-              - Action:
-                  - "s3:PutObject"
-                Effect: Allow
-                Resource: 
-                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
-      AssumeRolePolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Action:
-              - sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service:
-                - lambda.amazonaws.com
-
-  GetImgLambda:
-    Type: AWS::Lambda::Function
+      ApiId: !Ref ImageUploaderApi
+      Description: homepage
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt WebsiteLambda.Arn
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+  ApiGatewayInvokePermissionForWebsite:
+    Type: AWS::Lambda::Permission
     Properties:
-      Handler: index.handler
-      Runtime: python3.9
-      MemorySize: 128
-      Code:
-        ZipFile: !Sub |
-          import boto3
-          import base64
-          import json
-          import os
-          import logging
-          from botocore.config import Config
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt WebsiteLambda.Arn
+      Principal: apigateway.amazonaws.com
 
-          bucket = "${ImageUploaderS3Bucket}"
-          region = "${AWS::Region}"
-
-          logger = logging.getLogger()
-          logger.setLevel(logging.INFO)
-
-          s3_client = boto3.client(
-              "s3",
-              config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
-              region_name=region,
-          )
-
-          def handler(event, context):
-
-              logger.info("event: {}".format(event))
-
-              try:
-                  key = event["pathParameters"]["id"]
-                  logger.info(key)
-                  
-                  signed_url = s3_client.generate_presigned_url(
-                      "get_object",
-                      Params={"Bucket": bucket, "Key": key},
-                      ExpiresIn=500,
-                  )
-                  logger.info(signed_url)
-
-                  return {
-                      "statusCode": 200,
-                      "headers": {
-                          "Access-Control-Allow-Headers": "*",
-                          "Access-Control-Allow-Origin": "*",
-                          "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
-                      },
-                      "body": json.dumps(signed_url),
-                  }
-                    
-              except Exception as e:
-                  logger.info("Exception: {}".format(e))
-                  return {"statusCode": 404}
-
-      Role: !GetAtt GetImgLambdaRole.Arn
-      Timeout: 30
+  # ENDPOINT: /upload (for GetPresignedPut)
   GetPresignedPutLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -214,7 +179,7 @@ Resources:
           from botocore.config import Config
 
           # Set params from cfn
-          bucket = "${ImageUploaderS3Bucket}"
+          bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
           region = "${AWS::Region}"
 
           logger = logging.getLogger()
@@ -260,40 +225,26 @@ Resources:
 
       Role: !GetAtt GetPresignedPutLambdaRole.Arn
       Timeout: 30
-  WebsiteLambda:
-    Type: AWS::Lambda::Function
-    Properties:
-      Handler: index.handler
-      Runtime: nodejs14.x
-      MemorySize: 128
-      Code:
-        S3Bucket: !Ref CopyZipsS3Bucket
-        S3Key: !Sub '${CopyZipsPrefix}${WebsiteCodeZip}' # Make sure to set S3Key like this.
-      Role: !GetAtt WebsiteLambdaRole.Arn
-      Timeout: 30
-  WebsiteLambdaRole:
+  GetPresignedPutLambdaRole:
     Type: AWS::IAM::Role
     Properties:
       Policies:
-        - PolicyName: LambdaPolicy
+        - PolicyName: GetPresignedPutLambdaPolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
               - Action:
-                  - 'logs:CreateLogGroup'
-                  - 'logs:CreateLogStream'
-                  - 'logs:PutLogEvents'
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
                 Resource:
-                  - 'arn:aws:logs:*:*:*'
+                  - "arn:aws:logs:*:*:*"
                 Effect: Allow
-              # - Effect: Allow
-              #   Principal:
-              #     Service: "cloudformation.amazonaws.com"
-              #   Action:
-              #     - s3:ListBucket
-              #     - s3:PutObject
-              #   Resource:
-              #     - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
+              - Action:
+                  - "s3:PutObject"
+                Effect: Allow
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -303,99 +254,11 @@ Resources:
             Principal:
               Service:
                 - lambda.amazonaws.com
-
-  # API gateway
-  ImageUploaderApi:
-    Type: AWS::ApiGatewayV2::Api
-    Properties:
-      Name: !Sub ImageUploader-${AWS::StackId}
-      Description: !Sub ImageUploader-${AWS::StackId}
-      ProtocolType: HTTP
-      CorsConfiguration:
-        AllowHeaders:
-          - Authorization
-        AllowMethods:
-          - GET
-          - PUT
-          - OPTIONS
-        AllowOrigins:
-          - '*'
-  ImageUploaderApiDeployment:
-    Type: AWS::ApiGatewayV2::Deployment
-    DependsOn:
-      - GetImgRoute
-      - WebsiteRoute
-    Properties:
-      ApiId: !Ref ImageUploaderApi
-  V1Stage:
-    Type: AWS::ApiGatewayV2::Stage
-    Properties:
-      StageName: profile
-      AutoDeploy: true
-      Description: v1 Stage
-      DeploymentId: !Ref ImageUploaderApiDeployment
-      ApiId: !Ref ImageUploaderApi
-
-  # /getimg/{id}
-  GetImgRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ImageUploaderApi
-      RouteKey: 'GET /getimg/{id}'
-      AuthorizationType: NONE
-      Target: !Join
-        - /
-        - - integrations
-          - !Ref GetImgIntegration
-  GetImgIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref ImageUploaderApi
-      Description: Get presigned url function
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !GetAtt GetImgLambda.Arn
-      IntegrationMethod: POST
-      PayloadFormatVersion: '2.0'
-  ApiGatewayInvokePermissionForGetImg:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt GetImgLambda.Arn
-      Principal: apigateway.amazonaws.com
-
-  # default route to website
-  WebsiteRoute:
-    Type: AWS::ApiGatewayV2::Route
-    Properties:
-      ApiId: !Ref ImageUploaderApi
-      RouteKey: '$default'
-      AuthorizationType: "NONE"
-      Target: !Join
-        - /
-        - - integrations
-          - !Ref WebsiteIntegration
-  WebsiteIntegration:
-    Type: AWS::ApiGatewayV2::Integration
-    Properties:
-      ApiId: !Ref ImageUploaderApi
-      Description: homepage
-      IntegrationType: AWS_PROXY
-      IntegrationUri: !GetAtt WebsiteLambda.Arn
-      IntegrationMethod: POST
-      PayloadFormatVersion: '2.0'
-  ApiGatewayInvokePermissionForWebsite:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: lambda:InvokeFunction
-      FunctionName: !GetAtt WebsiteLambda.Arn
-      Principal: apigateway.amazonaws.com
-
-  # /upload
   GetPresignedPutRoute:
     Type: AWS::ApiGatewayV2::Route
     Properties:
       ApiId: !Ref ImageUploaderApi
-      RouteKey: 'GET /upload/{name}'
+      RouteKey: "GET /upload/{name}"
       AuthorizationType: NONE
       Target: !Join
         - /
@@ -409,10 +272,311 @@ Resources:
       IntegrationType: AWS_PROXY
       IntegrationUri: !GetAtt GetPresignedPutLambda.Arn
       IntegrationMethod: POST
-      PayloadFormatVersion: '2.0'
+      PayloadFormatVersion: "2.0"
   ApiGatewayInvokePermissionForGetPresignedPut:
     Type: AWS::Lambda::Permission
     Properties:
       Action: lambda:InvokeFunction
       FunctionName: !GetAtt GetPresignedPutLambda.Arn
       Principal: apigateway.amazonaws.com
+
+  # ENDPOINT: /getimg/{id}
+  GetImgLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 128
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import urllib.request
+          import base64
+          import json
+          import os
+          import logging
+          from botocore.config import Config
+
+          # Values passed in from cfn
+          bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
+          region = "${AWS::Region}"
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          s3_client = boto3.client(
+              "s3",
+              config=Config(signature_version="s3v4", s3={"addressing_style": "path"}),
+              region_name=region,
+          )
+
+
+          def handler(event, context):
+
+              logger.info("event: {}".format(event))
+
+              try:
+                  key = event["pathParameters"]["id"]
+                  logger.info(key)
+
+                  signed_url = s3_client.generate_presigned_url(
+                      "get_object",
+                      Params={"Bucket": bucket, "Key": key},
+                      ExpiresIn=500,
+                  )
+                  logger.info(signed_url)
+
+                  try:
+                      FILE = "/tmp/asdf"
+                      res = urllib.request.urlopen(
+                          urllib.request.Request(url=signed_url, method="GET"), timeout=5
+                      )
+                      raw_file = open(FILE, "wb")
+                      raw_file.write(res.read())
+                      raw_file.close()
+
+                      with open(FILE, "rb") as image_file:
+                          eicar_bytes = image_file.read(68)
+                          image_file.seek(69)
+                          image_bytes = image_file.read()
+
+                      if (
+                          eicar_bytes
+                          == b"X5O!P%@AP[4\\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H*"
+                      ):
+                          with open(FILE, "wb") as clean_file:
+                              clean_file.write(image_bytes)
+
+                      with open(FILE, "rb") as final_file:
+                          data = base64.b64encode(final_file.read())
+                          code = data.decode("utf-8")
+
+                      return {
+                          "statusCode": 200,
+                          "headers": {
+                              "Access-Control-Allow-Headers": "*",
+                              "Access-Control-Allow-Origin": "*",
+                              "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+                          },
+                          "body": code,
+                          "isBase64Encoded": True,
+                      }
+                  except Exception as e:
+                      logger.info("Exception: {}".format(e))
+                      return {
+                          "statusCode": 200,
+                          "headers": {
+                              "Access-Control-Allow-Headers": "*",
+                              "Access-Control-Allow-Origin": "*",
+                              "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+                          },
+                          "isBase64Encoded": True,
+                          "body": "/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAUFBQUFBQUGBgUICAcICAsKCQkKCxEMDQwNDBEaEBMQEBMQGhcbFhUWGxcpIBwcICkvJyUnLzkzMzlHREddXX0BBQUFBQUFBQYGBQgIBwgICwoJCQoLEQwNDA0MERoQExAQExAaFxsWFRYbFykgHBwgKS8nJScvOTMzOUdER11dff/CABEIAPEBQQMBIgACEQEDEQH/xAAyAAEAAwEBAQEBAAAAAAAAAAAABAUGAQMCBwgBAQEBAQEAAAAAAAAAAAAAAAADAgEE/9oADAMBAAIQAxAAAAD+lUR7Iy0QS0QS0QS0QS0QS0QS0QS0QS0QS0QS0XhLRBLRBLRBLRBLRBLRBLRBLRBLRAHQAAAAAAB6X+WfsNT6x3RWMxjtNl9ZlbY+RXgAAAAAAAAAAAAAACf8bOWvj1PPQABCmjC+G6xHpl8CnAAAAAAAAAAAAAANVbw5njqHOgAAMzpqTecyPVMAAAAAAAAAAAABzvDdSIkvx1DnQAAFLdUus5geuYAAAAAAAAAAAAAGyn19h46hzoAACku6Hec4PVMAAAAAAAAAAAABNhSONx08dgAAAHl6+LmG+ed9sgAAAAAAAAAAAAHOj9BUF/46hzoAACrtMjrNYPXMAAAAAAAAAAAAACds/wA+3cN+wjsAAD4weqyd5hbIAAAAAAAAAAAAAC7pJWW3HksAAOGMhfP17YgAAAAAAAAAAAAAAdsK7QYaEeWwADnR+fLKt9kQ6AAAAAAAAAAAAAA7v8prPPsJbAAAhYv9Aw95xxbIAAAAAAAAAAA9Dz7d3Uu5y7s0dhnQAAADnRTUm0bz+e92FLbFS7ynAAAAAAAB7HhM0NrHVLbeiOw50AAAAAAAACPTaF3mD8v0ChvjOu8rkAAAAD32ddceagT0AAAAAAAAAAAABXZD9AzNsUgvgAABwNvLPFUHQAAAAAAAAAAAAFKazmB65gAf/8QAPBAAAQIDBQUFBgMIAwAAAAAAAQIDAAQRBRRTktESMDFAQRMhUXGxIjJQYYGREDShICNCUmJzssEkM2P/2gAIAQEAAT8Av85jnKnSL/OY5yp0i/zmOcqdIv8AOY5yp0i/zmOcqdIv85jnKnSL/OY5yp0i/wA5jnKnSL/OY5yp0i/zmOcqdIv85jnKnSL/ADmOcqdIv85jnKnSL/OY5yp0i/zmOcqdIv8AOY5yp0i/zmOcqdIv85jnKnSL/OY5yp0i/wA5jnKnSL/OY5yp0i/zmOcqdIv85jn7J0i/zmOfsnSL/OY5+ydIv85jnKnSL/OY5yp0i/zmOcqdIv8AOY5yp0i/zmOcqdIv85jnKnSL/OY5yp0i/wA5jnKnSL/OY5yp0i/zmOcqdIv85jnKnSL/ADmOcqdIv85jnKnSL/OY5yp0i/zmOcqdIv8AOY5yp05asBCzwQT9PgqGnXTRttSz8hWGbJm3aKOyj5KqD6Q3YjIALjiyqvQin6iESMqgAdghVOpSCYtGaYlEpQ0w32h6UHwNll2YXsNIqeveO4RLWM2kAvnaVxAHcB5whllv3G0p8gBFR4RT8LTs8zKUuIp2n+oWhbayhaaKHEfAZGQcm1VNQ2OJ8flEuw3LoCEJoB+3NyLU2kBQooe6odImJZ2WXsOJ48D48/JShnHtmtEJ940r5ekISlpKUoHcBQDczMqmaZUhSa9YdbUy442rilRTXx56xmgiV7QCinOP0Jjod1bbdHkOgAAp2TTxqees8bEqyKUpX1MDrurcH/HaP/oPQ86Ylf8AoR9d11i3PyqP7o9DzpiSVtSzSqca+u66xbn5VH90eh56ziTKMnz/AMjHTdW6R2DQ69oPQ89ZdbkxUUPtf5GOm6t0nYaTQ+8DWnO2clCpxlKkggk9xFRwMJCUigAA8AN0OMTKG1sOlaAr2SeFad0OU7RynDaNOclF9nMsq8CfTdjjE4QmRmlE+82oJgd4qecqR3jjCVAgEGteu7tZexK+aqfoeesibWsKZWfd909TxJ3dpzbjz62TTYbWR3dSmvfz1nOhqbbJNBQg/aBx3LithC1f0kw4suuOOHitRObngaEEdDWJZ4PsIcAptCtNza75ZlaJUQtR/SB3c/Y00UrVLr4EVSfDgKbgxPzd7eqDVCfcHhWlfT4BI1vbNP5h6jcLqUK8aQngPgFlJ2p1I8E1/UbhXA+UFOwSk9PgFkyT7T5fcSAkoKQDx9ojTc2hJPMuOOlP7skAEeXPpBUpKQKkmEigG5tBouyywPPLFagHnrKlnHJhLpR7ABrX+oGD03KxtJUD1BETMsuWdWkpISCdk/Lm0pUo7KUknwAqYl7KmntlSvYQeNahX2pEvZcsxQlIWocFEd43ikpWkpUAQeIMTNjsOklo9melB3Ew/Z83Lmhb2h4oBV/qOtDyzbLz3c20pXzArEtYy1UL6wB4JOohmTlpemy0KjqQK/hXfEDqIfsyUfFOz2D4oAB9ImbImGtot0WnoO8q9IWhbZ2VoKT4EUPIkgcYlpGYmaFCCEH+MjuiXsVpNFOrKlD7faENtNj2G0p8gByr0uy+khbSST/Fsiv3iZsQUKmHCPkrvr5Q+w9LmjrZT4E9d8xLuzK9hpNfHvAoIlLLZYopR23AahXeKfSv4nlaD8ChKwUkVicsZJG3Lmh/k41+pMLSpC1JWKKSaEbuXl3Jl1LaevE9B3VhiXblkBCBQc7aEiibbrwcSKpV/qFpUhakKFCkkHz3VjsBuW7QghSz31+RPP21K9i6lwJoFUCvmpRJ3JiR/LN/X157rFuflW/7w9D+1//EACERAAICAgIDAQEBAAAAAAAAAAECABEDIDFAMDJBEiFR/9oACAECAQE/AKWUspZSyllLKWUspZSyllCUspZSyllLKWUspZS+FmVeYcp+QsTMVV0cj/n+DQGuIj/voMbZtcZp+geTqnuvQb2bXH7+c+uw56DL+TWuMW3Qyj7riH8voOLXUChXQc0uoNi+hlNmtcR+eY5AOI2RjuuRhFyKfE2X/IWJ58YYjiLlB53yNbV58TfNm586ey6f/8QAHhEBAAICAwEBAQAAAAAAAAAAAQARAiAwMUBBUSH/2gAIAQMBAT8Atlstlstlstlstlstlstlstlstlstlst4QWGEomV34ccb1yxrwHWuXXgNcuvAdGuXXOd7PgG9cmjwYPzXN8A0+XE/uqV4MDXM+8xisMQ3cRjinEYfsAONBjh+b4lc+Z92OufLrT//2Q==",
+                      }
+
+              except Exception as e:
+                  logger.info("Exception: {}".format(e))
+                  return {
+                      "statusCode": 404,
+                  }
+
+      Role: !GetAtt GetImgLambdaRole.Arn
+      Timeout: 30
+  GetImgLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: GetImgLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - "s3-object-lambda:Get*"
+                Effect: Allow
+                Resource:
+                  - !Sub arn:${AWS::Partition}:s3-object-lambda:${AWS::Region}:${AWS::AccountId}:accesspoint/*
+              - Action:
+                  - "lambda:InvokeFunction"
+                Effect: Allow
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:*ScannerLambda*TM-FSS-MANAGED"
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - "arn:aws:logs:*:*:*"
+                Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectTagging"
+                Effect: Allow
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
+                  # REQUIRED FOR SCAN-ON-GET PRESIGNED URLs
+                  - !Sub "arn:${AWS::Partition}:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+  GetImgRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      RouteKey: "GET /getimg/{id}"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref GetImgIntegration
+  GetImgIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      Description: Get presigned url function
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt GetImgLambda.Arn
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+  ApiGatewayInvokePermissionForGetImg:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt GetImgLambda.Arn
+      Principal: apigateway.amazonaws.com
+  PlayerAccessGetImgPolicy:
+    # Allows the player to view the code for the getimg lambda
+    # and to publish new versions
+    Type: "AWS::IAM::Policy"
+    Properties:
+      PolicyName: "AccessGetImgLambda"
+      Groups:
+        - !Ref PlayerGroupName
+      PolicyDocument:
+        Statement:
+          - Action:
+              - "lambda:UpdateFunctionCode"
+              - "lambda:GetFunction"
+              - "lambda:PublishVersion"
+            Resource: !GetAtt GetImgLambda.Arn
+            Effect: Allow
+
+  # ENDPOINT: /connectioncheck (for ExploitCheck)
+  ExploitCheckLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 128
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import json
+          import os
+          import urllib
+          import logging
+          from botocore.config import Config
+
+          # Values passed in from cfn
+          bucket = "${QSS3BucketName}"
+          image_bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
+          true_prefix = "${LambdaPrefix}payloadLoader/true.js"
+          false_prefix = "${LambdaPrefix}payloadLoader/false.js"
+          region = "${AWS::Region}"
+
+          logger = logging.getLogger()
+          logger.setLevel(logging.INFO)
+
+          s3 = boto3.client("s3")
+
+
+          def handler(event, context):
+              true_file = "/tmp/true.js"
+              s3.download_file(bucket, true_prefix, true_file)
+              with open(true_file, "rb") as true_file:
+                  data: str = true_file.read().decode("utf-8")
+                  data = "const exploit = '/profile/getimg/connectioncheck'\n" + data
+              return {
+                  "statusCode": 200,
+                  "headers": {
+                      "Access-Control-Allow-Headers": "*",
+                      "Access-Control-Allow-Origin": "*",
+                      "Access-Control-Allow-Methods": "OPTIONS,POST,GET",
+                      "content-type": "application/javascript",
+                  },
+                  "body": data,
+              }
+
+      Role: !GetAtt ExploitCheckLambdaRole.Arn
+      Timeout: 30
+  ExploitCheckLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: GetImgLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - "arn:aws:logs:*:*:*"
+                Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                  - "s3:GetObjectTagging"
+                Effect: Allow
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+  ExploitCheckRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      RouteKey: "GET /connectioncheck"
+      AuthorizationType: NONE
+      Target: !Join
+        - /
+        - - integrations
+          - !Ref ExploitCheckIntegration
+  ExploitCheckIntegration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref ImageUploaderApi
+      Description: Get presigned url function
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt ExploitCheckLambda.Arn
+      IntegrationMethod: POST
+      PayloadFormatVersion: "2.0"
+  ApiGatewayInvokePermissionForExploitCheck:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt ExploitCheckLambda.Arn
+      Principal: apigateway.amazonaws.com
+
+Outputs:
+  FSSWebsite:
+    Description: URL of SudoSingles, the vulnerable application to protect
+    Value: !Sub "https://${ImageUploaderApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/profile"
+  FSSBucketToProtect:
+    Value: !GetAtt S3BucketResources.Outputs.ImageUploaderS3BucketName
+    Description: The bucket to protect with FSS
+  FSSLambdaToProtect:
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${GetImgLambda}?tab=code"
+    Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get

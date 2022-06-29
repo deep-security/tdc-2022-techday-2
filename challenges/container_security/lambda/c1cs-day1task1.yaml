@@ -168,7 +168,7 @@ Resources:
           - scoreroleday1task1C1CS
           - Arn
       Runtime: python3.8
-      Timeout: 30
+      Timeout: 60
     DependsOn:
       - scoreroleday1task1C1CS
 Outputs:
