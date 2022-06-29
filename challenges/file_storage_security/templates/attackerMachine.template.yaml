@@ -326,15 +326,14 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/invokeAttackerStateMachine.template.yaml"
-    DependsOn:
-      - DeployAttackerEnvStateMachine
+    DependsOn: DeployAttackerEnvStateMachine
 
   # Get hostname
   GetFSSALBHostname:
     Type: AWS::CloudFormation::Stack
-    DependsOn: InvokeAttackerEnvStateMachine
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/getALBHostname.template.yaml'
+    DependsOn: InvokeAttackerEnvStateMachine
 
 Outputs:
   DeployAttackerEnvStateMachine:
