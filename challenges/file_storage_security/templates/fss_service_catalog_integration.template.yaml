@@ -59,15 +59,3 @@ Resources:
       Name: "FSSAllInOneProductID"
       Value: !Ref FSSAllInOneServiceCatalogProduct
       Type: String
-  FSSAllInOneProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref FSSAllInOneServiceCatalogProduct
-  FSSAllInOneLaunchRoleConstraint:
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    DependsOn: FSSAllInOneProductAssociation
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref FSSAllInOneServiceCatalogProduct
-      RoleArn: !Ref ServiceCatalogLaunchRoleArn
