@@ -49,7 +49,7 @@ Parameters:
   TechDayAdminUser:
     Type: String
     Description: RDP user for player
-    Default: tdplayer 
+    Default: tdadmin
   SafeModeAdministratorPassword:
     MinLength: '8'
     NoEcho: 'true'
@@ -136,7 +136,7 @@ Resources:
               source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/rdp_user.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\ad_cert.ps1':
-              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/ad_cert.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/add_user_domain.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adds_install.ps1':
               source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/adds_install.ps1
@@ -162,12 +162,7 @@ Resources:
                   - Ref: SafeModeAdministratorPassword
                   - " -TechDayAdminUser "
                   - Ref: TechDayAdminUser
-            4-install-ADcert:
-              command: !Join
-              - ''
-              - - 'powershell.exe -Command c:\s3-downloads\scripts\ad_cert.ps1 -SafeModeAdministratorPassword '
-                - Ref: SafeModeAdministratorPassword
-            5-install-ADDS:
+            4-install-ADDS:
               command: !Join
               - ''
               - - 'powershell.exe -Command c:\s3-downloads\scripts\adds_install.ps1 -SafeModeAdministratorPassword '
@@ -175,7 +170,7 @@ Resources:
                 - " -DomainDNSName "
                 - Ref: DomainDNSName
               waitAfterCompletion: forever
-            6-install-ADFS:
+            5-install-ADFS:
               command: !Join 
               - ''
               - - 'powershell.exe -Command c:\s3-downloads\scripts\adfs_install.ps1 -SafeModeAdministratorPassword '
@@ -185,6 +180,9 @@ Resources:
                 - " -TechDayAdminUser "
                 - Ref: TechDayAdminUser
               waitAfterCompletion: forever
+            6-configure-user:
+              command:
+                - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1'
     Properties:
       AvailabilityZone:
         Fn::Select: 

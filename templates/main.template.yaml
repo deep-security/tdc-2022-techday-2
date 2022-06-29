@@ -492,6 +492,9 @@ Outputs:
   C1WSLog4ShellSite:
     Value: !GetAtt c1wsLog4ShellStack.Outputs.Log4ShellSite
     Description: Tomcat Web App with Log4Shell Vulnerability.
+  
+  ADFSEndpointDNS:
+    Value: !GetAtt adfsStack.Outputs.PublicDNS
 
 # #Sample Challenge Outputs
 #   SampleChallengeBucket:
