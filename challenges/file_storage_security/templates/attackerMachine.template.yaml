@@ -27,24 +27,12 @@ Parameters:
     ConstraintDescription:
       Quick Start key prefix can include numbers, lowercase letters, uppercase
       letters, hyphens (-), and forward slash (/).
-    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates/
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/
     Default: ""
     Description:
       Update to where you hold the scripts. S3 bucket name for the Tech Day
       assets. Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slash (/).
-    Type: String
-  ToolsPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/._]*$
-    ConstraintDescription:
-      Quick Start key prefix can include numbers, lowercase letters, uppercase
-      letters, hyphens (-), and forward slash (/).
-    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/tools/
-    Default: ""
-    Description:
-      Update to where you hold the tools for this challenge. Quick Start key
-      prefix can include numbers, lowercase letters, uppercase letters, hyphens
-      (-), and forward slash (/).
     Type: String
   PlayerPassword:
     Description: The Player's password
@@ -134,14 +122,14 @@ Resources:
             inputs:
               timeoutSeconds: "180"
               runCommand:
-                - !Sub |
+                - |
                   NAMESPACE=fss-log4shell-attacker-env \
                 - !Sub |
                   sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
                   mkdir -p /tmp/manifests-$NAMESPACE && \
-                  aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-$NAMESPACE && \
-                  sudo /usr/local/bin/kubectl create secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix} --from-literal=PLAYERPASSWORD="${PlayerPassword}" --dry-run=client -o yaml > /tmp/manifests-$NAMESPACE/secrets.yaml && \
+                  aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}templates/k8s/ /tmp/manifests-$NAMESPACE && \
+                  sudo /usr/local/bin/kubectl create secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tools/ --from-literal=PLAYERPASSWORD="${PlayerPassword}" --dry-run=client -o yaml > /tmp/manifests-$NAMESPACE/secrets.yaml && \
                   sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f /tmp/manifests-$NAMESPACE
       DocumentType: Command
 
@@ -184,7 +172,7 @@ Resources:
                         "commands": ["""${commands}"""]
                     },
                 )
-          - commands: !Sub |
+          - commands: |
               sudo /usr/local/bin/kubectl delete namespace fss-log4shell-attacker-env --ignore-not-found=true
   LaunchK8sManifestsLambda:
     Type: AWS::Lambda::Function
@@ -243,7 +231,7 @@ Resources:
       Handler: index.lambda_handler
       Role: !GetAtt K8sAdminRole.Arn
       Code:
-        ZipFile: !Sub |
+        ZipFile: |
           import boto3
           import time
 
@@ -353,6 +341,17 @@ Resources:
           "Comment": "Idempotent state machine that deploys an attacker environment to EKS through an EKS bastion.\nNOTE: The EKS bastion(s) in question must have be tagged: \"Name:EKSBastion\"."
         }
       RoleArn: !GetAtt [DeployAttackerEnvStateMachineRole, Arn]
+
+  # Invoke the State Machine
+  InvokeAttackerEnvStateMachine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/invokeAttackerStateMachine.template.yaml"
+    DependsOn:
+      - DeployAttackerEnvStateMachine
 
 Outputs:
   DeployAttackerEnvStateMachine:

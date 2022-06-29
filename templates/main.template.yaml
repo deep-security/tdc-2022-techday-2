@@ -177,8 +177,19 @@ Resources:
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
         PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
-        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
+
+  FSSAttackerEnv:
+    Type: AWS::CloudFormation::Stack
+    Condition: BuildEks
+    Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+          PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
+    DependsOn:
+      - EKSStack
 
   V1SOStack:
     Type: AWS::CloudFormation::Stack
