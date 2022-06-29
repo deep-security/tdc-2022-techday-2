@@ -346,6 +346,9 @@ Resources:
   InvokeAttackerEnvStateMachine:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters: 
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/invokeAttackerStateMachine.template.yaml"
     DependsOn:
       - DeployAttackerEnvStateMachine
@@ -360,3 +363,6 @@ Outputs:
   DeleteAttackerNamespaceLambda:
     Description: DeleteAttackerNamespaceLambda Arn
     Value: !GetAtt DeleteAttackerNamespaceLambda.Arn
+  FSSAttackAlbHostname:
+    Value: !GetAtt InvokeAttackerEnvStateMachine.Outputs.FSSAttackAlbHostname
+    Description: "Alb hostname for the FSS attack container."
