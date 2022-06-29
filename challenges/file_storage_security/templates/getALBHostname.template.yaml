@@ -71,6 +71,7 @@ Resources:
                 response_data = {}
                 physicalResourceId = None
                 if event["RequestType"] == "Create":
+                    time.sleep(60)
                     client = boto3.client("ssm")
                     response = client.send_command(
                         Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
