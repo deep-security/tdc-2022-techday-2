@@ -4,7 +4,7 @@ Description: >
 
 Parameters:
 
-  VPCId:
+  VPCID:
     Type: AWS::EC2::VPC::Id
     Description: The VPC ID to use for the challenge.
   LatestAmazonLinuxAmiId: 
@@ -17,7 +17,7 @@ Resources:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Enables access to VOTK
-      VpcId: !Ref VPCId
+      VpcId: !Ref VPCID
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 443
