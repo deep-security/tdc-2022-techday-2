@@ -61,36 +61,15 @@ Resources:
       SecurityGroupIds:
         - !GetAtt VOTKSecurityGroup.GroupId
       UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash -xe
-          # Get the latest CloudFormation package
-          yum update -y aws-cfn-bootstrap
-          # Start cfn-init
-          /opt/aws/bin/cfn-init -s ${AWS::StackId} -r VOTKInstance --configsets ec2_bootstrap --region ${AWS::Region} 
-          # All done so signal success
-          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource host1 --region ${AWS::Region}
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y && yum install docker -y
+          service docker start
+          PUBLIC_NAME=$(curl -f http://169.254.169.254/latest/meta-data/public-hostname)
+          docker run -e PACKAGE=https://s3.us-west-2.amazonaws.com/autogen-prodops-tools.ddts-trendmicro.com/votk/packages/production/package.tar.gz -e REVERSE_MODE=true -e URL=https://${PUBLIC_NAME} --rm -p 443:80 jspdocker/webproxy:latest bash run.sh
       Tags:
         - Key: Challenge
-          Value: VOTK
-    Metadata:
-      AWS::CloudFormation::Init:
-        configSets:
-          ec2_bootstrap:
-            - install_docker
-        install_docker:
-          packages:
-            yum:
-              docker: []
-          services:
-            sysvinit:
-              docker:
-                enabled: "true"
-                ensureRunning: "true"
-          commands:
-            start_votk:
-              command:
-                - 'PUBLIC_NAME=$(TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"` && curl -H "X-aws-ec2-metadata-token: $TOKEN" -v http://169.254.169.254/latest/meta-data/public-hostname)'
-                - docker run -e PACKAGE=https://s3.us-west-2.amazonaws.com/autogen-prodops-tools.ddts-trendmicro.com/votk/packages/production/package.tar.gz -e REVERSE_MODE=true -e URL=https://${PUBLIC_NAME} --rm -p 443:80 jspdocker/webproxy:latest bash run.sh
+          Value: VOTK   
 
 Outputs:
   VOTKPublicDNS:
