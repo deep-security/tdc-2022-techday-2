@@ -52,7 +52,7 @@ Resources:
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: "https://raw.githubusercontent.com/trendmicro/cloudone-filestorage-deployment-templates/master/aws/FSS-All-In-One.template"
+            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}FSS-All-In-One.template"
   FSSAllInOneProductID:
     Type: AWS::SSM::Parameter
     Properties:
