@@ -39,6 +39,9 @@ Parameters:
   PlayerPassword:
     Description: The Player's password
     Type: String
+  PlayerGroupName:
+    Description: The Player's group name
+    Type: String
 
   # Service Catalog related
   PlayerServiceCatalogPortfolio:
@@ -68,6 +71,9 @@ Resources:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        PlayerGroupName: !Ref PlayerGroupName
+        LambdaPrefix: !Sub "${QSS3KeyPrefix}lambda/"
+        ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
         CopyZipsS3Bucket: !GetAtt CopyZipsStack.Outputs.DestinationBucket
         CopyZipsPrefix: !Sub "${QSS3KeyPrefix}lambda/"
         ProfilePictureDropperCodeZip: "profilePictureDropper/profilePictureDropper.zip"
@@ -103,3 +109,13 @@ Resources:
       - "imageUpload/imageUpload.zip"
       - "profilePictureDropper/profilePictureDropper.zip"
 
+Outputs:
+  FSSWebsite:
+    Value: !GetAtt ImageUpload.Outputs.FSSWebsite
+    Description: URL of SudoSingles, the vulnerable application to protect
+  FSSBucketToProtect:
+    Value: !GetAtt ImageUpload.Outputs.FSSBucketToProtect
+    Description: The bucket to protect with FSS
+  FSSLambdaToProtect:
+    Value: !GetAtt ImageUpload.Outputs.FSSLambdaToProtect
+    Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
