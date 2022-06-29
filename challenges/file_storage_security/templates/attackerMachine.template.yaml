@@ -312,29 +312,7 @@ Resources:
             },
             "Wait": {
               "Type": "Wait",
-              "Seconds": 60,
-              "Next": "GetAttackerLBHostnameLambda"
-            },
-            "GetAttackerLBHostnameLambda": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {
-                "Payload.$": "$",
-                "FunctionName": "${GetAttackerLBHostnameLambda.Arn}"
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException",
-                    "States.TaskFailed"
-                  ],
-                  "IntervalSeconds": 2,
-                  "MaxAttempts": 6,
-                  "BackoffRate": 2
-                }
-              ],
+              "Seconds": 120,
               "End": true
             }
           },
@@ -346,12 +324,16 @@ Resources:
   InvokeAttackerEnvStateMachine:
     Type: AWS::CloudFormation::Stack
     Properties:
-      Parameters: 
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/invokeAttackerStateMachine.template.yaml"
     DependsOn:
       - DeployAttackerEnvStateMachine
+
+  # Get hostname
+  GetFSSALBHostname:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: InvokeAttackerEnvStateMachine
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/getALBHostname.template.yaml'
 
 Outputs:
   DeployAttackerEnvStateMachine:
