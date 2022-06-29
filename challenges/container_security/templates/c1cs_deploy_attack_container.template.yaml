@@ -202,7 +202,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csAttackContainerLambdaFunctionRole.Arn
         Code:
@@ -234,7 +234,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csAttackContainerLambdaFunctionRole.Arn
         Code:
