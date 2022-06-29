@@ -186,6 +186,7 @@ Resources:
       Parameters:
         VPCID: !GetAtt VPCStack.Outputs.VPCID
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml'
+  
   V1SOStack:
     Type: AWS::CloudFormation::Stack
     Properties:
