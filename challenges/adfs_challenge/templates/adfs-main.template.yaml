@@ -16,7 +16,7 @@ Parameters:
     AllowedPattern: ^[0-9a-zA-Z-/._]*
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
-    Default: "latest/"
+    Default: ""
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
@@ -133,16 +133,16 @@ Resources:
         get-files:
           files:
             'c:\s3-downloads\scripts\rdp_user.ps1':
-              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/rdp_user.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/rdp_user.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\ad_cert.ps1':
-              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/ad_cert.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/ad_cert.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adds_install.ps1':
-              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/adds_install.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/adds_install.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adfs_install.ps1':
-              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/scripts/adfs_install.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/adfs_install.ps1
               authentication: S3AccessCreds
         configure-instance:
           commands:
@@ -192,7 +192,7 @@ Resources:
           - Fn::GetAZs: ""
       InstanceInitiatedShutdownBehavior: stop
       IamInstanceProfile: !Ref Profile
-      ImageId: !Ref 'LatestAmiId'
+      ImageId: !Ref LatestAmiId
       InstanceType: !Ref InstanceSize
       UserData: !Base64
         'Fn::Join': 
@@ -216,19 +216,16 @@ Resources:
             - "\n"           
             - "</powershell>\n"
       NetworkInterfaces:
-          - DeleteOnTermination: true
-            DeviceIndex: 0
-          - AssociatePublicIpAddress: true
+          - DeleteOnTermination: 'true'
             DeviceIndex: 0
             Description: Primary network interface
-            SubnetId:
-              Ref: PublicSubnet1ID
+            SubnetId: !Ref PublicSubnet1ID
             GroupSet:
             - !Ref ADFSSecurityGroup
 Outputs:
   InstanceId:
     Description: 'InstanceId'
     Value: !Ref Instance
-  PublicIp:
-    Description: Server Public IP
+  PublicDNS:
+    Description: Server Public DNS
     Value: !GetAtt Instance.PublicDnsName

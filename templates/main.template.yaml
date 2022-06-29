@@ -123,6 +123,8 @@ Resources:
           VPCID: !GetAtt VPCStack.Outputs.VPCID
           PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/templates/adfs-main.template.yaml'
+      DependsOn:
+        - VPCStack
 
   c1csStack:
       Type: AWS::CloudFormation::Stack
