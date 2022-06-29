@@ -76,6 +76,8 @@ Resources:
                 time.sleep(1)
                 response_data = {}
                 request_type = event["RequestType"]
+                print(event)
+                print(request_type)
                 try:
                     if request_type == "Create":
                         time.sleep(60)
@@ -89,16 +91,21 @@ Resources:
                                 ]
                             },
                         )
+                        print(f"response:{response}")
                         command_id = response["Command"]["CommandId"]
+                        print(command_id)
                         tries = 0
                         output = "False"
                         while tries < 10:
+                            print(f"try number {tries}")
                             tries = tries + 1
                             try:
+                                print("in try block")
                                 time.sleep(0.5)  # some delay always required...
                                 invocations_list = client.list_command_invocations(
                                     CommandId=command_id,
                                 )["CommandInvocations"]
+                                print(invocations_list)
                                 instance_id = sorted(
                                     invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
                                 )[0]["InstanceId"]
