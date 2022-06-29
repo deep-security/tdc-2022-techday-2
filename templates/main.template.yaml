@@ -177,6 +177,8 @@ Resources:
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
         PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+        PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
 
   FSSAttackerEnv:
@@ -506,3 +508,12 @@ Outputs:
   FSSAttackAlbHostname:
     Value: !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname
     Description: "Alb hostname for the FSS attack container."
+  FSSWebsite:
+    Value: !GetAtt FSSStack.Outputs.FSSWebsite
+    Description: URL of SudoSingles, the vulnerable application to protect
+  FSSBucketToProtect:
+    Value: !GetAtt FSSStack.Outputs.FSSBucketToProtect
+    Description: The bucket to protect with FSS
+  FSSLambdaToProtect:
+    Value: !GetAtt FSSStack.Outputs.FSSLambdaToProtect
+    Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get

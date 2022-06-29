@@ -2,47 +2,32 @@
 
 ```plain
 file_storage_security/
+├── templates/ => Templates for this challenge
 ├── lambda/ => Lambdas for this challenge
-├── templates/ => CloudFormation templates for this challenge
-│  └── k8s/ => Manifest files for the kubernetes environment
-├── tools/ => Binaries and tools for challenge red-team activities
+├── scripts/ => Development scripts
 ├── flake.nix => Internal tooling file
 └── flake.lock => Internal tooling lockfile
 ```
 
-# Kubernetes Environment
+# Scripts
+All under `scripts/`:
+- `package-lambda.sh`: package the code in a lambda folder into a `.zip`, ready for consumption by Lambda. Run inside the directory of the function you wish to package, calling `../../scripts/package-lambda.sh`.
 
-## Structure
-In this challenge, an attacker environment is launched into the existing EKS stack. Here are the steps that are taken by Cloudformation to create the environment:
+<!-- # How to add a new lambda function
 
-- Delete any existing infrastrucutre already in the EKS cluster that pertains to this challenge. 
-- Create a new namespace to launch challenge pods into.
-- Launch all the contents of `./templates/k8s`.
+I swear this is going to make the CloudFormation easier to reason about, but can be a PITA when you make a new function. Tradeoffs.
 
-## Development
+> TODO: Automate this.
 
-To develop/test locally:
-
-1. Get a Kubernetes cluster. You can use any cluster, but I recommend the following as it replicates the Tech Day environment:
-    - Launch an EKS stack, either through the main CloudFormation template, or launching `infra/eks/amazon-eks-entrypoint-existing-vpc.template.yaml` separately (making sure to pass in the outputs of the main template's `VPCStack`).
-2. Create a `cfn-references` secret in the cluster with the following values:
-    ```json
-    {
-        "TOOLSURL": "https://CODEBUCKET.s3.amazonaws.com/PATH/TO/TOOLS/", 
-        "PLAYERPASSWORD": "YOUR-DESIRED-PASSWORD-FOR-LOCAL-DEVELOPMENT"
-    }
-    ```
-   - I do this by running: 
-    ```bash
-    kubectl create secret generic cfn-references --from-literal=TOOLSURL=https://CODEBUCKET.s3.amazonaws.com/PATH/TO/TOOLS/ --from-literal=PLAYERPASSWORD="YOUR-DESIRED-PASSWORD-FOR-LOCAL-DEVELOPMENT" --dry-run=client -o yaml | kubectl apply -f -
-    ```
-   - Note that this secret will be overwritten in the Tech Day cluster, so you'll have to reset it to your custom value if that happens.
-3. During Tech Day, all the manifests in `./templates/k8s` will be launched, so to replicate this behavior, I'd always test deployment using `kubectl apply -f templates/k8s`. But this is really up to you. 
-4. Have fun!
-
-To test the Tech Day deployment:
-
-1. The `FSSStack`'s nested `AttackerMachine` template will launch a Lambda Step Function called `DeployAttackerEnvStateMachine`. Find it in the Resources section of the `AttackerMachine` nested template and go to it.
-2. Run the state machine.
-    - Each activation of the script will delete any existing Kubernetes infrastructure from this challenge and relaunch it. Should take about 2 minutes.
-3. Use the `Player` user and `PlayerPassword` main-stack output to login to the attacker machine.
+1. Copy an existing lambda folder and rename it to your liking.
+2. Delete the existing `.zip` file in the folder.
+3. Edit code and alter `requirements.txt `as needed. Just leave requirements.txt empty if there are no dependencies.
+4. Once function is finished, `cd` into the folder and run `./package.sh`. 
+5. Edit `templates/entrypoint.template.yaml`: 
+    1. Include a parameter that points to the zip file. Follow the form of the function code already there.
+    2. Add that parameter as a parameter to the `FSSMainStack` resource. For example `MyCode: !Ref MyCode`.
+    3. Add that parameter as a `!Ref` under `Objects` in the `CopyZips` resource
+6. Edit `templates/main.template.yaml`:
+    1. Add a parameter under `Parameters` that has the same name as you defined in step 5. Set `Default: ""` and `Type: String`.
+    2. Add the function to the template, following the form of other functions currently in the template.
+7. Commit/sync/move on with your life. You did it! -->
