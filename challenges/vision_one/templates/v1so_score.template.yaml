@@ -56,6 +56,7 @@ Resources:
             import json
             import os
 
+            key = 'value'
             url_path = '/beta/xdr/threatintel/suspiciousObjects'
             token = os.environ['v1AuthToken']
             url_base = os.environ['v1ApiBaseURL']
