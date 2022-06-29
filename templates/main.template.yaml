@@ -185,6 +185,7 @@ Resources:
     Properties:
       Parameters:
         VPCID: !GetAtt VPCStack.Outputs.VPCID
+        PublicSubnetId: !GetAtt VPCStack.Outputs.PublicSubnet1ID
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml'
   
   V1SOStack:

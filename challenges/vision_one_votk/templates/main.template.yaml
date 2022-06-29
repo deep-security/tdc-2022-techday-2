@@ -11,6 +11,9 @@ Parameters:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
     Description: DO NOT CHANGE THIS VALUE
+  PublicSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The ID of the public subnet to use for the challenge.
 
 Resources:
   VOTKSecurityGroup:
@@ -31,6 +34,7 @@ Resources:
     Properties:
       ImageId: !Ref LatestAmazonLinuxAmiId
       InstanceType: m6i.xlarge
+      SubnetId: !Ref PublicSubnetId
       SecurityGroupIds:
         - !GetAtt VOTKSecurityGroup.GroupId
       UserData:
