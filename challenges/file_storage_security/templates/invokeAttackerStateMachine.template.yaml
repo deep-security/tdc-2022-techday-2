@@ -85,18 +85,17 @@ Resources:
                   )
 
                   cfn_status = cfnresponse.SUCCESS
-
               except Exception as e:
                   logger.info("Exception: {}".format(e))
                   cfn_status = cfnresponse.FAILED
-
-              cfnresponse.send(
-                  event,
-                  context,
-                  cfn_status,
-                  {},
-                  "InvokeDeployAttackerEnvStateMachineLambda",
-              )
+              finally:
+                  cfnresponse.send(
+                      event,
+                      context,
+                      cfn_status,
+                      {},
+                      "InvokeDeployAttackerEnvStateMachineLambda",
+                  )
 
   # Custom Resource
   InvokeDeployAttackerEnvStateMachineLambda:
