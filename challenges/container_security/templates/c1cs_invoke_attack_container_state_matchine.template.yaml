@@ -35,7 +35,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt Deployc1csAttackContainerstateMachineLambdaRole.Arn
         Code:
