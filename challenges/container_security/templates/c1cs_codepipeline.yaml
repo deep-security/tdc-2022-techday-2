@@ -237,13 +237,13 @@ Resources:
                               try:
                                   print("Kicking off Build")
                                   execute_build(event)
-                                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeStartCodeBuildLambda")
+                                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
                               except Exception as build_exce:
                                   print("ERROR: Build threw exception")
                                   print((repr(build_exce)))
                                   # Signal back that we failed
                                   return send_response(event, get_response_dict(event),
-                                                      "FAILED", repr(build_exce))
+                                                      cfnresponse.FAILED, repr(build_exce))
                               else:
                                   # CodeBuild will send the signal
                                   print("Build Kicked off ok CodeBuild should signal back")
@@ -267,7 +267,7 @@ Resources:
                                   return send_response(event, response, "FAILED",
                                                       "Cleanup of Container image failed." + repr(cleanup_exception))
                               # signal success to CFN
-                              cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeStartCodeBuildLambda")
+                              cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
                               return send_response(event, response)
                           else:
                               # Invalid RequestType
