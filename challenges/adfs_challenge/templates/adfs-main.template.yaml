@@ -100,7 +100,8 @@ Resources:
   ADFSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      VpcId: Ref! VPCID
+      VpcId:
+        Ref: VPCID
       GroupName: adfs-techday-sg
       GroupDescription: "Allow HTTP/HTTPS and SSH inbound and outbound traffic"
       SecurityGroupIngress:
