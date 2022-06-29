@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Tech Day C1WS day1 main Template
+Parameters:
+  # Bucket path related
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+Resources:
+  ############################################ 
+  ############ For Scoring Bucket ############ 
+  ############################################
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+
+  CleanupBucketOnDelete:
+    Type: Custom::cleanupBucket
+    Properties:
+      ServiceToken: !GetAtt 'CleanBucketFunction.Arn'
+    DependsOn: S3Bucket
+
+  CleanBucketFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Description: Cleans out Bucket during delete
+      Handler: index.handler
+      Runtime: python3.8
+      Role: !GetAtt "CleanBucketRole.Arn"
+      Timeout: 900
+      Environment:
+        Variables: 
+          BUCKET_NAME: !Ref S3Bucket
+      Code:
+        ZipFile: |
+          import cfnresponse
+          import logging
+          import boto3
+          import time, os
+          status = cfnresponse.SUCCESS
+          logger = logging.getLogger(__name__)
+          logging.basicConfig(format='%(asctime)s %(message)s',level=logging.DEBUG)
+          def handler(event, context):
+              logger.debug(event)
+              if event['RequestType'] == 'Delete':
+                BUCKETNAME = os.environ['BUCKET_NAME']
+                s3 = boto3.resource('s3')
+                time.sleep(90)
+                bucket = s3.Bucket(BUCKETNAME)
+                bucket_versioning = s3.BucketVersioning(BUCKETNAME)
+                if bucket_versioning.status == 'Enabled':
+                  bucket.object_versions.delete()
+                else:
+                  bucket.objects.all().delete()
+                cfnresponse.send(event, context, status, {}, None)
+              else:
+                cfnresponse.send(event, context, status, {}, None)
+  CleanBucketRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: lambda-bucketcleaner
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:DeleteObject
+                  - s3:DeleteObjectVersion
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}/*'
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                  - s3:GetBucketVersioning
+                Resource: !Sub 'arn:${AWS::Partition}:s3:::${S3Bucket}'
+
+  ############################################ 
+  ############# For SNS template ############# 
+  ############################################
+  SNStopic:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}onbording_sns.yaml
+
+  ############################################ 
+  ######### For event check template ######### 
+  ############################################
+  eventCheckerContainer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}eventChecker_container.yaml
+      Parameters:
+        SnsTopicArn: !GetAtt SNStopic.Outputs.SNSTopicARN
+        StateS3BucketcArn: !GetAtt S3Bucket.Arn
+
+  eventCheckerTLSI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}eventChecker_tlsi.yaml
+      Parameters:
+        SnsTopicArn: !GetAtt SNStopic.Outputs.SNSTopicARN
+        StateS3BucketcArn: !GetAtt S3Bucket.Arn
+
+Outputs:
+  S3BucketName:
+    Value: !Ref S3Bucket
+  S3BucketARN:
+    Value: !GetAtt S3Bucket.Arn
+  SNSTopicARN:
+    Value: !GetAtt SNStopic.Outputs.SNSTopicARN

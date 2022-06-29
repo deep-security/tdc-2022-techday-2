@@ -1,0 +1,177 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  scoreroleday1task3C1CS:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      Policies: 
+        - PolicyName: scoreroleday1task3C1CS
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "ssm:GetParameter"
+                Resource: 
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1Region
+                  - arn:aws:ssm:*:*:parameter/player/C1CS/clusterID
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  C1CSScoreLambdarday1task3:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: C1CSScoreLambdarday1task3
+      Code: 
+        ZipFile: |
+          import json
+          import urllib3
+          import sys
+          import boto3
+          from urllib.parse import urlparse
+
+          client = boto3.client('ssm')
+
+          def lambda_handler(event, context):
+
+
+
+              parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
+              playerApiKey = parameter ['Parameter']['Value']
+
+              parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
+              playerC1Region = parameter ['Parameter']['Value']
+
+              parameter = client.get_parameter(Name='/player/C1CS/clusterID', WithDecryption=True)
+              playerC1csClusterID = parameter ['Parameter']['Value']
+              
+              # Query c1cs clusterID to find the policyID
+              urlCluster = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/clusters/'+playerC1csClusterID+''
+              payloadCluster = json.dumps({
+              })
+              headers = {
+                  'api-version': 'v1',
+                  'Authorization': 'ApiKey '+playerApiKey+'',
+                  'Content-Type': 'application/json'
+              }
+
+              http = urllib3.PoolManager()
+              encoded_payload = payloadCluster.encode("utf-8")
+              clusterEvalResponse = http.request("GET", url=urlCluster, headers=headers) #, body=encoded_payload)
+              
+              #print(clusterEvalResponse.data.decode("utf-8"))
+              clusterEval = json.loads(clusterEvalResponse.data.decode("utf-8"))
+              policyID = clusterEval["policyID"]
+              #print(policyID)
+              
+              
+              # Query policy ID to get rulesets
+              urlPolicy = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/policies/'+policyID+''
+              payloadPolicy = json.dumps({
+              })
+              headers = {
+                  'api-version': 'v1',
+                  'Authorization': 'ApiKey '+playerApiKey+'',
+                  'Content-Type': 'application/json'
+              }
+
+              http = urllib3.PoolManager()
+              encoded_payload = payloadPolicy.encode("utf-8")
+              policyEvalResponse = http.request("GET", url=urlPolicy, headers=headers) #, body=encoded_payload)
+              
+              #print(policyEvalResponse.data.decode("utf-8"))
+              policyEval = json.loads(policyEvalResponse.data.decode("utf-8"))
+              try:
+                  rulesetID = policyEval["runtime"]["default"]["rulesets"]
+              except:
+                  print("Policy may not have a runtime ruleset assigned.")
+                  sys.exit(1)
+
+              
+              # Loop through rulesets in case player assinged multiple rulesets. Output should be rulesetID so that we can query each rulesetID for the correct rules.
+              passingScore = 6
+              playerComplete = "no"
+              for ruleset in rulesetID:
+                  rulesetIDtoQuery = ruleset["id"]
+                  urlruleset = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/rulesets/'+rulesetIDtoQuery+''
+                  
+                  payloadPolicy = json.dumps({
+                  })
+                  headers = {
+                      'api-version': 'v1',
+                      'Authorization': 'ApiKey '+playerApiKey+'',
+                      'Content-Type': 'application/json'
+                  }
+              
+                  http = urllib3.PoolManager()
+                  encoded_payload = payloadPolicy.encode("utf-8")
+                  rulesetEvalResponse = http.request("GET", url=urlruleset, headers=headers) #, body=encoded_payload)
+                  
+                  #print(policyEvalResponse.data.decode("utf-8"))
+                  rulesetEval = json.loads(rulesetEvalResponse.data.decode("utf-8"))
+                  
+                  try:
+                      rules = rulesetEval["rules"]
+                  except:
+                      print("Runtime Ruleset may not have any rules assigned.")
+                      sys.exit(1)
+                      
+                  #print(rules)
+                  ruleEvalScore = 0
+                  for rule in rules:
+                      ruleID = rule["ruleID"]
+                      ruleMitigation = rule["mitigation"]
+                      #print(ruleID)
+                      
+                      if ruleID == "TM-00000008" and ruleMitigation == "isolate": # (T1613)Contact EC2 Instance Metadata Service From Container
+                          ruleEvalScore = ruleEvalScore + 1
+                      if ruleID == "TM-00000010" and ruleMitigation == "isolate": # (T1543)Launch Package Management Process in Container
+                          ruleEvalScore = ruleEvalScore + 1
+                      if ruleID == "TM-00000011" and ruleMitigation == "isolate": # (T1059.004)Netcat Remote Code Execution in Container
+                          ruleEvalScore = ruleEvalScore + 1
+                      if ruleID == "TM-00000019" and ruleMitigation == "isolate": # (T1613)Specific discovery tool executed in container
+                          ruleEvalScore = ruleEvalScore + 1
+                      if ruleID == "TM-00000014" and ruleMitigation == "isolate": # (T1068)Packet socket created in container
+                          ruleEvalScore = ruleEvalScore + 1
+                      if ruleID == "TM-00000046" and ruleMitigation == "isolate": # Out-of-namespace network access attempts
+                          ruleEvalScore = ruleEvalScore + 1
+
+                  if ruleEvalScore == passingScore:
+                      playerComplete = "yes"
+                  else:
+                      playerComplete = "no"
+                      message = "Not yet completed"
+                      print(message)
+                      raise Exception(message)
+                      break
+                  #print(ruleEvalScore)
+              if playerComplete == "yes":
+                      message = "Task completed"
+                      print(message)
+                      return (True)
+              else:
+                  message = "Not yet completed"
+                  print(message)
+                  raise Exception(message)
+              #print(message)
+
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - scoreroleday1task3C1CS
+          - Arn
+      Runtime: python3.8
+      Timeout: 60
+    DependsOn:
+      - scoreroleday1task3C1CS
+Outputs:
+  C1CSScoreLambdarday1task3:
+    Value:
+      Ref: C1CSScoreLambdarday1task3

@@ -76,6 +76,10 @@ Parameters:
     Default: QSS3KeyPrefix
     AllowedValues: ["QSS3KeyPrefix"]
     Description: DO NOT CHANGE THIS VALUE
+  QSS3BucketNameSSMValue:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3BucketName
+    Description: DO NOT CHANGE THIS VALUE
   QSS3KeyPrefixSSMValue:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: QSS3KeyPrefix
@@ -111,8 +115,8 @@ Parameters:
   LambdaFunctionTimeout:
     Type: Number
     Default: 900
-  PostOnboardFunctionName:
-    Default: "PostOnboardFunctionName"
+  C1PostOnboardFunctionName:
+    Default: "C1PostOnboardFunctionName"
     Description: DO NOT MODIFY. Expected value of the SSM Parameter Value for the Post Onboard function name.
     Type: 'AWS::SSM::Parameter::Value<String>'
 
@@ -173,7 +177,7 @@ Resources:
                   - "ssm:PutParameter"
               - Effect: Allow
                 Resource: 
-                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${PostOnboardFunctionName}
+                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${C1PostOnboardFunctionName}
                 Action:
                   - "lambda:InvokeFunction"
       Path: /
@@ -412,7 +416,7 @@ Resources:
                                   # Since task was successful, we will kick of the Post Onboarding(AKA Wrinkler) lambda
                                   lambdaClient = boto3.client('lambda')
                                   lambdaClient.invoke(
-                                    FunctionName=str(os.environ.get("POST_ONBOARD_LAMBDA_NAME")),
+                                    FunctionName=str(os.environ.get("C1_POST_ONBOARD_LAMBDA_NAME")),
                                     InvocationType="Event"
                                   )
               except Exception as e:
@@ -434,7 +438,7 @@ Resources:
           c1ApiKey: !Ref c1ApiKey
           c1UsersList: !Ref c1UsersList
           c1LicenseValidationDayCount: 3      
-          POST_ONBOARD_LAMBDA_NAME: !Ref PostOnboardFunctionName
+          C1_POST_ONBOARD_LAMBDA_NAME: !Ref C1PostOnboardFunctionName
       Role: !GetAtt TechDayC1onboardingLambdaRole.Arn
   
   # Task 1 - Creates an AWS Lambda function with the Cloud One Onboarding verification module.
@@ -506,8 +510,6 @@ Resources:
     Type: 'Custom::TechDay-C1onboarding-SvcCatalog'
     Properties:
       ServiceToken: !GetAtt C1OnboardingLambdaFunction.Arn
-
-  # Service Catalog associations
 
   # ExampleChallengePortfolioProductAssociation:
   #   Type: AWS::ServiceCatalog::PortfolioProductAssociation

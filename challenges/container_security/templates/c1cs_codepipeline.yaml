@@ -1,0 +1,347 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: tdc-2022-techday-1 Cloud One Container Security - Deployment
+
+Parameters:
+  Environment:
+    Description: 'The env name of this stack, default is ''prod'''
+    Default: prod
+    Type: String
+    AllowedValues:
+      - dev
+      - stg
+      - uat
+      - prod
+  ServiceName:
+    Description: String text of service name
+    Default: c1cs-ecr
+    Type: String
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2022-2
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+
+Resources:
+
+# Create iAM Role/Policy
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ServiceName}-codebuild-service-role-${Environment}
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - sts:AssumeRole
+            Principal:
+              Service:
+                - codebuild.amazonaws.com
+
+  CodeBuildServicePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: !Sub ${ServiceName}-CodeBuildServicePolicy-${Environment}
+      Roles:
+        - !Ref CodeBuildServiceRole
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Action:
+              - logs:CreateLogGroup
+              - logs:CreateLogStream
+              - logs:PutLogEvents
+            Resource: "arn:aws:logs:*:*:*"
+          - Effect: Allow
+            Action:
+              - s3:GetObject
+              - s3:GetObjectVersion
+              - s3:GetBucketAcl
+              - s3:GetBucketLocation
+            Resource:
+              - !Sub "arn:aws:s3:::${QSS3BucketName}/${QSS3KeyPrefix}*"
+          - Effect: Allow
+            Action:
+              - codecommit:GitPull
+            Resource: !Sub "arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${ServiceName}"
+          - Effect: Allow
+            Action:
+              - ecr:BatchCheckLayerAvailability
+              - ecr:GetDownloadUrlForLayer
+              - ecr:BatchGetImage
+              - ecr:CompleteLayerUpload
+              - ecr:InitiateLayerUpload
+              - ecr:PutImage
+              - ecr:UploadLayerPart
+            Resource:
+              - arn:aws:ecr:*:*:repository/c1cs-attack
+          - Effect: Allow
+            Action:
+              - ecr:GetAuthorizationToken
+            Resource: "*"
+          - Effect: Allow
+            Action:
+              - codebuild:CreateReportGroup
+              - codebuild:CreateReport
+              - codebuild:UpdateReport
+              - codebuild:BatchPutTestCases
+            Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${ServiceName}-${Environment}-*"
+          - Effect: Allow
+            Action:
+              - iam:PassRole
+            Resource: !GetAtt CodeBuildServiceRole.Arn
+
+  startCodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: c1csLambdaFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - codebuild:StartBuild
+            Resource:
+              - arn:aws:codebuild:*:*:project/c1cs-ecr-prod
+          - Effect: Allow
+            Action:
+              - ecr:DescribeImages
+              - ecr:BatchDeleteImage
+              - ecr:ListImages
+              - ecr:DescribeRepositories
+            Resource:
+              - arn:aws:ecr:*:*:repository/c1cs-attack
+
+  c1csECR:
+    Type: AWS::ECR::Repository
+    Properties: 
+      ImageTagMutability: MUTABLE
+      RepositoryName: c1cs-attack
+      RepositoryPolicyText: !Sub |
+        {
+          "Version":"2012-10-17",
+          "Statement":[
+              {
+                "Sid":"CodeBuildAccess",
+                "Effect":"Allow",
+                "Principal":{
+                    "Service":"codebuild.amazonaws.com"
+                },
+                "Action":[
+                  "ecr:BatchGetImage",
+                  "ecr:BatchCheckLayerAvailability",
+                  "ecr:CompleteLayerUpload",
+                  "ecr:GetDownloadUrlForLayer",
+                  "ecr:InitiateLayerUpload",
+                  "ecr:PutImage",
+                  "ecr:UploadLayerPart"
+                ],
+                "Condition":{
+                    "ArnLike":{
+                      "aws:SourceArn":"arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/c1cs-ecr-prod"
+                    },
+                    "StringEquals":{
+                      "aws:SourceAccount":"${AWS::AccountId}"
+                    }
+                }
+              }
+          ]
+        }
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub ${ServiceName}-${Environment}
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: NO_ARTIFACTS
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/amazonlinux2-x86_64-standard:3.0-20.03.13
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: CURRENT_ENV
+            Type: PLAINTEXT
+            Value: !Ref Environment
+          - Name: ACCOUNT_ID
+            Type: PLAINTEXT
+            Value: !Ref 'AWS::AccountId'
+          - Name: SERVICE_NAME
+            Type: PLAINTEXT
+            Value: !Ref ServiceName
+      Source:
+        Type: S3
+        Location: !Sub ${QSS3BucketName}/${QSS3KeyPrefix}templates/dockerFiles.zip
+      TimeoutInMinutes: 10
+    DependsOn: c1csECR
+
+  lambdaFunctionStartCodeBuild:
+        Type: AWS::Lambda::Function
+        Properties:
+          Runtime: python3.8
+          Timeout: 60
+          Handler: index.lambda_handler
+          Role: !GetAtt startCodeBuildRole.Arn
+          Code:
+            ZipFile:
+              !Sub
+                - |-
+                  import http.client
+                  import urllib.parse
+                  import json
+                  import boto3
+                  import traceback
+                  import cfnresponse
+
+                  def lambda_handler(event, context):
+                      """Main Lambda Handling function."""
+                      account_id = context.invoked_function_arn.split(":")[4]
+
+                      try:
+                          # Log the received event
+                          print(("Received event: " + json.dumps(event, indent=2)))
+
+                          # Setup base response
+                          response = get_response_dict(event)
+
+                          # CREATE UPDATE (want to avoid rebuilds unless something changed)
+                          if event['RequestType'] in ("Create", "Update"):
+                              try:
+                                  print("Kicking off Build")
+                                  execute_build(event)
+                                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeStartCodeBuildLambda")
+                              except Exception as build_exce:
+                                  print("ERROR: Build threw exception")
+                                  print((repr(build_exce)))
+                                  # Signal back that we failed
+                                  return send_response(event, get_response_dict(event),
+                                                      "FAILED", repr(build_exce))
+                              else:
+                                  # CodeBuild will send the signal
+                                  print("Build Kicked off ok CodeBuild should signal back")
+                                  return
+                          elif event['RequestType'] == "Delete":
+                              # TODO: Remove the created images in the Repositories
+                              print("Delete event remove container images")
+                              response['PhysicalResourceId'] = "1233244324"
+                              try:
+                                  resources = event['ResourceProperties']
+                                  #repository = resources['c1cs-attack']
+                                  repository = 'c1cs-attack'
+                                  cleanup_images_repo(repository, account_id)
+                              except Exception as cleanup_exception:
+                                  # signal failure to CFN
+                                  print((json.dumps(event, indent=2)))
+                                  traceback.print_stack()
+                                  print("---------")
+                                  traceback.print_exc()
+                                  print((repr(cleanup_exception)))
+                                  return send_response(event, response, "FAILED",
+                                                      "Cleanup of Container image failed." + repr(cleanup_exception))
+                              # signal success to CFN
+                              cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeStartCodeBuildLambda")
+                              return send_response(event, response)
+                          else:
+                              # Invalid RequestType
+                              print("ERROR: Invalid request type send error signal to cfn")
+                              print("ERROR: Expected - Create, Update, Delete")
+                      except Exception as unhandled:
+                          response = get_response_dict(event)
+                          #return send_response(event, response, "FAILED",
+                          #                    "Unhandled exception, failing gracefully: " + str(unhandled))
+
+
+                  def cleanup_images_repo(repository, account_id):
+                      """
+                      Delete Container images
+                      """
+                      ecr_client = boto3.client('ecr')
+                      repository = "c1cs-attack"
+                      print("Run command to delete images in ECR")
+                      response = ecr_client.batch_delete_image(
+                          repositoryName=repository,
+                          imageIds=[
+                              {
+                                  'imageTag': 'tdc_2022_2_c1csAttack'
+                              },
+                          ]
+                      )
+                      print(response)
+
+                  def execute_build(event):
+                      """Kickoff CodeBuild Project."""
+                      build = boto3.client('codebuild')
+                      project_name = "c1cs-ecr-prod"
+                      signal_url = event["ResponseURL"]
+                      stack_id = event["StackId"]
+                      request_id = event["RequestId"]
+                      logical_resource_id = event["LogicalResourceId"]
+                      url = urllib.parse.urlparse(event['ResponseURL'])
+                      response = build.start_build(projectName=project_name)
+                      return response
+
+
+                  def get_response_dict(event):
+                      """Setup Response object for CFN Signal."""
+                      response = {
+                          'StackId': event['StackId'],
+                          'RequestId': event['RequestId'],
+                          'LogicalResourceId': event['LogicalResourceId'],
+                          'Status': 'SUCCESS'
+                      }
+                      return response
+
+
+                  def send_response(event, response, status=None, reason=None):
+                      """Response sender."""
+                      if status is not None:
+                          response['Status'] = status
+
+                      if reason is not None:
+                          response['Reason'] = reason
+
+                      if 'ResponseURL' in event and event['ResponseURL']:
+                          url = urllib.parse.urlparse(event['ResponseURL'])
+                          body = json.dumps(response)
+                          https = http.client.HTTPSConnection(url.hostname)
+                          https.request('PUT', url.path+'?'+url.query, body)
+                          print("Sent CFN Response")
+
+                      return response
+                -
+                  lambda_function_role_arn: !Ref startCodeBuildRole
+
+  InvokeStartCodeBuildLambda:
+    Type: Custom::InvokeStartCodeBuildLambda
+    Properties:
+      ServiceToken: !GetAtt lambdaFunctionStartCodeBuild.Arn
+      Timeout: 600
+        # The code build process takes about 4.5 minuts.  This timeout could be reduced from 10 minutes if needed.

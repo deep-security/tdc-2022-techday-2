@@ -1,5 +1,5 @@
 AWSTemplateFormatVersion: 2010-09-09
-Description: tdc-2022-techday-1 Cloud One Container Security - Deployment
+Description: tdc-2022-techday-2 Cloud One Container Security - Deployment
 
 Resources:
 
@@ -149,7 +149,7 @@ Resources:
             - "echo -e '    runtimeSecurity:' >> /tmp/overrides_cs.yaml"
             - "echo -e '        enabled: true' >> /tmp/overrides_cs.yaml"
             - "echo -e '    exclusion:' >> /tmp/overrides_cs.yaml"
-            - "echo -e '        namespaces: [ kube-system, calico-system ]' >> /tmp/overrides_cs.yaml"
+            - "echo -e '        namespaces: [ kube-system, calico-system, fss-log4shell-attacker-env, tigera-operator ]' >> /tmp/overrides_cs.yaml"
       DocumentType: Command
       Name: 'c1csCreateOverridesFile'
   HelmInstallC1CS: 
@@ -173,7 +173,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Runtime: python3.8
-      Timeout: 20
+      Timeout: 60
       Handler: index.lambda_handler
       Role: !GetAtt c1csLambdaFunctionRole.Arn
       Code:
@@ -226,7 +226,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csLambdaFunctionRole.Arn
         Code:
@@ -289,7 +289,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csLambdaFunctionRole.Arn
         Code:
@@ -555,7 +555,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csLambdaFunctionRole.Arn
         Code:
@@ -610,7 +610,7 @@ Resources:
         Type: AWS::Lambda::Function
         Properties:
           Runtime: python3.8
-          Timeout: 20
+          Timeout: 60
           Handler: index.lambda_handler
           Role: !GetAtt c1csLambdaFunctionRole.Arn
           Code:
@@ -642,7 +642,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csLambdaFunctionRole.Arn
         Code:
@@ -674,7 +674,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csLambdaFunctionRole.Arn
         Code:
@@ -706,7 +706,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csLambdaFunctionRole.Arn
         Code:

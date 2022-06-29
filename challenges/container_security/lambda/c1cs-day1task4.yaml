@@ -1,0 +1,106 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  scoreroleday1task4C1CS:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      Policies: 
+        - PolicyName: scoreroleday1task4C1CS
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "ssm:GetParameter"
+                Resource: 
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1Region
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  C1CSScoreLambdarday1task4:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: C1CSScoreLambdarday1task4
+      Code: 
+        ZipFile: |
+          import json
+          import urllib3
+          import boto3
+          from urllib.parse import urlparse
+
+          client = boto3.client('ssm')
+
+          def lambda_handler(event, context):
+
+              parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
+              playerApiKey = parameter ['Parameter']['Value']
+
+              parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
+              playerC1Region = parameter ['Parameter']['Value']
+              
+          # Get latest 25 runtime events from c1cs api
+              url = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/events/sensors?limit=50'
+              payloadEvent = json.dumps({
+              })
+              headers = {
+                  'api-version': 'v1',
+                  'Authorization': 'ApiKey '+playerApiKey+'',
+                  'Content-Type': 'application/json'
+              }
+
+              http = urllib3.PoolManager()
+              encoded_payload = payloadEvent.encode("utf-8")
+              eventsResponse = http.request("GET", url=url, headers=headers) #, body=encoded_payload)
+              
+              eventsRaw = json.loads(eventsResponse.data.decode("utf-8"))
+              events = eventsRaw["events"]
+              
+          # Check if any of the 25 events match the correct answer
+              taskComplete = "NotComplete"
+              for event in events:
+                  if ((event["proc.cmdline"] == "yum /usr/bin/yum install nmap" or event["proc.cmdline"] == "yum /usr/bin/yum install nmap -y") and event["mitigation"] == "isolate" and event["ruleID"] == "TM-00000010") and event["container.image.tag"] == "tdc_2022_2_c1csAttack":
+                      
+                      # Correct answer example:
+                          #2022-06-23T02:22:24.687877Z
+                          #isolate
+                          #TM-00000010
+                          #yum /usr/bin/yum install nmap
+                          #tdc_2022_2_c1csAttack
+                      
+                      print(event["timestamp"])
+                      print(event["mitigation"])
+                      print(event["ruleID"])
+                      print(event["proc.cmdline"])
+                      print(event["container.image.tag"])
+                      taskComplete = "completd"
+              print(taskComplete)
+
+              if taskComplete == "completd":
+                  message = "Task completed"
+                  print(message)
+                  return (True)
+              else:
+                  message = "Not yet completed"
+                  print(message)
+                  #raise Exception(message)
+
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - scoreroleday1task4C1CS
+          - Arn
+      Runtime: python3.8
+      Timeout: 60
+    DependsOn:
+      - scoreroleday1task4C1CS
+Outputs:
+  C1CSScoreLambdarday1task4:
+    Value:
+      Ref: C1CSScoreLambdarday1task4

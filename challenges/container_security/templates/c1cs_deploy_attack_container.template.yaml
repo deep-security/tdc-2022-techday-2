@@ -1,0 +1,356 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: tdc-2022-techday-1 Cloud One Container Security - Deployment
+
+Parameters:
+  # Overall
+  awsAccountID:
+    Default: ""
+    Description: AWS Account ID 
+    Type: String
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2022-2
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+Resources:
+
+# IAM
+
+  c1csAttackContainerLambdaFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: c1csLambdaFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - arn:aws:ssm:*:*:parameter/player/playerawsAccountID
+          - Effect: Allow
+            Action:
+              - ssm:PutParameter
+              - ssm:SendCommand
+            Resource:
+              - arn:aws:ssm:*:*:document/CreateC1csAttackContainer
+              - arn:aws:ssm:*:*:document/CreateC1csAttackContainerLoadBalancer
+          - Effect: Allow
+            Action:
+              - ssm:SendCommand
+            Resource:
+              - arn:aws:ec2:*:*:instance/*
+            Condition:
+              StringLike:
+                ssm:resourceTag/Name:
+                  - EKSBastion
+
+  c1csAttackStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - states.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/service-role/"
+      Policies:
+      - PolicyName: StateMachinePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+              - ssm:SendCommand
+            Resource:
+              - !GetAtt lambdaFunctionRunSSMCommandCreateC1csAttackContainer.Arn
+              - !GetAtt lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer.Arn
+
+
+
+# SSM Parameters
+
+  C1CSStateMachineArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/C1CS/Deployc1csAttackContainerstateMachine
+      Type: String
+      Value: !Ref Deployc1csAttackContainerstateMachine
+      Description: ARN for Deployc1csAttackContainerstateMachine 
+
+
+# SSM Documents
+  CreateC1csAttackContainer: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Command Document will deploy the c1cs attack container'
+        parameters:
+          playerawsAccountID:
+            type: String
+            default: !Ref awsAccountID
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "echo 'apiVersion: apps/v1' > /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e 'kind: Deployment' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e 'metadata:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '  name: gotty-attack' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '  labels:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '    app: gotty' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e 'spec:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '  replicas: 1' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '  selector:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '    matchLabels:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '      app: gotty' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '  template:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '    metadata:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '      labels:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        app: gotty' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '    spec:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '      containers:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '      - name: gotty' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        image: {{playerawsAccountID}}.dkr.ecr.us-east-1.amazonaws.com/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        imagePullPolicy: Always' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        ports:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        - containerPort: 8080' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        livenessProbe:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '          failureThreshold: 3' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '          periodSeconds: 3' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '          exec:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '            command:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '            - cat' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '            - /run_gotty.sh' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '          initialDelaySeconds: 3' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        startupProbe:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '          failureThreshold: 20' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '          periodSeconds: 10' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '          initialDelaySeconds: 3' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '          exec:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '            command:' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '            - cat' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '            - /run_gotty.sh' >> /tmp/c1cs_AttackContainer.yaml"
+            - "sudo /usr/local/bin/kubectl apply -f /tmp/c1cs_AttackContainer.yaml"
+      DocumentType: Command
+      Name: 'CreateC1csAttackContainer'
+
+  CreateC1csAttackContainerLoadBalancer: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Command Document will deploy the c1cs attack container'
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "echo 'apiVersion: v1' > /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo 'kind: Service' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo 'metadata:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  name: c1cs-attack-loadbalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo 'spec:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  type: LoadBalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  selector:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '    app: gotty' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  ports:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '      - protocol: TCP' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '        port: 80' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '        targetPort: 8080' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "sudo /usr/local/bin/kubectl apply -f /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+      DocumentType: Command
+      Name: 'CreateC1csAttackContainerLoadBalancer'
+
+# Lambda Functions
+  lambdaFunctionRunSSMCommandCreateC1csAttackContainer:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 60
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csAttackContainerLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import boto3
+
+                ssm = boto3.client('ssm')
+                region = 'us-east-1'
+
+                def lambda_handler(event, context):
+                    response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                        DocumentName='CreateC1csAttackContainer',
+                        DocumentVersion='$DEFAULT',
+                        TimeoutSeconds=123,
+                        Comment='string'
+                    )
+              -
+                lambda_function_role_arn: !Ref c1csAttackContainerLambdaFunctionRole
+  lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 60
+        Handler: index.lambda_handler
+        Role: !GetAtt c1csAttackContainerLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import boto3
+
+                ssm = boto3.client('ssm')
+                region = 'us-east-1'
+
+                def lambda_handler(event, context):
+                    response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                        DocumentName='CreateC1csAttackContainerLoadBalancer',
+                        DocumentVersion='$DEFAULT',
+                        TimeoutSeconds=123,
+                        Comment='string'
+                    )
+              -
+                lambda_function_role_arn: !Ref c1csAttackContainerLambdaFunctionRole
+
+# Create State Machine
+  Deployc1csAttackContainerstateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: Deployc1csAttackContainerstateMachine
+      DefinitionString: !Sub |
+        {
+          "Comment": "This state machine inspects a players api key then creates resources in the players C1CS account.  Then Deploys C1CS in EKS",
+          "StartAt": "CreateC1csAttackContainer",
+          "States": {
+            "CreateC1csAttackContainer": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionRunSSMCommandCreateC1csAttackContainer.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "CreateC1csAttackContainerLoadBalancer"
+            },
+            "CreateC1csAttackContainerLoadBalancer": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      RoleArn: !GetAtt [ c1csAttackStateMachineRole, Arn ]
+
+# Invoke State Machine
+  invokeAttackContainerStateMatchine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_invoke_attack_container_state_matchine.template.yaml'
+
+# Wait 60 seconds for c1cs_invoke_attack_container_state_matchine.template.yaml to finish invoking: Deployc1csAttackContainerstateMachine
+#  deployC1csAttackWaitHandle:
+#    Type: AWS::CloudFormation::WaitConditionHandle
+#  deployC1csAttackWaitCondition:
+#    DependsOn: invokeAttackContainerStateMatchine
+#    Type: AWS::CloudFormation::WaitCondition
+#    Properties:
+#      Handle: !Ref deployC1csAttackWaitHandle
+#      Timeout: '60'
+#      Count: 1
+  getC1csAttackAlb:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: invokeAttackContainerStateMatchine
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_get_alb_hostname.yaml'
+
+Outputs:
+  lambdaFunctionRunSSMCommandCreateC1csAttackContainer:
+    Description: Run SSM Command to uninstall C1CS
+    Value: !GetAtt lambdaFunctionRunSSMCommandCreateC1csAttackContainer.Arn
+  lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer:
+    Description: Run SSM Command to uninstall C1CS
+    Value: !GetAtt lambdaFunctionRunSSMCommandCreateC1csAttackContainerLoadBalancer.Arn
+  Deployc1csAttackContainerstateMachine:
+    Description: Step function that deploys C1CS in EKS
+    Value: !GetAtt Deployc1csAttackContainerstateMachine.Arn
+  c1csAttackAlbHostname:
+    Description: ALB Hostname that the player uses to access the c1cs attack container
+    Value: !GetAtt getC1csAttackAlb.Outputs.c1csAttackAlbHostname

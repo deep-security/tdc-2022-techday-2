@@ -1,0 +1,128 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+
+# Iam Role
+
+  c1csGetAlbHostnameRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: c1csGetAlbHostnameRole
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - ssm:SendCommand
+              - ssm:PutParameter
+            Resource:
+              - arn:aws:ssm:*:*:document/AWS-RunShellScript
+              - arn:aws:ssm:*:*:parameter/player/C1CS/LoadBalancerHostname
+          - Effect: Allow
+            Action:
+              - ssm:SendCommand
+              - ec2:DescribeInstances
+            Resource:
+              - arn:aws:ec2:*:*:instance/*
+            Condition:
+              StringLike:
+                ssm:resourceTag/Name:
+                  - EKSBastion
+          - Effect: Allow
+            Action:
+              - ssm:GetCommandInvocation
+              - ssm:ListCommandInvocations
+            Resource:
+              - arn:aws:ssm:*:*:*
+
+# Lambda Function
+  GetLoadBalancerHostname:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Timeout: 60
+      Handler: index.lambda_handler
+      Role: !GetAtt c1csGetAlbHostnameRole.Arn
+      Code:
+        ZipFile:
+          !Sub
+            - |-
+              import json
+              import boto3
+              import botocore
+              import time
+              import cfnresponse
+
+              def lambda_handler(event=None, context=None):
+                  time.sleep(1)
+                  response_data = {}
+                  physicalResourceId = None
+                  if event["RequestType"] == "Create":
+                      client = boto3.client("ssm")
+                      response = client.send_command(
+                          Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                          DocumentName="AWS-RunShellScript",
+                          Parameters={
+                              "commands": [
+                                  "sudo /usr/local/bin/kubectl get services --namespace default c1cs-attack-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                              ]
+                          },
+                      )
+                      command_id = response["Command"]["CommandId"]
+                      tries = 0
+                      output = "False"
+                      while tries < 10:
+                          tries = tries + 1
+                          try:
+                              time.sleep(0.5)  # some delay always required...
+                              invocations_list = client.list_command_invocations(
+                                  CommandId=command_id,
+                              )["CommandInvocations"]
+                              instance_id = sorted(
+                                  invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
+                              )[0]["InstanceId"]
+                              print(instance_id)
+                              result = client.get_command_invocation(
+                                  CommandId=command_id,
+                                  InstanceId=instance_id,
+                              )
+                              print(result)
+                              if result["Status"] == "InProgress":
+                                  continue
+                              output = result["StandardOutputContent"]
+                              print(output)
+                              break
+                          except client.exceptions.InvocationDoesNotExist:
+                              continue
+                      response_data = { "c1csAttackAlbHostname": output }
+                      client.put_parameter(Name='/player/C1CS/LoadBalancerHostname', Value=output, Type='String', Overwrite=True)
+                  else: # if event["RequestType"] == "Delete":
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "GetC1csAlbAttackHostname")
+                      output = "Recieved Delete command from CFN"
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+                  return output
+            -
+              lambda_function_role_arn: !Ref c1csGetAlbHostnameRole
+
+ #CustomResources
+  InvokeGetC1csAlbAttackHostname:
+    Type: Custom::GetC1csAlbAttackHostname
+    Properties:
+      ServiceToken: !GetAtt GetLoadBalancerHostname.Arn
+      Timeout: 120
+  
+Outputs:
+ c1csAttackAlbHostname:
+    Value: !GetAtt InvokeGetC1csAlbAttackHostname.c1csAttackAlbHostname
+    Description: "Alb hostname for the c1cs attack container."

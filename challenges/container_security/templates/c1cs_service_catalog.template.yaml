@@ -36,7 +36,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt LambdaFunctionRoleServiceCatalog.Arn
         Code:
@@ -73,17 +73,12 @@ Resources:
                     #response_data = { "RandomString": physicalResourceId }
                     cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeDeployC1CSStateMachineLambda")
               -
-                #lambda_function_role_arn: !Ref LambdaFunctionRole
                 lambda_function_role_arn: !Ref LambdaFunctionRoleServiceCatalog
-# lambdaFunctionInvokeDeployC1CSStateMachine
-  # Ref stateMachine arn instead of reading ssm para /player/C1CS/StateMachineArn
-  # https://gist.github.com/dasgoll/611220330a187c6efccbcb4180603794
-
 
 # Custom Resources
   InvokeDeployC1CSStateMachineLambda:
     Type: Custom::DeployC1CSStateMachineLambda
     Properties:
       ServiceToken: !GetAtt lambdaFunctionInvokeDeployC1CSStateMachine.Arn
-      Timeout: 5
+      Timeout: 60
 
