@@ -59,21 +59,9 @@ Resources:
       Name: "FSSAllInOneProductID"
       Value: !Ref FSSAllInOneServiceCatalogProduct
       Type: String
-  FSSAllInOneProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref FSSAllInOneServiceCatalogProduct
-  FSSAllInOneLaunchRoleConstraint:
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    DependsOn: FSSAllInOneProductAssociation
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref FSSAllInOneServiceCatalogProduct
-      RoleArn: !Ref ServiceCatalogLaunchRoleArn
 
   # AttackerEnv
-  AttackerEnvServiceCatalogProduct:
+  FSSAttackerEnvServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
       Description: "Hacker environment for FSS Challenge"
@@ -82,21 +70,9 @@ Resources:
       ProvisioningArtifactParameters:
         - Info:
             LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}invokeAttackerStateMachine.template.yaml"
-  AttackerEnvProductID:
+  FSSAttackerEnvProductID:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: "AttackerEnvProductID"
-      Value: !Ref AttackerEnvServiceCatalogProduct
+      Name: "FSSAttackerEnvProductID"
+      Value: !Ref FSSAttackerEnvServiceCatalogProduct
       Type: String
-  AttackerEnvProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref AttackerEnvServiceCatalogProduct
-  AttackerEnvLaunchRoleConstraint:
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    DependsOn: AttackerEnvProductAssociation
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref AttackerEnvServiceCatalogProduct
-      RoleArn: !Ref ServiceCatalogLaunchRoleArn
