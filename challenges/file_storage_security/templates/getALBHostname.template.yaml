@@ -70,7 +70,7 @@ Resources:
                 time.sleep(1)
                 response_data = {}
                 physicalResourceId = None
-                if event["RequestType"] == "Create":
+                if event["RequestType"] in ["Create", "Update"]:
                     time.sleep(60)
                     client = boto3.client("ssm")
                     response = client.send_command(
