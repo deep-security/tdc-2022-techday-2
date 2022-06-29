@@ -185,8 +185,6 @@ Resources:
     Properties:
       Parameters:
         VPC: !GetAtt VPCStack.Outputs.VPCID
-        SubnetA: !GetAtt VPCStack.Outputs.PublicSubnet1ID
-        SubnetB: !GetAtt VPCStack.Outputs.PublicSubnet2ID
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml'
   V1SOStack:
     Type: AWS::CloudFormation::Stack
