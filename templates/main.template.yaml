@@ -188,7 +188,7 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/network_security/"
         AvailabilityZone: !Select
-          - '1'
+          - '0'
           - !Split
             - ","
             - !FindInMap
@@ -331,7 +331,7 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/vpc/templates/aws-vpc.template.yaml'
       Parameters:
-        NumberOfAZs: 4
+        NumberOfAZs: 3
         AvailabilityZones: !FindInMap
           - RegionMap
           - !Ref 'AWS::Region'
@@ -508,4 +508,4 @@ Outputs:
     Description: Bucket for V1 SO task information (player access required)
   c1csAlbHostname:
     Description: ALB Hostname that the player uses to access the c1cs attack container
-    Value: !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname  
+    Value: !If [ BuildEks, !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname, "" ]
