@@ -244,7 +244,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl get services --namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                          "sudo /usr/local/bin/kubectl get services --namespace fss-log4shell-attacker-env attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
                       ]
                   },
               )
