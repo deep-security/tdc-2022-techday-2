@@ -101,6 +101,10 @@ Parameters:
     Default: "/player/V1/v1ApiBaseUrl"
     Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One API Base URL.
     Type: String
+  v1SOApiBaseUrlSSMKey:
+    Default: "player/V1/v1SOApiBaseUrl"
+    Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One SO API Base URL.
+    Type: String
   v1ApiKeySSMKey:
     Default: "/player/V1/v1ApiKey"
     Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One API Key.
@@ -168,6 +172,9 @@ Resources:
                   - !Sub
                     - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${v1ApiBaseUrlSSMKey}
                     - v1ApiBaseUrlSSMKey: !Ref v1ApiBaseUrlSSMKey
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${v1SOApiBaseUrlSSMKey}
+                    - v1SOApiBaseUrlSSMKey: !Ref v1SOApiBaseUrlSSMKey
                   - !Sub
                     - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${v1ApiKeySSMKey}
                     - v1ApiKeySSMKey: !Ref v1ApiKeySSMKey
