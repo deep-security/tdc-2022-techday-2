@@ -187,7 +187,7 @@ Resources:
           import time
 
           ssm = boto3.client("ssm")
-          region = ${AWS::Region}
+          region = "${AWS::Region}"
 
 
           def lambda_handler(event=None, context=None):
