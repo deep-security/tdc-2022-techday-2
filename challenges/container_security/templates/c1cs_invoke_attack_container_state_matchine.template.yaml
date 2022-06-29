@@ -68,7 +68,7 @@ Resources:
                         stateMachineArn=stateMachineArnParameter,
                         name=stateMachineName,
                       )
-                    cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeDeployC1CSStateMachineLambda")
+                    cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
               -
                 lambda_function_role_arn: !Ref Deployc1csAttackContainerstateMachineLambdaRole
 
