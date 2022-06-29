@@ -83,6 +83,16 @@ Resources:
           PlayerPassword: !Ref PlayerPassword
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/attackerMachine.template.yaml"
 
+  LaunchAttackerEnvironment:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/invokeAttackerStateMachine.template.yaml"
+    DependsOn:
+      - AttackerMachine
+
   # CopyZips
   CopyZipsStack:
     Type: AWS::CloudFormation::Stack

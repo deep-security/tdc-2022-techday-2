@@ -71,32 +71,3 @@ Resources:
       PortfolioId: !Ref PlayerServiceCatalogPortfolio
       ProductId: !Ref FSSAllInOneServiceCatalogProduct
       RoleArn: !Ref ServiceCatalogLaunchRoleArn
-
-  # AttackerEnv
-  AttackerEnvServiceCatalogProduct:
-    Type: AWS::ServiceCatalog::CloudFormationProduct
-    Properties:
-      Description: "Hacker environment for FSS Challenge"
-      Name: "FSS Environment"
-      Owner: "Trend Micro"
-      ProvisioningArtifactParameters:
-        - Info:
-            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}invokeAttackerStateMachine.template.yaml"
-  AttackerEnvProductID:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "AttackerEnvProductID"
-      Value: !Ref AttackerEnvServiceCatalogProduct
-      Type: String
-  AttackerEnvProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref AttackerEnvServiceCatalogProduct
-  AttackerEnvLaunchRoleConstraint:
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    DependsOn: AttackerEnvProductAssociation
-    Properties:
-      PortfolioId: !Ref PlayerServiceCatalogPortfolio
-      ProductId: !Ref AttackerEnvServiceCatalogProduct
-      RoleArn: !Ref ServiceCatalogLaunchRoleArn
