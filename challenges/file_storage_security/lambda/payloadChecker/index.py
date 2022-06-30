@@ -5,7 +5,7 @@ import urllib.request
 
 
 bucket = "${ImageUploaderS3Bucket}"
-pwned_url = "https://${QSS3BucketName}/${ToolsPrefix}pwned.zip"
+pwned_url = "https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${ToolsPrefix}pwned.zip"
 file_key = "connectioncheck"
 
 s3 = boto3.client("s3")
