@@ -204,43 +204,46 @@ Resources:
           import boto3
           import time
           import re
+
           ssmc = boto3.client("ssm")
           ec2c = boto3.client("ec2")
           ec2r = boto3.resource("ec2")
           lambdac = boto3.client("lambda")
 
-          def sendReq(server='http://www.google.com', timeout=2):
+          def sendReq(server, timeout=2):
               return curl("curl --connect-timeout {} {}".format(timeout, server).split(' '))
 
-          def sendAttack(server='http://www.google.com', timeout=2):
+          def sendAttack(server, timeout=2):
               return curl("curl --connect-timeout {} -H 'User-Agent: sdvntyer' {}/api/v88".format(timeout, server).split(' '))
-
+              # return curl("curl --connect-timeout {} {}".format(timeout, server).split(' '))  
           def curl(cmd):
-              # Returns True iff was able to connect to server
+              # Returns True if was able to connect to server
               # AWS Lambda Functions block all ICMP packets, need to use curl instead.
               try:
                   output = subprocess.run(cmd, stderr=subprocess.PIPE, check=False).stderr.decode().strip()
                   errcode = re.search(".*curl: \((\d+)\).*", output)
-                  print("errcode: {}".format(errcode.group(1) if errcode else errcode))
+                  print("server: {} / errcode: {}".format(server, errcode.group(1) if errcode else errcode))
                   if errcode is None:  # No error code means we were able to connect
                       return True
                   else:
-                      return errcode.group(1) != "28"  # errcode 28 means connection timeout
+                      return errcode.group(1) != "28"  # errcode 28 means connection timeout, which means Network Security blocked it, or lambda has no internet access
               except Exception as e:
                   print(e)
                   return None
 
           def handler(event, context):
               msg = ""
-              victim = os.environ.get("VICTIM", "http://www.google.com")
-              req = sendReq(victim)
+              victim = os.environ.get("VICTIM")
+              # req = sendReq(victim)
+              req = sendReq('http://www.google.com')
               attack = sendAttack(victim)
-              print("Request: {} // Attack: {}".format(req, attack))
               if req is True and attack is False:
                   msg = "You've successfully blocked the vulnerability!"
                   return True
               else:
                   msg = "Unfortunately attacks are still occurring against your servers! Make sure you check your configuration and perhaps re-read the instructions, and try again."
+                  print(req)
+                  print(attack)
                   raise Exception("Incomplete")
               return msg
       Environment:
@@ -384,23 +387,22 @@ Resources:
             - logs:CreateLogGroup
             - logs:CreateLogStream
             - ec2:DescribeRouteTables
-            - ec2:DeleteRoute
-            - ec2:CreateRoute
             - cloudformation:DescribeStacks
-            - cloudformation:DeleteStack
             Effect: Allow
             Resource: "*"
-            Sid: AllowCleanup
+            Sid: BasicReadPerms
+          - Action:
+            - ec2:DeleteRoute
+            - ec2:CreateRoute
+            Effect: Allow
+            Resource:
+            - !Ref PrivateSubnetRTB
+            - !Ref PublicSubnetRTB
+            - !Ref IGWRTB
+            Sid: AllowCleanupRoutes
+          - Action:
+            - cloudformation:DeleteStack
+            Effect: Allow
+            Resource: "arn:aws:cloudformation:*:*:stack/TM-NS-Endpoint-*"
           Version: 2012-10-17
         PolicyName: NetworkSecurity_CleanupLambdaRole
-
-
-
-
-
-
-
-
-
-
-
