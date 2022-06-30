@@ -37,6 +37,7 @@ Resources:
   C1WSScoreLambdaTLSI:
     Type: AWS::Lambda::Function
     Properties:
+      FunctionName: C1WSScoreLambdaTLSI
       Code: 
         ZipFile: |
           import json, os
