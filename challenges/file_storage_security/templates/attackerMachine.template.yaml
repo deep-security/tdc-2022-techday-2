@@ -128,7 +128,7 @@ Resources:
                   sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
                   mkdir -p /tmp/manifests-$NAMESPACE && \
-                  sudo /usr/local/bin/kubectl create secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tools/ --from-literal=PLAYERPASSWORD="${PlayerPassword}" --dry-run=client -o yaml > /tmp/manifests-$NAMESPACE/secrets.yaml && \
+                  sudo /usr/local/bin/kubectl create --namespace=$NAMESPACE secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tools/ --from-literal=PLAYERPASSWORD="${PlayerPassword}" && \
                   sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/k8s/main.yaml
       DocumentType: Command
 
