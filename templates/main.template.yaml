@@ -520,7 +520,7 @@ Outputs:
     Description: ALB Hostname that the player uses to access the c1cs attack container
     Value: !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname  
 
-  FSSAttackAlbHostname:
+  FSSAttackerMachineAccessUrl:
     Value: !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname
     Description: "Alb hostname for the FSS attack container."
   FSSWebsite:
