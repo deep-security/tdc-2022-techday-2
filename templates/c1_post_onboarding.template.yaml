@@ -151,6 +151,10 @@ Resources:
         QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/network_security/'
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/network_security/templates/network_security_xaccountiamrole.template.yaml'
 
+  C1WSinitialConfigure:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/onbording_servicecatalog.yaml
 
 # SamplePostOnboard:
 #     Type: AWS::CloudFormation::Stack

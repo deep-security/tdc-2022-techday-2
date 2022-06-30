@@ -31,7 +31,7 @@ Metadata:
 Parameters:
   v1TrendRegion:
     Default: "United States"
-    AllowedValues: ["United States"]
+    AllowedValues: ["United States", "Europe", "Singapore", "Japan", "Australia", "India"]
     Description: Vision One Trend Region
     Type: String
   v1AuthToken:
