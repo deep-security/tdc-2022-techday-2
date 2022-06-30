@@ -99,6 +99,7 @@ Resources:
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
         ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
         ImageUploaderS3Bucket: !GetAtt ImageUpload.Outputs.FSSBucketToProtect 
+        SudoSinglesEndpoint: !GetAtt ImageUpload.Outputs.FSSWebsite
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/answerValidation.template.yaml'
 
   # CopyZips
