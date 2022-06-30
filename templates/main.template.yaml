@@ -543,7 +543,4 @@ Outputs:
   FSSLambdaToProtect:
     Value: !GetAtt FSSStack.Outputs.FSSLambdaToProtect
     Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
-<<<<<<< HEAD
 
-=======
->>>>>>> origin/main
