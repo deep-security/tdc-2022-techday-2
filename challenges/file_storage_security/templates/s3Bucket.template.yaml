@@ -1,0 +1,233 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: S3Bucket and related resources for the FSS challenge
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2021-2
+    Description:
+      S3 bucket name for the Quick Start assets. This string can include
+      numbers, lowercase letters, uppercase letters, and hyphens (-). It cannot start
+      or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates
+    Default: ""
+    Description:
+      S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+  CopyZipsS3Bucket:
+    Default: ""
+    Type: String
+  CopyZipsPrefix:
+    Default: ""
+    Type: String
+
+  ProfilePictureDropperCodeZip:
+    Default: ""
+    Type: String
+
+Resources:
+  ImageUploaderS3Bucket:
+    Type: "AWS::S3::Bucket"
+    Properties:
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - HEAD
+              - PUT
+            AllowedOrigins:
+              - "*"
+
+  # Upload images to bucket on create (grabbed from CopyZips bucket)
+  ProfilePictureDropper:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt ProfilePictureDropperLambda.Arn
+    DependsOn: ImageUploaderS3Bucket
+  ProfilePictureDropperLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 128
+      Code:
+        S3Bucket: !Ref CopyZipsS3Bucket
+        S3Key: !Sub "${CopyZipsPrefix}${ProfilePictureDropperCodeZip}" # Make sure to set S3Key like this.
+      Environment:
+        Variables:
+          BUCKET: !Ref ImageUploaderS3Bucket
+      Role: !GetAtt ProfilePictureDropperLambdaRole.Arn
+      Timeout: 60
+  ProfilePictureDropperLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+      Policies:
+        - PolicyName: LambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - "arn:aws:logs:*:*:*"
+                Effect: Allow
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - !Sub "arn:${AWS::Partition}:s3:::${ImageUploaderS3Bucket}/*"
+
+  # Clean objects and access points on delete
+  CleanBucket:
+    Type: Custom::CleanBucket
+    Properties:
+      ServiceToken: !GetAtt CleanBucketLambda.Arn
+      the_bucket: !Ref ImageUploaderS3Bucket
+  CleanBucketLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: index.handler
+      Role: !GetAtt CleanBucketLambdaRole.Arn
+      Timeout: 360
+      Runtime: python3.9
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import cfnresponse
+
+          s3_control_client = boto3.client("s3control")
+
+
+          def remove_access_points(bucket_name: str, account_id: str):
+              access_points_raw = s3_control_client.list_access_points(
+                  AccountId=account_id, Bucket=bucket_name
+              ).get("AccessPointList")
+              if access_points_raw:
+                  access_points = [dict.get("Name") for dict in access_points_raw]
+                  print(access_points)
+                  for access_point in access_points:
+                      try:
+                          response = s3_control_client.delete_access_point(
+                              AccountId=account_id, Name=access_point
+                          )
+                      except Exception as e:
+                          print(f"Exception is: {e}")
+
+
+          def handler(event, context):
+              # Init ...
+              the_event = event["RequestType"]
+              print("The event is: ", str(the_event))
+              response_data = {}
+              # Retrieve parameters
+              the_bucket = event["ResourceProperties"]["the_bucket"]
+              try:
+                  if the_event == "Delete":
+                      print("Deleting S3 content...")
+                      b_operator = boto3.resource("s3")
+                      b_operator.Bucket(str(the_bucket)).objects.all().delete()
+
+                      print("Removing access points...")
+                      b_operator = boto3.resource("s3")
+                      remove_access_points(str(the_bucket), "${AWS::AccountId}")
+                  # Everything OK... send the signal back
+                  print("Operation successful!")
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+              except Exception as e:
+                  print("Operation failed...")
+                  print(str(e))
+                  response_data["Data"] = str(e)
+                  cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
+  CleanBucketLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+        Version: "2012-10-17"
+      Path: "/"
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource: arn:aws:logs:*:*:*
+            Version: "2012-10-17"
+          PolicyName: "debuglogs"
+        - PolicyDocument:
+            Statement:
+              - Action:
+                  - s3:DeleteObject
+                  - s3:List*
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:s3:::${ImageUploaderS3Bucket}/*
+                  - !Sub arn:aws:s3:::${ImageUploaderS3Bucket}
+              - Action:
+                  - s3:DeleteAccessPoint
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:s3:::${ImageUploaderS3Bucket}
+              - Action:
+                  - s3:ListAccessPoints
+                Effect: Allow
+                Resource:
+                  - "*"
+              - Action:
+                  - s3:DeleteAccessPoint
+                Effect: Allow
+                Resource:
+                  - !Sub "arn:aws:s3:${AWS::Region}:${AWS::AccountId}:accesspoint/*"
+            Version: "2012-10-17"
+          PolicyName: "s3Actions"
+      RoleName: "CleanBucketLambdaRole"
+
+Outputs:
+  ImageUploaderS3BucketName:
+    Value: !Ref ImageUploaderS3Bucket
+    Description: Image Uploader S3 Bucket Name
+  ImageUploaderS3BucketARN:
+    Value: !GetAtt ImageUploaderS3Bucket.Arn
+    Description: Image Uploader S3 Bucket arn

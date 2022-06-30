@@ -36,7 +36,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt LambdaFunctionRoleServiceCatalog.Arn
         Code:
@@ -80,5 +80,5 @@ Resources:
     Type: Custom::DeployC1CSStateMachineLambda
     Properties:
       ServiceToken: !GetAtt lambdaFunctionInvokeDeployC1CSStateMachine.Arn
-      Timeout: 5
+      Timeout: 60
 
