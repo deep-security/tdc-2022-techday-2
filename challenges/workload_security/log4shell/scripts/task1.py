@@ -33,7 +33,11 @@ def lambda_handler(event, context):
                     break
         
         # Return task result
-        return result_flag
+        if result_flag == False:
+            raise Exception("Agent isn't installed or activated yet.")
+            return result_flag
         
+        return result_flag
+
     except requests.exceptions.RequestException as e:
         raise SystemExit(e)
