@@ -1,8 +1,10 @@
 import boto3
 import requests
-def lambda_handler(event, context):
+
+bucket = "${ImageUploaderS3Bucket}"
+
+def handler(event, context):
     s3 = boto3.client('s3')
-    bucket = 'conformity-testjp'
     path_test = '/tmp/'         # temp path in lambda.
     FILE_NAME = 'eicar.txt'
     file_url = "https://secure.eicar.org/eicar.com.txt"
@@ -11,7 +13,7 @@ def lambda_handler(event, context):
         for chunk in response.iter_content(chunk_size = 16*1024):
             data.write(chunk)
         print(data)
-    s3.upload_file('/tmp/eicar.txt', bucket, 'test.txt')
+    s3.upload_file('/tmp/eicar.txt', bucket, 'log4shell.txt')
 
     return {
             'status': 'True',
