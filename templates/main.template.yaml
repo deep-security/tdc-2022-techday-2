@@ -114,6 +114,18 @@ Conditions:
 
 Resources:
 
+  adfsStack:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/adfs_challenge'
+          VPCID: !GetAtt VPCStack.Outputs.VPCID
+          PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+        TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/templates/adfs-main.template.yaml'
+      DependsOn:
+        - VPCStack
+
   c1csStack:
       Type: AWS::CloudFormation::Stack
       Properties:
@@ -181,6 +193,14 @@ Resources:
         PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
 
+  VOTKStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        VPCID: !GetAtt VPCStack.Outputs.VPCID
+        PublicSubnetId: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml'
+  
   V1SOStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -481,6 +501,9 @@ Outputs:
   C1WSLog4ShellSite:
     Value: !GetAtt c1wsLog4ShellStack.Outputs.Log4ShellSite
     Description: Tomcat Web App with Log4Shell Vulnerability.
+  
+  ADFSEndpointDNS:
+    Value: !GetAtt adfsStack.Outputs.PublicDNS
 
 # #Sample Challenge Outputs
 #   SampleChallengeBucket:
