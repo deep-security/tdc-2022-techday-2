@@ -2,10 +2,12 @@ import boto3
 import filecmp
 import zipfile
 import urllib.request
+from urllib.error import HTTPError
 
 
 bucket = "${ImageUploaderS3Bucket}"
 pwned_url = "https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${ToolsPrefix}pwned.zip"
+endpoint = "${SudoSinglesEndpoint}"
 file_key = "connectioncheck"
 
 s3 = boto3.client("s3")
@@ -36,38 +38,45 @@ def get_payload():
     return "/tmp/connectioncheck"
 
 
-def payload_check():
+def scan_on_get_response():
     try:
-        player_file = "/tmp/player_file"
-        control_file = get_payload()
-        s3.download_file(bucket, file_key, player_file)
-        file_equality = filecmp.cmp(control_file, player_file)
-        assert file_equality == True
-    except:
-        raise PayloadNotFoundError
+        url = f"{endpoint}/{file_key}"
+        res = urllib.request.urlopen(
+            urllib.request.Request(url=f"{endpoint}/getimg/{file_key}", method="GET"),
+            timeout=5,
+        )
+        data = {"code": res.code, "data": res.read()}
+    except HTTPError as e:
+        data = {"code": e.code, "reason": e.reason, "headers": e.headers.items()}
+    finally:
+        return data
 
 
-def protection_check():
+def payload_check(control_file_path):
     try:
-        player_file = "/tmp/player_file"
-        control_file = get_payload()
-        s3.download_file(bucket, file_key, player_file)
-        file_equality = filecmp.cmp(control_file, player_file)
-        assert file_equality == True
+        player_file_path = "/tmp/player_file_path"
+        s3.download_file(bucket, file_key, player_file_path)
+        files_are_equal: bool = filecmp.cmp(control_file_path, player_file_path)
+        assert files_are_equal
     except:
         raise PayloadNotFoundError
+    else:
+        return files_are_equal
+
+
+def protection_check(control_file_path):
+    try:
+        data = scan_on_get_response()
+        contents = data.get("data")
+        with open(control_file_path, "rb") as control_file:
+            file_is_clean: bool = contents not in control_file.read()
+        assert file_is_clean
+    except:
+        raise PayloadNotBlockedError
+    else:
+        return file_is_clean
 
 
 def handler(event, context):
-    try:
-        assert payload_check() == True
-        assert protection_check() == True
-    except PayloadNotFoundError as e:
-        print(e)
-        raise Exception("Payload not detected! Try again.")
-    except PayloadNotBlockedError as e:
-        print(e)
-        raise Exception("Payload not detected! Try again.")
-    except Exception as e:
-        print(e)
-        raise Exception(f"Exception: {e}")
+    control_file_path = get_payload()
+    return payload_check(control_file_path) and protection_check(control_file_path)
