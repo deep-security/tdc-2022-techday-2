@@ -71,41 +71,46 @@ Resources:
             import botocore
             import time
             import cfnresponse
-
+            
+            client = boto3.client("ssm")
+            
             def lambda_handler(event=None, context=None):
                 time.sleep(1)
                 response_data = {}
                 request_type = event["RequestType"]
                 print(event)
                 print(request_type)
+                output = "False"
                 try:
-                    if request_type == "Create":
+                    if request_type in ("Create", "Update"):
                         time.sleep(60)
-                        client = boto3.client("ssm")
-                        response = client.send_command(
-                            Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
-                            DocumentName="AWS-RunShellScript",
-                            Parameters={
-                                "commands": [
-                                    "sudo /usr/local/bin/kubectl get services --namespace ${Namespace} attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
-                                ]
-                            },
-                        )
-                        print(f"response:{response}")
-                        command_id = response["Command"]["CommandId"]
-                        print(command_id)
+                        
                         tries = 0
-                        output = "False"
                         while tries < 10:
-                            print(f"try number {tries}")
                             tries = tries + 1
+                            print(f"try number {tries}")
+                            
+                            response = client.send_command(
+                                Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                                DocumentName="AWS-RunShellScript",
+                                Parameters={
+                                    "commands": [
+                                        "sudo /usr/local/bin/kubectl get services --namespace fss-log4shell-attacker-env attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                                    ]
+                                },
+                            )
+                            print(f"response:{response}")
+                            command_id = response["Command"]["CommandId"]
+                            print(command_id)
                             try:
                                 print("in try block")
-                                time.sleep(0.5)  # some delay always required...
+                                time.sleep(3)  # some delay always required...
                                 invocations_list = client.list_command_invocations(
                                     CommandId=command_id,
                                 )["CommandInvocations"]
                                 print(invocations_list)
+                                if invocations_list == []:
+                                    continue
                                 instance_id = sorted(
                                     invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
                                 )[0]["InstanceId"]
@@ -131,7 +136,7 @@ Resources:
                     return output
                 except Exception as e:
                     cfnresponse.send(event, context, cfnresponse.FAILED, {"Data": str(e)})
-               
+                           
           - lambda_function_role_arn: !Ref FSSGetAlbHostnameRole
 
   #CustomResources
