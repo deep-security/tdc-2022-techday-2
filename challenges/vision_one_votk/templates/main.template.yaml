@@ -1,0 +1,77 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This template defines a the main stack for a challenge.
+
+Parameters:
+
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC ID to use for the challenge.
+  LatestAmazonLinuxAmiId: 
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Description: DO NOT CHANGE THIS VALUE
+  PublicSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The ID of the public subnet to use for the challenge.
+
+Resources:
+  VOTKInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Path: /
+  VOTKInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - !Ref VOTKInstanceRole
+  VOTKSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enables access to VOTK
+      VpcId: !Ref VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Challenge
+          Value: VOTK
+        - Key: Name
+          Value: "VOTK"
+  VOTKInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmazonLinuxAmiId
+      InstanceType: m6i.xlarge
+      SubnetId: !Ref PublicSubnetId
+      IamInstanceProfile: !Ref VOTKInstanceProfile
+      SecurityGroupIds:
+        - !GetAtt VOTKSecurityGroup.GroupId
+      UserData:
+        Fn::Base64: |
+          #!/bin/bash
+          yum update -y && yum install docker -y
+          service docker start
+          PUBLIC_NAME=$(curl -f http://169.254.169.254/latest/meta-data/public-hostname)
+          docker run -e PACKAGE=https://s3.us-west-2.amazonaws.com/autogen-prodops-tools.ddts-trendmicro.com/votk/packages/production/package.tar.gz -e REVERSE_MODE=true -e URL=https://${PUBLIC_NAME} --rm -p 443:80 jspdocker/webproxy:latest bash run.sh
+      Tags:
+        - Key: Challenge
+          Value: VOTK   
+
+Outputs:
+  VOTKPublicDNS:
+    Description: VOTK public DNS
+    Value: !GetAtt VOTKInstance.PublicDnsName
