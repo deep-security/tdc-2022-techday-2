@@ -74,7 +74,18 @@ Resources:
         ProfilePictureDropperCodeZip: "profilePictureDropper/profilePictureDropper.zip"
         WebsiteCodeZip: "imageUpload/imageUpload.zip"
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/imageUpload.template.yaml"
-      
+
+  # Answers
+  AnswerValidation:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
+        ImageUploaderS3Bucket: !GetAtt ImageUpload.Outputs.FSSBucketToProtect 
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/answerValidation.template.yaml'
+
   # CopyZips
   CopyZipsStack:
     Type: AWS::CloudFormation::Stack
