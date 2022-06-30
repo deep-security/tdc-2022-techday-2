@@ -348,5 +348,5 @@ Outputs:
     Description: DeleteAttackerNamespaceLambda Arn
     Value: !GetAtt DeleteAttackerNamespaceLambda.Arn
   FSSAttackAlbHostname:
-    Value: !GetAtt InvokeAttackerEnvStateMachine.Outputs.FSSAttackAlbHostname
+    Value: !GetAtt GetFSSALBHostname.Outputs.FSSAttackAlbHostname
     Description: "Alb hostname for the FSS attack container."
