@@ -52,9 +52,10 @@ Resources:
   PayloadCheckerLambda:
     Type: AWS::Lambda::Function
     Properties:
+      FunctionName: payloadChecker
       Handler: index.handler
       Runtime: python3.9
-      MemorySize: 128
+      MemorySize: 512
       Code:
         ZipFile: !Sub |
           import boto3
@@ -130,9 +131,10 @@ Resources:
   ProtectionCheckerLambda:
     Type: AWS::Lambda::Function
     Properties:
+      FunctionName: protectionChecker
       Handler: index.handler
       Runtime: python3.9
-      MemorySize: 128
+      MemorySize: 512
       Code:
         ZipFile: !Sub |
           import boto3
