@@ -67,7 +67,6 @@ Resources:
               def lambda_handler(event=None, context=None):
                   time.sleep(1)
                   response_data = {}
-                  physicalResourceId = None
                   if event["RequestType"] == "Create":
                       client = boto3.client("ssm")
                       response = client.send_command(
@@ -107,9 +106,6 @@ Resources:
                               continue
                       response_data = { "c1csAttackAlbHostname": output }
                       client.put_parameter(Name='/player/C1CS/LoadBalancerHostname', Value=output, Type='String', Overwrite=True)
-                  else: # if event["RequestType"] == "Delete":
-                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "GetC1csAlbAttackHostname")
-                      output = "Recieved Delete command from CFN"
                   cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
                   return output
             -

@@ -229,21 +229,17 @@ Resources:
                           # Log the received event
                           print(("Received event: " + json.dumps(event, indent=2)))
 
-                          # Setup base response
-                          response = get_response_dict(event)
-
                           # CREATE UPDATE (want to avoid rebuilds unless something changed)
                           if event['RequestType'] in ("Create", "Update"):
                               try:
                                   print("Kicking off Build")
                                   execute_build(event)
-                                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeStartCodeBuildLambda")
+                                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
                               except Exception as build_exce:
                                   print("ERROR: Build threw exception")
                                   print((repr(build_exce)))
                                   # Signal back that we failed
-                                  return send_response(event, get_response_dict(event),
-                                                      "FAILED", repr(build_exce))
+                                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
                               else:
                                   # CodeBuild will send the signal
                                   print("Build Kicked off ok CodeBuild should signal back")
@@ -251,12 +247,13 @@ Resources:
                           elif event['RequestType'] == "Delete":
                               # TODO: Remove the created images in the Repositories
                               print("Delete event remove container images")
-                              response['PhysicalResourceId'] = "1233244324"
                               try:
                                   resources = event['ResourceProperties']
                                   #repository = resources['c1cs-attack']
                                   repository = 'c1cs-attack'
                                   cleanup_images_repo(repository, account_id)
+                                  # signal success to CFN
+                                  cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
                               except Exception as cleanup_exception:
                                   # signal failure to CFN
                                   print((json.dumps(event, indent=2)))
@@ -264,19 +261,14 @@ Resources:
                                   print("---------")
                                   traceback.print_exc()
                                   print((repr(cleanup_exception)))
-                                  return send_response(event, response, "FAILED",
-                                                      "Cleanup of Container image failed." + repr(cleanup_exception))
-                              # signal success to CFN
-                              cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeStartCodeBuildLambda")
-                              return send_response(event, response)
+                                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
                           else:
                               # Invalid RequestType
                               print("ERROR: Invalid request type send error signal to cfn")
                               print("ERROR: Expected - Create, Update, Delete")
+                              response.send(event, context, response.FAILED, {});
                       except Exception as unhandled:
-                          response = get_response_dict(event)
-                          #return send_response(event, response, "FAILED",
-                          #                    "Unhandled exception, failing gracefully: " + str(unhandled))
+                          response.send(event, context, response.FAILED, {});
 
 
                   def cleanup_images_repo(repository, account_id):
