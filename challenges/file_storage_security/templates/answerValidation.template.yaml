@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: All answer validation functions for the FSS challenge for tdc-2022-techday-2
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase letters, uppercase
+      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Default: none
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start bucket name can include numbers, lowercase letters,
+      uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), and forward slash (/).
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates/
+    Default: ""
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Type: String
+
+  ImageUploaderS3Bucket:
+    Default: ""
+    Type: String
+    Description: The S3 Bucket that will contain the payload to be checked
+  ToolsPrefix:
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/tools/
+    Default: ""
+    Type: String
+    Description: The S3 Bucket that will contain the payload to be checked
+
+Resources:
+  PayloadCheckerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 128
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import filecmp
+          import zipfile
+          import urllib.request
+          
+          
+          bucket = "${ImageUploaderS3Bucket}"
+          pwned_url = "https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${ToolsPrefix}pwned.zip"
+          file_key = "connectioncheck"
+          
+          s3 = boto3.client("s3")
+          
+          
+          def get_payload():
+              download_location = "/tmp/pwned.zip"
+              with open(download_location, "wb") as control_file:
+                  res = urllib.request.urlopen(
+                      urllib.request.Request(url=pwned_url, method="GET"), timeout=5
+                  )
+                  control_file.write(res.read())
+          
+              with zipfile.ZipFile(download_location, "r") as zip_ref:
+                  zip_ref.extractall(path="/tmp", pwd=b"novirus")
+              return "/tmp/connectioncheck"
+          
+          
+          def handler(event, context):
+              player_file = "/tmp/player_file"
+              control_file = get_payload()
+              try:
+                  s3.download_file(bucket, file_key, player_file)
+                  file_equality = filecmp.cmp(control_file, player_file)
+                  print(file_equality)
+                  assert file_equality == True
+              except Exception as e:
+                  print(e)
+                  raise Exception("Payload not detected! Try again.")
+
+      Role: !GetAtt PayloadCheckerLambdaRole.Arn
+      Timeout: 30
+  PayloadCheckerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: PayloadCheckerLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - "arn:aws:logs:*:*:*"
+                Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                Effect: Allow
+                Resource:
+                  - !Sub "arn:aws:s3:::${ImageUploaderS3Bucket}/connectioncheck"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
