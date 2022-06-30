@@ -236,27 +236,27 @@ Resources:
   ############################################ 
   ########## C1WS Service Catalog ########### 
   ############################################
-  C1WSNewServiceCatalogProduct:
-    Type: AWS::ServiceCatalog::CloudFormationProduct
-    Properties:
-      Description: Be sure to expand this before tryng Cloud One Workload Security Challenges
-      Name: C1WS Initial preparation
-      Owner: Trend Micro
-      ProvisioningArtifactParameters:
-        - Info:
-            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/onbording_servicecatalog.yaml
-  C1WSNewServicePorfolioProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
-      ProductId: !Ref C1WSNewServiceCatalogProduct
-  C1WSNewServiceLaunchRoleConstraint:
-    DependsOn: C1WSNewServicePorfolioProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
-      ProductId: !Ref C1WSNewServiceCatalogProduct
-      RoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+  # C1WSNewServiceCatalogProduct:
+  #   Type: AWS::ServiceCatalog::CloudFormationProduct
+  #   Properties:
+  #     Description: Be sure to expand this before tryng Cloud One Workload Security Challenges
+  #     Name: C1WS Initial preparation
+  #     Owner: Trend Micro
+  #     ProvisioningArtifactParameters:
+  #       - Info:
+  #           LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/onbording_servicecatalog.yaml
+  # C1WSNewServicePorfolioProductAssociation:
+  #   Type: AWS::ServiceCatalog::PortfolioProductAssociation
+  #   Properties:
+  #     PortfolioId: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+  #     ProductId: !Ref C1WSNewServiceCatalogProduct
+  # C1WSNewServiceLaunchRoleConstraint:
+  #   DependsOn: C1WSNewServicePorfolioProductAssociation
+  #   Type: AWS::ServiceCatalog::LaunchRoleConstraint
+  #   Properties:
+  #     PortfolioId: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+  #     ProductId: !Ref C1WSNewServiceCatalogProduct
+  #     RoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
  
   # SAMPLE: Load Challenges and Infra for Challenges
   # Sample:
