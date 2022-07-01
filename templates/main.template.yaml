@@ -193,6 +193,7 @@ Resources:
         PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
 
+
   c1nsStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -210,6 +211,19 @@ Resources:
               - AZs
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         IGWID: !GetAtt VPCStack.Outputs.IGWID
+
+  FSSAttackerEnv:
+    Type: AWS::CloudFormation::Stack
+    Condition: BuildEks
+    Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+          PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
+    DependsOn:
+      - EKSStack
+
 
   VOTKStack:
     Type: AWS::CloudFormation::Stack
@@ -398,34 +412,6 @@ Resources:
       - VPCStack
       - KeyPairStack
 
-  C1PostOnboardTrigger:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        MainStackId: !Ref AWS::StackId
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1_postonboard_trigger.template.yaml'
-
-  C1PostOnboardFunctionNameSsmParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "C1PostOnboardFunctionName"
-      Value: !GetAtt C1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
-      Type: String
-  
-  V1PostOnboardTrigger:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        MainStackId: !Ref AWS::StackId
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/v1_postonboard_trigger.template.yaml'
-
-  V1PostOnboardFunctionNameSsmParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "V1PostOnboardFunctionName"
-      Value: !GetAtt V1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
-      Type: String
-
   LockoutInfraStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -534,6 +520,9 @@ Outputs:
     Description: ALB Hostname that the player uses to access the c1cs attack container
     Value: !If [ BuildEks, !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname, "" ]
 
+  FSSAttackerMachineAccessUrl:
+    Value: !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname
+    Description: "Alb hostname for the FSS attack container."
   FSSWebsite:
     Value: !GetAtt FSSStack.Outputs.FSSWebsite
     Description: URL of SudoSingles, the vulnerable application to protect

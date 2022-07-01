@@ -59,20 +59,3 @@ Resources:
       Name: "FSSAllInOneProductID"
       Value: !Ref FSSAllInOneServiceCatalogProduct
       Type: String
-
-  # AttackerEnv
-  FSSAttackerEnvServiceCatalogProduct:
-    Type: AWS::ServiceCatalog::CloudFormationProduct
-    Properties:
-      Description: "Hacker environment for FSS Challenge"
-      Name: "FSS Environment"
-      Owner: "Trend Micro"
-      ProvisioningArtifactParameters:
-        - Info:
-            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}invokeAttackerStateMachine.template.yaml"
-  FSSAttackerEnvProductID:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "FSSAttackerEnvProductID"
-      Value: !Ref FSSAttackerEnvServiceCatalogProduct
-      Type: String
