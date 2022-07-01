@@ -4,24 +4,14 @@ Description: >
 
 Parameters:
   # Bucket path related
-  QSS3BucketName:
-    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
-    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
-      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
-      (-).
-    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
-      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
-      It cannot start or end with a hyphen (-).
+  QSS3BucketNameSSMValue:
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: QSS3BucketName
-  QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/.]*$
-    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
-      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Description: DO NOT CHANGE THIS VALUE
+  QSS3KeyPrefixSSMValue:
+    Type: 'AWS::SSM::Parameter::Value<String>'
     Default: QSS3KeyPrefix
-    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
-      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
-      forward slash (/).
+    Description: DO NOT CHANGE THIS VALUE
     Type: 'AWS::SSM::Parameter::Value<String>'
   PublicSubnet1SSMParameter:
     Default: "PublicSubnet1"
@@ -163,7 +153,7 @@ Resources:
             Start-Transcript -path "c:\Projects\InstanceBuild.log"
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
             iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-            (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
+            (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}challenges/workload_security/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
             Expand-Archive C:\Users\Administrator\Downloads\Projects.zip c:\
             Set-Content -Path 'C:\Projects\Bucket.txt' -Value '${AVCWinBucket}' -NoNewline
             Set-Content -Path 'C:\Projects\C1Region.txt' -Value '${c1RegionSSMKey}' -NoNewline
@@ -175,11 +165,11 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-       BucketName: !Ref AVCWinBucket
-       ObjectNames: 'UpgradeTask.txt'
-       ObjectPrefixes: ''
-       ExpectedValues: 'True'
-       FunctionName: 'AVC-Checker-Script'
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/answer_checker.template.yaml'
+        BucketName: !Ref AVCWinBucket
+        ObjectNames: 'UpgradeTask.txt'
+        ObjectPrefixes: ''
+        ExpectedValues: 'True'
+        FunctionName: 'AVC-Checker-Script'
+      TemplateURL: !Sub 'https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}challenges/workload_security/agentversioncontrol/templates/answer_checker.template.yaml'
 
 #Outputs:
