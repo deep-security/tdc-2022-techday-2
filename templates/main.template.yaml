@@ -201,7 +201,7 @@ Resources:
           QSS3BucketName: !Ref QSS3BucketName
           QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
           PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/deployAttackerEnv.template.yaml"
     DependsOn:
       - EKSStack
 

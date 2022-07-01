@@ -1,0 +1,89 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description:
+  tdc-2022-techday-2 Cloud One File Storage Security and Conformity main
+  template
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase letters, uppercase
+      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Default: none
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start bucket name can include numbers, lowercase letters,
+      uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), and forward slash (/).
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/
+    Default: ""
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Type: String
+
+  PlayerPassword:
+    Description: The Player's password
+    Type: String
+
+Resources:
+  # Build the image
+  AttackerImageBuilder:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}"
+        Environment: prod
+        ServiceName: fss-ecr
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fssCodePipeline.yaml"
+
+  # Launch all K8s prereqs
+  AttackerK8sResources:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+        PlayerPassword: !Ref PlayerPassword
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/attackerMachine.template.yaml"
+
+  # After the above two are done, launch the kubernetes environment
+  LaunchK8sEnv:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/invokeAttackerStateMachine.template.yaml"
+    DependsOn:
+      - AttackerImageBuilder
+      - AttackerK8sResources
+
+  # After the environment is launched, grab the hostname and return it
+  GetFSSALBHostname:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters: 
+        Namespace: "fss-log4shell-attacker-env"
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/getALBHostname.template.yaml'
+    DependsOn: LaunchK8sEnv
+
+Outputs:
+  FSSAttackAlbHostname:
+    Value: !GetAtt GetFSSALBHostname.Outputs.FSSAttackAlbHostname
+    Description: "Alb hostname for the FSS attack container."
