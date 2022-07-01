@@ -45,8 +45,8 @@ Resources:
               parameter = client.get_parameter(Name='/player/C1/c1Region', WithDecryption=True)
               playerC1Region = parameter ['Parameter']['Value']
               
-          # Get latest 25 runtime events from c1cs api
-              url = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/events/sensors?limit=25'
+          # Get latest 65 runtime events from c1cs api
+              url = 'https://container.'+playerC1Region+'.cloudone.trendmicro.com/api/events/sensors?limit=65'
               payloadEvent = json.dumps({
               })
               headers = {
