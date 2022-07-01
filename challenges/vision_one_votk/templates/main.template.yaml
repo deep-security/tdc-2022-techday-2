@@ -37,7 +37,7 @@ Parameters:
       It cannot start or end with a hyphen (-).
     Type: String
   QSS3KeyPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    AllowedPattern: ^[0-9a-zA-Z-/._]*
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
     Default: "latest/"
@@ -98,7 +98,7 @@ Resources:
           service docker start
           PUBLIC_NAME=$(curl -f http://169.254.169.254/latest/meta-data/public-hostname)
           PACKAGE_URL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}packages/package.tar.gz 
-          CONTAINER_NAME=$ContainerRegistry/$ContainerRepository:$ContainerTag
+          CONTAINER_NAME=${ContainerRegistry}/${ContainerRepository}:${ContainerTag}
           docker run \
             -e PACKAGE=$PACKAGE_URL\
             -e REVERSE_MODE=true \
