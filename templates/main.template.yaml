@@ -392,34 +392,6 @@ Resources:
       - VPCStack
       - KeyPairStack
 
-  C1PostOnboardTrigger:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        MainStackId: !Ref AWS::StackId
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1_postonboard_trigger.template.yaml'
-
-  C1PostOnboardFunctionNameSsmParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "C1PostOnboardFunctionName"
-      Value: !GetAtt C1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
-      Type: String
-  
-  V1PostOnboardTrigger:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        MainStackId: !Ref AWS::StackId
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/v1_postonboard_trigger.template.yaml'
-
-  V1PostOnboardFunctionNameSsmParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "V1PostOnboardFunctionName"
-      Value: !GetAtt V1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
-      Type: String
-
   LockoutInfraStack:
     Type: AWS::CloudFormation::Stack
     Properties:
