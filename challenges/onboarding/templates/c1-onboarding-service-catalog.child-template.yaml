@@ -115,10 +115,6 @@ Parameters:
   LambdaFunctionTimeout:
     Type: Number
     Default: 900
-  C1PostOnboardFunctionName:
-    Default: "C1PostOnboardFunctionName"
-    Description: DO NOT MODIFY. Expected value of the SSM Parameter Value for the Post Onboard function name.
-    Type: 'AWS::SSM::Parameter::Value<String>'
 
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
@@ -175,11 +171,6 @@ Resources:
                 Action:
                   - "ssm:GetParameter"
                   - "ssm:PutParameter"
-              - Effect: Allow
-                Resource: 
-                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${C1PostOnboardFunctionName}
-                Action:
-                  - "lambda:InvokeFunction"
       Path: /
       Tags:
         - Key: BusinessCase
@@ -413,12 +404,6 @@ Resources:
                                   # Stores onboarding success as an SSM Parameter "c1Onboarding" for Mission Control verification.
                                   setC1SsmParameter(ssmClient, "c1OnboardingStatus", "Success")
 
-                                  # Since task was successful, we will kick of the Post Onboarding(AKA Wrinkler) lambda
-                                  lambdaClient = boto3.client('lambda')
-                                  lambdaClient.invoke(
-                                    FunctionName=str(os.environ.get("C1_POST_ONBOARD_LAMBDA_NAME")),
-                                    InvocationType="Event"
-                                  )
               except Exception as e:
                   logger.info("Exception: {}".format(e))
                   status = cfnresponse.FAILED
@@ -438,8 +423,18 @@ Resources:
           c1ApiKey: !Ref c1ApiKey
           c1UsersList: !Ref c1UsersList
           c1LicenseValidationDayCount: 3      
-          C1_POST_ONBOARD_LAMBDA_NAME: !Ref C1PostOnboardFunctionName
       Role: !GetAtt TechDayC1onboardingLambdaRole.Arn
+
+  # Triggers Cloud One post-onboarding stacks creation.
+  PostOnboardingStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: C1OnboardingLambdaCustomResource
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketNameSSMValue
+        QSS3KeyPrefix: !Ref QSS3KeyPrefixSSMValue
+      TemplateURL: !Sub 'https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}templates/c1_post_onboarding.template.yaml'
+
   
   # Task 1 - Creates an AWS Lambda function with the Cloud One Onboarding verification module.
   VerifyC1OnboardingLambdaFunction:
