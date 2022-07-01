@@ -667,7 +667,7 @@ Outputs:
   FSSLambdaToProtect:
     Value: !Sub https://${AWS::Region}.console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${GetImgLambda}?tab=code"
     Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
-  PayloadDropperUrl:
+  FSSPayloadDropperUrl:
     Value: !GetAtt PayloadDropperLambdaUrl.FunctionUrl
     Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.
     
