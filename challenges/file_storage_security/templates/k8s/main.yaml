@@ -1,0 +1,124 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: attacker-machine
+  name: attacker-machine-loadbalancer
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    app: attacker-machine
+  type: LoadBalancer
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: log4shell
+  name: sudosingles-optimizer
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: log4shell
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: attacker-machine
+  name: attacker-machine-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: attacker-machine
+  template:
+    metadata:
+      labels:
+        app: attacker-machine
+    spec:
+      containers:
+      - env:
+        - name: AUTO_LOGIN
+          value: "false"
+        - name: PLAYERPASSWORD
+          valueFrom:
+            secretKeyRef:
+              key: PLAYERPASSWORD
+              name: cfn-references
+        - name: TOOLSURL
+          valueFrom:
+            secretKeyRef:
+              key: TOOLSURL
+              name: cfn-references
+        image: lscr.io/linuxserver/webtop:ubuntu-xfce
+        lifecycle:
+          postStart:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                sleep 15 && \
+                echo "$PLAYERPASSWORD" | xargs -I{} echo abc:{} | chpasswd && usermod -l Player abc && \
+                gpasswd -d Player sudo && \
+                sudo apt-get update && \
+                sudo apt-get install -y openjdk-8-jdk unzip curl vim nano net-tools iproute2 && \
+                sudo mkdir -p /config/Desktop/hacker && \
+                curl -v "$TOOLSURL"JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \
+                sudo unzip -P novirus /tmp/JNDIExploit-v1.2.zip -d /config/Desktop/hacker && \
+                rm /tmp/JNDIExploit-v1.2.zip
+        livenessProbe:
+          failureThreshold: 3
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 3
+          periodSeconds: 3
+        name: attacker-machine
+        ports:
+        - containerPort: 3000
+        resources:
+          limits:
+            cpu: "1"
+            memory: 1Gi
+        startupProbe:
+          failureThreshold: 20
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 3
+          periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: log4shell
+  name: log4shell-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: log4shell
+  template:
+    metadata:
+      labels:
+        app: log4shell
+    spec:
+      containers:
+      - image: public.ecr.aws/q4l4n3k8/log4shell-vulnerable-app:latest
+        name: vulnerable-app
+        ports:
+        - containerPort: 8080
+        resources:
+          limits:
+            cpu: 250m
+            memory: 128Mi
