@@ -140,7 +140,7 @@ Resources:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3Key: !Ref QSS3KeyPrefix
-        HostName: !GetAtt VictimLog4Shell.Outputs.Log4ShellPrivateDNSName
+        HostName: !GetAtt VictimLog4Shell.Outputs.Log4ShellPublicDNSName
         ScoreLambdaRole: !GetAtt scoreroleC1WS.Arn
 
   SNSLambdaTask2:
@@ -192,7 +192,7 @@ Resources:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3Key: !Ref QSS3KeyPrefix
-        HostName: !GetAtt VictimLog4Shell.Outputs.Log4ShellPrivateDNSName
+        HostName: !GetAtt VictimLog4Shell.Outputs.Log4ShellPublicDNSName
         ScoreLambdaRole: !GetAtt scoreroleC1WS.Arn
         
 Outputs:
