@@ -9,6 +9,7 @@ Metadata:
         - "W2001"
         - "E3001" #cfn-lint can't handle function urls yet...
         - "E1010" #cfn-lint can't handle function urls yet...
+        - "E3002" #cfn-lint can't handle function urls yet...
 
 Parameters:
   QSS3BucketName:
@@ -150,6 +151,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !GetAtt PayloadDropperLambda.Arn
+      FunctionUrlAuthType: NONE
       Action: lambda:InvokeFunctionUrl
       Principal: "*"
 
