@@ -4,15 +4,25 @@ Description: >
 
 Parameters:
   # Bucket path related
-  QSS3BucketNameSSMValue:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: QSS3BucketName
-    Description: DO NOT CHANGE THIS VALUE
-  QSS3KeyPrefixSSMValue:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: QSS3KeyPrefix
-    Description: DO NOT CHANGE THIS VALUE
-    Type: 'AWS::SSM::Parameter::Value<String>'
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2021-2
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: challenges/
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
   PublicSubnet1SSMParameter:
     Default: "PublicSubnet1"
     Description: DO NOT CHANGE THIS VALUE
