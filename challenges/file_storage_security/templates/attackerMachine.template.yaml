@@ -27,24 +27,12 @@ Parameters:
     ConstraintDescription:
       Quick Start key prefix can include numbers, lowercase letters, uppercase
       letters, hyphens (-), and forward slash (/).
-    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates/
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/
     Default: ""
     Description:
       Update to where you hold the scripts. S3 bucket name for the Tech Day
       assets. Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slash (/).
-    Type: String
-  ToolsPrefix:
-    AllowedPattern: ^[0-9a-zA-Z-/._]*$
-    ConstraintDescription:
-      Quick Start key prefix can include numbers, lowercase letters, uppercase
-      letters, hyphens (-), and forward slash (/).
-    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/tools/
-    Default: ""
-    Description:
-      Update to where you hold the tools for this challenge. Quick Start key
-      prefix can include numbers, lowercase letters, uppercase letters, hyphens
-      (-), and forward slash (/).
     Type: String
   PlayerPassword:
     Description: The Player's password
@@ -135,19 +123,13 @@ Resources:
               timeoutSeconds: "180"
               runCommand:
                 - |
-                  wget https://github.com/mikefarah/yq/releases/download/v4.25.1/yq_linux_amd64.tar.gz -O - | \
-                  tar xz && mv yq_linux_amd64 /usr/local/bin/yq && \
-                - !Sub |
-                  NAMESPACE=$(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) \
+                  NAMESPACE=fss-log4shell-attacker-env \
                 - !Sub |
                   sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
                   sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
                   mkdir -p /tmp/manifests-$NAMESPACE && \
-                  aws s3 cp --recursive s3://${QSS3BucketName}/${QSS3KeyPrefix}k8s/ /tmp/manifests-$NAMESPACE && \
-                  for file in $(grep -lR deployment /tmp/manifests-$NAMESPACE); do \
-                  /usr/local/bin/yq -i '.spec.template.spec.containers[].env += [{"name":"TOOLSURL", "value":"https://${QSS3BucketName}.s3.amazonaws.com/${ToolsPrefix}"}, {"name": "PLAYERPASSWORD", "value":"${PlayerPassword}"}]' $file; \
-                  done && \
-                  sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f /tmp/manifests-$NAMESPACE
+                  sudo /usr/local/bin/kubectl create --namespace=$NAMESPACE secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tools/ --from-literal=PLAYERPASSWORD="${PlayerPassword}" && \
+                  sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/k8s/main.yaml
       DocumentType: Command
 
   # SSM Parameters
@@ -190,8 +172,8 @@ Resources:
                             "${commands}"
                     },
                 )
-          - commands: !Sub |
-              sudo /usr/local/bin/kubectl delete namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) --ignore-not-found=true
+          - commands: |
+              sudo /usr/local/bin/kubectl delete namespace fss-log4shell-attacker-env --ignore-not-found=true
   LaunchK8sManifestsLambda:
     Type: AWS::Lambda::Function
     Properties:
@@ -205,7 +187,7 @@ Resources:
           import time
 
           ssm = boto3.client("ssm")
-          region = ${AWS::Region}
+          region = "${AWS::Region}"
 
 
           def lambda_handler(event=None, context=None):
@@ -249,7 +231,7 @@ Resources:
       Handler: index.lambda_handler
       Role: !GetAtt K8sAdminRole.Arn
       Code:
-        ZipFile: !Sub |
+        ZipFile: |
           import boto3
           import time
 
@@ -261,7 +243,7 @@ Resources:
                   DocumentName="AWS-RunShellScript",
                   Parameters={
                       "commands": [
-                          "sudo /usr/local/bin/kubectl get services --namespace $(echo ${AWS::StackName} | tr '[:upper:]' '[:lower:]' | cut -c -62) attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                          "sudo /usr/local/bin/kubectl get services --namespace fss-log4shell-attacker-env attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
                       ]
                   },
               )
@@ -330,34 +312,29 @@ Resources:
             },
             "Wait": {
               "Type": "Wait",
-              "Seconds": 60,
-              "Next": "GetAttackerLBHostnameLambda"
-            },
-            "GetAttackerLBHostnameLambda": {
-              "Type": "Task",
-              "Resource": "arn:aws:states:::lambda:invoke",
-              "Parameters": {
-                "Payload.$": "$",
-                "FunctionName": "${GetAttackerLBHostnameLambda.Arn}"
-              },
-              "Retry": [
-                {
-                  "ErrorEquals": [
-                    "Lambda.ServiceException",
-                    "Lambda.AWSLambdaException",
-                    "Lambda.SdkClientException"
-                  ],
-                  "IntervalSeconds": 2,
-                  "MaxAttempts": 6,
-                  "BackoffRate": 2
-                }
-              ],
+              "Seconds": 120,
               "End": true
             }
           },
           "Comment": "Idempotent state machine that deploys an attacker environment to EKS through an EKS bastion.\nNOTE: The EKS bastion(s) in question must have be tagged: \"Name:EKSBastion\"."
         }
       RoleArn: !GetAtt [DeployAttackerEnvStateMachineRole, Arn]
+
+  # Invoke the State Machine
+  InvokeAttackerEnvStateMachine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/invokeAttackerStateMachine.template.yaml"
+    DependsOn: DeployAttackerEnvStateMachine
+
+  # Get hostname
+  GetFSSALBHostname:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters: 
+        Namespace: "fss-log4shell-attacker-env"
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/getALBHostname.template.yaml'
+    DependsOn: InvokeAttackerEnvStateMachine
 
 Outputs:
   DeployAttackerEnvStateMachine:
@@ -369,3 +346,6 @@ Outputs:
   DeleteAttackerNamespaceLambda:
     Description: DeleteAttackerNamespaceLambda Arn
     Value: !GetAtt DeleteAttackerNamespaceLambda.Arn
+  FSSAttackAlbHostname:
+    Value: !GetAtt GetFSSALBHostname.Outputs.FSSAttackAlbHostname
+    Description: "Alb hostname for the FSS attack container."
