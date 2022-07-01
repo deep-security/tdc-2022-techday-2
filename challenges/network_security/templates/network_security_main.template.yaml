@@ -403,6 +403,7 @@ Resources:
           - Action:
             - cloudformation:DeleteStack
             Effect: Allow
-            Resource: "arn:aws:cloudformation:*:*:stack/TM-NS-Endpoint-*"
+            Resource:
+              - !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/TM-NS-Endpoint-*/*
           Version: 2012-10-17
         PolicyName: NetworkSecurity_CleanupLambdaRole
