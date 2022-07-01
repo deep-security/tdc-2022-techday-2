@@ -214,29 +214,32 @@ Resources:
             ZipFile:
               !Sub
                 - |-
+                  import time
                   import http.client
                   import urllib.parse
                   import json
                   import boto3
                   import traceback
                   import cfnresponse
-
+                  
                   def lambda_handler(event, context):
                       """Main Lambda Handling function."""
                       account_id = context.invoked_function_arn.split(":")[4]
-
+                  
                       try:
                           # Log the received event
                           print(("Received event: " + json.dumps(event, indent=2)))
-
+                  
                           # Setup base response
                           response = get_response_dict(event)
-
+                  
                           # CREATE UPDATE (want to avoid rebuilds unless something changed)
                           if event['RequestType'] in ("Create", "Update"):
                               try:
                                   print("Kicking off Build")
-                                  execute_build(event)
+                                  build_response = execute_build(event)
+                                  print("Waiting for Build to complete")
+                                  wait_for_completion(build_response)
                                   cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "InvokeStartCodeBuildLambda")
                               except Exception as build_exce:
                                   print("ERROR: Build threw exception")
@@ -277,8 +280,8 @@ Resources:
                           response = get_response_dict(event)
                           #return send_response(event, response, "FAILED",
                           #                    "Unhandled exception, failing gracefully: " + str(unhandled))
-
-
+                  
+                  
                   def cleanup_images_repo(repository, account_id):
                       """
                       Delete Container images
@@ -295,7 +298,7 @@ Resources:
                           ]
                       )
                       print(response)
-
+                  
                   def execute_build(event):
                       """Kickoff CodeBuild Project."""
                       build = boto3.client('codebuild')
@@ -307,34 +310,55 @@ Resources:
                       url = urllib.parse.urlparse(event['ResponseURL'])
                       response = build.start_build(projectName=project_name)
                       return response
-
-
+                  
+                  def wait_for_completion(build_response):
+                    build = boto3.client('codebuild')
+                    build_id = build_response['build']['id']
+                  
+                    buildSucceeded = False
+                  
+                    counter = 0
+                    while counter < 7:   #capped this, so it just fails if it takes too long
+                      time.sleep(60) # the code build process takes a while...
+                      counter = counter + 1
+                      theBuild = build.batch_get_builds(ids=[build_id])
+                      buildStatus = theBuild['builds'][0]['buildStatus']
+                      if buildStatus == 'SUCCEEDED':
+                        buildSucceeded = True
+                        break
+                      elif buildStatus == 'FAILED' or buildStatus == 'FAULT' or buildStatus == 'STOPPED' or buildStatus == 'TIMED_OUT':
+                        break
+                      print(f"Build not finished! Trying again on try #{counter}")
+                  
+                    assert buildSucceeded
+                  
+                  
                   def get_response_dict(event):
                       """Setup Response object for CFN Signal."""
                       response = {
                           'StackId': event['StackId'],
                           'RequestId': event['RequestId'],
                           'LogicalResourceId': event['LogicalResourceId'],
-                          'Status': 'SUCCESS'
+                                            'Status': 'SUCCESS'
                       }
                       return response
-
-
+                  
+                  
                   def send_response(event, response, status=None, reason=None):
                       """Response sender."""
                       if status is not None:
                           response['Status'] = status
-
+                  
                       if reason is not None:
                           response['Reason'] = reason
-
+                  
                       if 'ResponseURL' in event and event['ResponseURL']:
                           url = urllib.parse.urlparse(event['ResponseURL'])
                           body = json.dumps(response)
                           https = http.client.HTTPSConnection(url.hostname)
                           https.request('PUT', url.path+'?'+url.query, body)
                           print("Sent CFN Response")
-
+                  
                       return response
                 -
                   lambda_function_role_arn: !Ref startCodeBuildRole
