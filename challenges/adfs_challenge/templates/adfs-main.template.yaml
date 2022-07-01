@@ -227,3 +227,38 @@ Outputs:
   PublicDNS:
     Description: Server Public DNS
     Value: !GetAtt Instance.PublicDnsName
+
+    # Scoring
+  ADFSScoreLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      Policies: 
+        - PolicyName: ADFSScoreLambdaPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "ssm:GetParameter"
+                Resource: 
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ADFSScoreLambdaRoleSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "ADFSScoreLambdaRole"
+      Value: !GetAtt ADFSScoreLambdaRole.Arn
+      Type: String
+
+  ScoreLambdaDAY1Task1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task1.yaml
