@@ -396,9 +396,9 @@ Resources:
             - ec2:CreateRoute
             Effect: Allow
             Resource:
-            - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::Account}:route-table/${PrivateSubnetRTB}
-            - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::Account}:route-table/${PublicSubnetRTB}
-            - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::Account}:route-table/${IGWRTB}
+            - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:route-table/${PrivateSubnetRTB}
+            - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:route-table/${PublicSubnetRTB}
+            - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:route-table/${IGWRTB}
             Sid: AllowCleanupRoutes
           - Action:
             - cloudformation:DeleteStack
