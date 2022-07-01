@@ -23,10 +23,17 @@ def lambda_handler(event, context):
                 if object["Key"] == verification_answer:
                     result_flag = True
                     break
-            
+
+            # Return task result
+            if result_flag == False:
+                raise Exception("Log Inspection event isn't in the Cloud One Console yet.")
+                return result_flag
+        
             return result_flag
             
         else:
+            raise Exception("Log Inspection event isn't in the Cloud One Console yet.")
             return result_flag
+
     except botocore.exceptions.ClientError as error:
         raise error
