@@ -37,26 +37,26 @@ Resources:
   # you need to use Service Catalog instead. This sample would create an entry in Service
   # catalog for the player:
   ######################
-  C1WSAVCServiceCatalogProduct:
-    Type: AWS::ServiceCatalog::CloudFormationProduct
-    Properties:
-      Description: This is an EC2 instance with a DSA installed for the Agent Version Control challenge.
-      Name: AVC DSA
-      Owner: Trend Micro
-      ProvisioningArtifactParameters:
-        - Info:
-            LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1ws_avc_service_catalog.template.yaml
+  # C1WSAVCServiceCatalogProduct:
+  #   Type: AWS::ServiceCatalog::CloudFormationProduct
+  #   Properties:
+  #     Description: This is an EC2 instance with a DSA installed for the Agent Version Control challenge.
+  #     Name: AVC DSA
+  #     Owner: Trend Micro
+  #     ProvisioningArtifactParameters:
+  #       - Info:
+  #           LoadTemplateFromURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1ws_avc_service_catalog.template.yaml
 
-  ######################
-  # The Service Catalog Association is locked behind the Onboarding Challenge Service Catalog. This forces players to play onboarding challenge first.
-  # Create your association like below, and add a Service Catalog association in challenges/onboarding/templates/c1-onboarding-service-catalog.child-template.yaml for C1
-  # Or challenges/onboarding/templates/v1-onboarding-service-catalog.child-template.yaml for V1. There are examples in those templates.
-  ######################
-  C1WSAVCServiceCatalogProductID:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "C1WSAVCProductID"
-      Value: !Ref C1WSAVCServiceCatalogProduct
-      Type: String
+  # ######################
+  # # The Service Catalog Association is locked behind the Onboarding Challenge Service Catalog. This forces players to play onboarding challenge first.
+  # # Create your association like below, and add a Service Catalog association in challenges/onboarding/templates/c1-onboarding-service-catalog.child-template.yaml for C1
+  # # Or challenges/onboarding/templates/v1-onboarding-service-catalog.child-template.yaml for V1. There are examples in those templates.
+  # ######################
+  # C1WSAVCServiceCatalogProductID:
+  #   Type: AWS::SSM::Parameter
+  #   Properties:
+  #     Name: "C1WSAVCProductID"
+  #     Value: !Ref C1WSAVCServiceCatalogProduct
+  #     Type: String
 
 #Outputs:
