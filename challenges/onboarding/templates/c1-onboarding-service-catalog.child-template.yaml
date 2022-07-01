@@ -519,6 +519,7 @@ Resources:
   #     PortfolioId: '{{resolve:ssm:PortfolioId:1}}'
   #     ProductId: '{{resolve:ssm:ExampleProductID:1}}'
   #     RoleArn: '{{resolve:ssm:RoleArn:1}}'
+
   # C1WSAVCDeployPortfolioProductAssociation:
   #   Type: AWS::ServiceCatalog::PortfolioProductAssociation
   #   Properties:
