@@ -72,6 +72,7 @@ Resources:
               logger.info("event: {}".format(event))
 
               try:
+                  cfn_status = cfnresponse.SUCCESS
                   if event['RequestType'] in ("Create", "Update"):
                     parameter = clientssm.get_parameter(Name="/player/FSS/DeployAttackerEnvStateMachineArn", WithDecryption=True)
                     stateMachineArn = parameter["Parameter"]["Value"]
@@ -84,7 +85,6 @@ Resources:
                         stateMachineArn=stateMachineArn,
                         name=stateMachineName,
                     )
-                  cfn_status = cfnresponse.SUCCESS
               except Exception as e:
                   logger.info("Exception: {}".format(e))
                   cfn_status = cfnresponse.FAILED
@@ -102,4 +102,4 @@ Resources:
     Type: Custom::DeployAttackerEnvStateMachineLambda
     Properties:
       ServiceToken: !GetAtt DeployAttackerEnvStateMachineLambda.Arn
-      Timeout: 5
+      Timeout: 120
