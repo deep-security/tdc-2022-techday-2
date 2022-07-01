@@ -124,10 +124,6 @@ Parameters:
   LambdaFunctionTimeout:
     Type: Number
     Default: 900
-  V1PostOnboardFunctionName:
-    Default: "V1PostOnboardFunctionName"
-    Description: DO NOT MODIFY. Expected value of the SSM Parameter Value for the Post Onboard function name.
-    Type: 'AWS::SSM::Parameter::Value<String>'
 
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
@@ -184,11 +180,6 @@ Resources:
                 Action:
                   - "ssm:GetParameter"
                   - "ssm:PutParameter"
-              - Effect: Allow
-                Resource: 
-                  - !Sub arn:${AWS::Partition}:lambda:${AWS::Region}:${AWS::AccountId}:function:${V1PostOnboardFunctionName}
-                Action:
-                  - "lambda:InvokeFunction"
       Path: /
       Tags:
         - Key: BusinessCase
@@ -389,12 +380,6 @@ Resources:
 
                               # Stores onboarding success as an SSM Parameter "v1Onboarding" for Mission Control verification.
                               setV1SsmParameter(ssmClient, "v1OnboardingStatus", "Success")           
-                              # Since task was successful, we will kick of the Post Onboarding(AKA Wrinkler) lambda
-                              lambdaClient = boto3.client('lambda')
-                              lambdaClient.invoke(
-                                  FunctionName=str(os.environ.get("V1_POST_ONBOARD_LAMBDA_NAME")),
-                                  InvocationType="Event"
-                                )
               except Exception as e:
                   logger.info("Exception: {}".format(e))
                   status = cfnresponse.FAILED
@@ -413,9 +398,19 @@ Resources:
           awsRegion: !Ref AWS::Region
           v1TrendRegion: !Ref v1TrendRegion
           v1AuthToken: !Ref v1AuthToken
-          v1UsersList: !Ref v1UsersList        
-          V1_POST_ONBOARD_LAMBDA_NAME: !Ref V1PostOnboardFunctionName
+          v1UsersList: !Ref v1UsersList
       Role: !GetAtt TechDayV1onboardingLambdaRole.Arn
+
+  # Triggers Vision One post-onboarding stacks creation.
+  PostOnboardingStack:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: C1OnboardingLambdaCustomResource
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketNameSSMValue
+        QSS3KeyPrefix: !Ref QSS3KeyPrefixSSMValue
+      TemplateURL: !Sub 'https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}templates/v1_post_onboarding.template.yaml'
+
 
   # Task 1 - Creates an AWS Lambda function with the Vision One Onboarding verification module.
   VerifyV1OnboardingLambdaFunction:
