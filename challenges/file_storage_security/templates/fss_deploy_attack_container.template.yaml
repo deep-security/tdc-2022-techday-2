@@ -1,0 +1,343 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: tdc-2022-techday-1 Cloud One Container Security - Deployment
+
+Parameters:
+  # Overall
+  awsAccountID:
+    Default: ""
+    Description: AWS Account ID 
+    Type: String
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2022-2
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+
+Resources:
+
+# IAM
+
+  fssAttackContainerLambdaFunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/"
+      Policies:
+      - PolicyName: fssLambdaFunctionPolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - arn:aws:ssm:*:*:parameter/player/playerawsAccountID
+          - Effect: Allow
+            Action:
+              - ssm:PutParameter
+              - ssm:SendCommand
+            Resource:
+              - arn:aws:ssm:*:*:document/CreatefssAttackContainer
+              - arn:aws:ssm:*:*:document/CreatefssAttackContainerLoadBalancer
+          - Effect: Allow
+            Action:
+              - ssm:SendCommand
+            Resource:
+              - arn:aws:ec2:*:*:instance/*
+            Condition:
+              StringLike:
+                ssm:resourceTag/Name:
+                  - EKSBastion
+
+  fssAttackStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+              - states.amazonaws.com
+          Action:
+            - sts:AssumeRole
+      Path: "/service-role/"
+      Policies:
+      - PolicyName: StateMachinePolicy
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+              - lambda:InvokeFunction
+              - ssm:SendCommand
+            Resource:
+              - !GetAtt lambdaFunctionRunSSMCommandCreatefssAttackContainer.Arn
+              - !GetAtt lambdaFunctionRunSSMCommandCreatefssAttackContainerLoadBalancer.Arn
+
+
+
+# SSM Parameters
+
+  fssStateMachineArnParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/fss/DeployfssAttackContainerstateMachine
+      Type: String
+      Value: !Ref DeployfssAttackContainerstateMachine
+      Description: ARN for DeployfssAttackContainerstateMachine 
+
+
+# SSM Documents
+  CreatefssAttackContainer: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Command Document will deploy the fss attack container'
+        parameters:
+          playerawsAccountID:
+            type: String
+            default: !Ref awsAccountID
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "echo 'apiVersion: apps/v1' > /tmp/fss_AttackContainer.yaml"
+            - "echo -e 'kind: Deployment' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e 'metadata:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '  name: log4shell-deployment' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '  labels:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '    app: log4shell' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e 'spec:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '  replicas: 1' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '  selector:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '    matchLabels:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '      app: log4shell' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '  template:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '    metadata:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '      labels:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '        app: log4shell' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '    spec:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '      containers:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '      - name: fss-attack' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '        image: {{playerawsAccountID}}.dkr.ecr.us-east-1.amazonaws.com/fss-attack:tdc_2022_2_fssAttack' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '        imagePullPolicy: Always' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '        ports:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '        - containerPort: 8080' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '        livenessProbe:' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '          failureThreshold: 3' >> /tmp/fss_AttackContainer.yaml"
+            - "echo -e '          periodSeconds: 3' >> /tmp/fss_AttackContainer.yaml"
+            - "sudo /usr/local/bin/kubectl apply -f /tmp/fss_AttackContainer.yaml"
+      DocumentType: Command
+      Name: 'CreatefssAttackContainer'
+
+  CreatefssAttackContainerLoadBalancer: 
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: '2.2'
+        description: 'Command Document will deploy the fss attack container'
+        mainSteps:
+        - action: aws:runShellScript
+          name: runCommands
+          inputs:
+            timeoutSeconds: '60'
+            runCommand:
+            - "echo 'apiVersion: v1' > /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo 'kind: Service' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo 'metadata:' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  name: fss-attack-loadbalancer' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo 'spec:' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  type: LoadBalancer' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  selector:' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo -e '    app: log4shell' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  ports:' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo -e '      - protocol: TCP' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo -e '        port: 80' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo -e '        targetPort: 8080' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "sudo /usr/local/bin/kubectl apply -f /tmp/fss_AttackContainer_loadbalancer.yaml"
+      DocumentType: Command
+      Name: 'CreatefssAttackContainerLoadBalancer'
+
+# Lambda Functions
+  lambdaFunctionRunSSMCommandCreatefssAttackContainer:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 60
+        Handler: index.lambda_handler
+        Role: !GetAtt fssAttackContainerLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import boto3
+
+                ssm = boto3.client('ssm')
+                region = 'us-east-1'
+
+                def lambda_handler(event, context):
+                    response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                        DocumentName='CreatefssAttackContainer',
+                        DocumentVersion='$DEFAULT',
+                        TimeoutSeconds=123,
+                        Comment='string'
+                    )
+              -
+                lambda_function_role_arn: !Ref fssAttackContainerLambdaFunctionRole
+  lambdaFunctionRunSSMCommandCreatefssAttackContainerLoadBalancer:
+      Type: AWS::Lambda::Function
+      Properties:
+        Runtime: python3.8
+        Timeout: 60
+        Handler: index.lambda_handler
+        Role: !GetAtt fssAttackContainerLambdaFunctionRole.Arn
+        Code:
+          ZipFile:
+            !Sub
+              - |-
+                import json
+                import boto3
+
+                ssm = boto3.client('ssm')
+                region = 'us-east-1'
+
+                def lambda_handler(event, context):
+                    response = ssm.send_command(
+                        Targets = [ 
+                            {
+                                'Key': 'tag:Name',
+                                'Values': ['EKSBastion'] 
+                            } 
+                        ],
+                        DocumentName='CreatefssAttackContainerLoadBalancer',
+                        DocumentVersion='$DEFAULT',
+                        TimeoutSeconds=123,
+                        Comment='string'
+                    )
+              -
+                lambda_function_role_arn: !Ref fssAttackContainerLambdaFunctionRole
+
+# Create State Machine
+  DeployfssAttackContainerstateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: DeployfssAttackContainerstateMachine
+      DefinitionString: !Sub |
+        {
+          "Comment": "This state machine inspects a players api key then creates resources in the players fss account.  Then Deploys fss in EKS",
+          "StartAt": "CreatefssAttackContainer",
+          "States": {
+            "CreatefssAttackContainer": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionRunSSMCommandCreatefssAttackContainer.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "CreatefssAttackContainerLoadBalancer"
+            },
+            "CreatefssAttackContainerLoadBalancer": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${lambdaFunctionRunSSMCommandCreatefssAttackContainerLoadBalancer.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 2,
+                  "MaxAttempts": 6,
+                  "BackoffRate": 2
+                }
+              ],
+              "End": true
+            }
+          }
+        }
+      RoleArn: !GetAtt [ fssAttackStateMachineRole, Arn ]
+
+# Invoke State Machine
+  invokeAttackContainerStateMatchine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_invoke_attack_container_state_matchine.template.yaml'
+
+# Wait 60 seconds for fss_invoke_attack_container_state_matchine.template.yaml to finish invoking: DeployfssAttackContainerstateMachine
+#  deployfssAttackWaitHandle:
+#    Type: AWS::CloudFormation::WaitConditionHandle
+#  deployfssAttackWaitCondition:
+#    DependsOn: invokeAttackContainerStateMatchine
+#    Type: AWS::CloudFormation::WaitCondition
+#    Properties:
+#      Handle: !Ref deployfssAttackWaitHandle
+#      Timeout: '60'
+#      Count: 1
+  getfssAttackAlb:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: invokeAttackContainerStateMatchine
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_get_alb_hostname.yaml'
+
+Outputs:
+  lambdaFunctionRunSSMCommandCreatefssAttackContainer:
+    Description: Run SSM Command to uninstall fss
+    Value: !GetAtt lambdaFunctionRunSSMCommandCreatefssAttackContainer.Arn
+  lambdaFunctionRunSSMCommandCreatefssAttackContainerLoadBalancer:
+    Description: Run SSM Command to uninstall fss
+    Value: !GetAtt lambdaFunctionRunSSMCommandCreatefssAttackContainerLoadBalancer.Arn
+  DeployfssAttackContainerstateMachine:
+    Description: Step function that deploys fss in EKS
+    Value: !GetAtt DeployfssAttackContainerstateMachine.Arn
+  fssAttackAlbHostname:
+    Description: ALB Hostname that the player uses to access the fss attack container
+    Value: !GetAtt getfssAttackAlb.Outputs.fssAttackAlbHostname
