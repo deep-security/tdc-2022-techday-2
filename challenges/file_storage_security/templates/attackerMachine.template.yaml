@@ -122,14 +122,34 @@ Resources:
             inputs:
               timeoutSeconds: "180"
               runCommand:
-                - |
-                  NAMESPACE=fss-log4shell-attacker-env \
                 - !Sub |
-                  sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
-                  sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
-                  mkdir -p /tmp/manifests-$NAMESPACE && \
-                  sudo /usr/local/bin/kubectl create --namespace=$NAMESPACE secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tools/ --from-literal=PLAYERPASSWORD="${PlayerPassword}" && \
-                  sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/k8s/main.yaml
+                    NAMESPACE=fss-log4shell-attacker-env \
+                    TOOLSURL="https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tools/" \
+                    PLAYERPASSWORD=${PlayerPassword} \
+                - |
+                    # Install yq \
+                    wget https://github.com/mikefarah/yq/releases/download/v4.25.1/yq_linux_amd64.tar.gz -O - | \
+                    tar xz && mv yq_linux_amd64 /usr/local/bin/yq && \
+                - !Sub |
+                    # Download manifest files \
+                    mkdir -p /tmp/manifests-$NAMESPACE && \
+                    cd /tmp/manifests-$NAMESPACE && \
+                    curl https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/k8s/kustomization.yaml --output kustomization.yaml && \
+                    readarray manifests < <(yq '.resources[]' kustomization.yaml) && \
+                    for MANIFEST in ${!manifests[@]}; do curl https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/k8s/$MANIFEST --output $MANIFEST; done && \
+                    # Modify image names \
+                    cat <<EOF >> kustomization.yaml
+  
+                    images:
+                    - name: public.ecr.aws/q4l4n3k8/log4shell-vulnerable-app:latest
+                      newName: ${AWS::AccountId}.dkr.ecr.${AWS::Region}.${AWS::URLSuffix}/fss-attack
+                      newTag: tdc_2022_2_fssAttack
+                    EOF && \
+                - |
+                    sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
+                    sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
+                    sudo /usr/local/bin/kubectl create --namespace=$NAMESPACE secret generic cfn-references --from-literal=TOOLSURL="$TOOLSURL" --from-literal=PLAYERPASSWORD="$PLAYERPASSWORD" && \
+                    sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -k .
       DocumentType: Command
 
   # SSM Parameters

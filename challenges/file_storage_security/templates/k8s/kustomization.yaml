@@ -5,3 +5,12 @@ resources:
   - attacker-loadbalancer-service.yaml
   - log4shell-deployment.yaml
   - log4shell-endpoint-service.yaml
+
+# Something like this will be added dynamically at runtime when the template launches
+# For local testing, you can uncomment this if you want. 
+# It should work fine without this part in your environment, though.
+#
+# images:
+# - name: public.ecr.aws/q4l4n3k8/log4shell-vulnerable-app:latest
+#   newName: {{playerawsAccountID}}.dkr.ecr.us-east-1.amazonaws.com/fss-attack
+#   newTag: tdc_2022_2_fssAttack
