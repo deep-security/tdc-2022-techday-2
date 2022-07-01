@@ -26,6 +26,25 @@ Parameters:
     Type: String
     Description: The container tag to use for the challenge.
     Default: v0.25.0
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2022-2
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/.]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: "latest/"
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
 
 Resources:
   VOTKInstanceRole:
@@ -79,14 +98,14 @@ Resources:
           service docker start
           PUBLIC_NAME=$(curl -f http://169.254.169.254/latest/meta-data/public-hostname)
           PACKAGE_URL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}packages/package.tar.gz 
-          CONTAINER_NAME=${ContainerRegistry}/${ContainerRepository}:${ContainerTag}
+          CONTAINER_NAME=$ContainerRegistry/$ContainerRepository:$ContainerTag
           docker run \
-            -e PACKAGE=${PACKAGE_URL}\
+            -e PACKAGE=$PACKAGE_URL\
             -e REVERSE_MODE=true \
-            -e URL=https://${PUBLIC_NAME} \
+            -e URL=https://$PUBLIC_NAME \
             --rm \
             -p 443:80 \
-            ${CONTAINER_NAME} bash run.sh
+            $CONTAINER_NAME bash run.sh
       Tags:
         - Key: Challenge
           Value: VOTK   
