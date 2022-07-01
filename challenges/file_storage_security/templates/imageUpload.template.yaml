@@ -7,6 +7,8 @@ Metadata:
     config:
       ignore_checks:
         - "W2001"
+        - "E3001" #cfn-lint can't handle function urls yet...
+        - "E1010" #cfn-lint can't handle function urls yet...
 
 Parameters:
   QSS3BucketName:
@@ -131,6 +133,19 @@ Resources:
 
       Role: !GetAtt PayloadDropperLambdaRole.Arn
       Timeout: 30
+  PayloadDropperLambdaUrl:
+    Type: AWS::Lambda::Url
+    Properties: 
+      TargetFunctionArn: !GetAtt PayloadDropperLambda.Arn
+      AuthType: NONE
+      Cors:
+        AllowHeaders:
+          - "*"
+        AllowMethods:
+          - GET
+          - HEAD
+        AllowOrigins:
+          - "*"
 
   #### API GATEWAY ####
   ImageUploaderApi:
@@ -644,3 +659,7 @@ Outputs:
   FSSLambdaToProtect:
     Value: !Sub https://${AWS::Region}.console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${GetImgLambda}?tab=code"
     Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
+  PayloadDropperUrl:
+    Value: !GetAtt PayloadDropperLambdaUrl.FunctionUrl
+    Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.
+    
