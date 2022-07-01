@@ -150,7 +150,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties:
       FunctionName: !GetAtt PayloadDropperLambda.Arn
-      Action: lambda:InvokeFunction
+      Action: lambda:InvokeFunctionUrl
       Principal: "*"
 
   #### API GATEWAY ####
