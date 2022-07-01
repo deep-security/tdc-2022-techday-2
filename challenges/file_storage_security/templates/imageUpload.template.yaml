@@ -67,6 +67,70 @@ Resources:
         CopyZipsPrefix: !Ref CopyZipsPrefix
         ProfilePictureDropperCodeZip: !Ref ProfilePictureDropperCodeZip
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}s3Bucket.template.yaml"
+  PayloadDropperLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: PayloadDropperLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - "arn:aws:logs:*:*:*"
+                Effect: Allow
+              - Action:
+                  - "s3:PutObject"
+                Effect: Allow
+                Resource:
+                  - !Sub "arn:aws:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/connectioncheck"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+  PayloadDropperLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 512
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import urllib.request
+          import zipfile
+          
+          bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
+          pwned_url = "https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${ToolsPrefix}pwned.zip"
+          s3 = boto3.client("s3")
+          
+          def get_payload():
+              download_location = "/tmp/pwned.zip"
+              with open(download_location, "wb") as control_file:
+                  res = urllib.request.urlopen(
+                      urllib.request.Request(url=pwned_url, method="GET"), timeout=5
+                  )
+                  control_file.write(res.read())
+          
+              with zipfile.ZipFile(download_location, "r") as zip_ref:
+                  zip_ref.extractall(path="/tmp", pwd=b"novirus")
+              return "/tmp/connectioncheck"
+          
+          def handler(event, context):
+              connectioncheck_path = get_payload()
+              s3.upload_file(connectioncheck_path, bucket, "connectioncheck")
+              return {"status": "True", "statusCode": 200, "body": "Payload delivered"}
+
+      Role: !GetAtt PayloadDropperLambdaRole.Arn
+      Timeout: 30
 
   #### API GATEWAY ####
   ImageUploaderApi:
