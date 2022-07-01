@@ -18,7 +18,7 @@ Parameters:
     AllowedPattern: ^[0-9a-zA-Z-/.]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
-    Default: challenges/
+    Default: ""
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
@@ -163,7 +163,7 @@ Resources:
             Start-Transcript -path "c:\Projects\InstanceBuild.log"
             [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
             iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-            (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
+            (New-Object System.Net.WebClient).DownloadFile("https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/scripts/Projects.zip", "C:\Users\Administrator\Downloads\Projects.zip")
             Expand-Archive C:\Users\Administrator\Downloads\Projects.zip c:\
             Set-Content -Path 'C:\Projects\Bucket.txt' -Value '${AVCWinBucket}' -NoNewline
             Set-Content -Path 'C:\Projects\C1Region.txt' -Value '${c1RegionSSMKey}' -NoNewline
@@ -180,6 +180,6 @@ Resources:
         ObjectPrefixes: ''
         ExpectedValues: 'True'
         FunctionName: 'AVC-Checker-Script'
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}workload_security/agentversioncontrol/templates/answer_checker.template.yaml'
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/answer_checker.template.yaml'
 
 #Outputs:

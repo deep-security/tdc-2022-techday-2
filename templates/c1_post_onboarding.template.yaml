@@ -45,6 +45,9 @@ Resources:
   C1AVCDSA:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/c1ws_avc_dsa.template.yaml 
 
 # SamplePostOnboard:
