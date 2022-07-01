@@ -72,9 +72,9 @@ Resources:
               -
                 lambda_function_role_arn: !Ref Deployc1csAttackContainerstateMachineLambdaRole
 
-# Custom Resources
-  InvokeDeployc1csAttackContainerstateMachine:
-    Type: Custom::Deployc1csAttackContainerstateMachine
-    Properties:
-      ServiceToken: !GetAtt lambdaFunctionInvokeDeployc1csAttackContainerstateMachine.Arn
-      Timeout: 120
+## Custom Resources
+#  InvokeDeployc1csAttackContainerstateMachine:
+#    Type: Custom::Deployc1csAttackContainerstateMachine
+#    Properties:
+#      ServiceToken: !GetAtt lambdaFunctionInvokeDeployc1csAttackContainerstateMachine.Arn
+#      Timeout: 120
