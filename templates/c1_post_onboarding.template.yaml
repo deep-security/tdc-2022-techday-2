@@ -142,6 +142,11 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_service_catalog.template.yaml'
 
+  C1WSinitialConfigure:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/onbording_servicecatalog.yaml
+
 # SamplePostOnboard:
 #     Type: AWS::CloudFormation::Stack
 #     Properties:

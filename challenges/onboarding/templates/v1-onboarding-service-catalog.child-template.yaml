@@ -101,6 +101,10 @@ Parameters:
     Default: "/player/V1/v1ApiBaseUrl"
     Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One API Base URL.
     Type: String
+  v1SOApiBaseUrlSSMKey:
+    Default: "/player/V1/v1SOApiBaseUrl"
+    Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One SO API Base URL.
+    Type: String
   v1ApiKeySSMKey:
     Default: "/player/V1/v1ApiKey"
     Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One API Key.
@@ -169,6 +173,9 @@ Resources:
                     - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${v1ApiBaseUrlSSMKey}
                     - v1ApiBaseUrlSSMKey: !Ref v1ApiBaseUrlSSMKey
                   - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${v1SOApiBaseUrlSSMKey}
+                    - v1SOApiBaseUrlSSMKey: !Ref v1SOApiBaseUrlSSMKey
+                  - !Sub
                     - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${v1ApiKeySSMKey}
                     - v1ApiKeySSMKey: !Ref v1ApiKeySSMKey
                   - !Sub
@@ -220,12 +227,12 @@ Resources:
           # Returns the Vision One region-based API Endpoint Base URL.
           def v1ApiEndpointBaseUrl(v1TrendRegion):
 
-              return "https://" + v1ApiEndpointBaseUrls[v1TrendRegion] + "/beta/xdr/portal"
+              return "https://" + v1ApiEndpointBaseUrls[v1TrendRegion] #+ "/beta/xdr/portal"
 
           # Validates the Vision One Auth token passed to this function by listing roles in the Vision One account, returns True if success, otherwise False.
           def v1VerifyAuthToken(ssmClient, http, httpHeaders, v1TrendRegion):
 
-              r = http.request('GET', v1ApiEndpointBaseUrl(v1TrendRegion) + "/accounts/roles", headers=httpHeaders)
+              r = http.request('GET', v1ApiEndpointBaseUrl(v1TrendRegion) + "/v2.0/xdr/portal/accounts/roles", headers=httpHeaders)
 
               v1ListAccountsResponse = json.loads(r.data)
               
@@ -261,7 +268,7 @@ Resources:
                   "role": str(v1Role)
               }
 
-              v1InvitePlayerResponse = json.loads(http.request('POST', v1ApiEndpointBaseUrl(v1TrendRegion) + "/accounts/" + urllib.parse.quote_plus(str(emailId)) , headers=httpHeaders, body=json.dumps(httpBody)).data)
+              v1InvitePlayerResponse = json.loads(http.request('POST', v1ApiEndpointBaseUrl(v1TrendRegion) + "/v2.0/xdr/portal/accounts/" + urllib.parse.quote_plus(str(emailId)) , headers=httpHeaders, body=json.dumps(httpBody)).data)
 
               if "error" in v1InvitePlayerResponse:
 
@@ -279,6 +286,7 @@ Resources:
                       raise Exception('Error: Invitation unsuccessful.')
 
           # Verify User Accounts exist in the Vision One account.
+          # This only exists in Beta
           def v1VerifyUserAccounts(http, httpHeaders, v1TrendRegion, v1UsersList):
 
               v1UserAccountsResponse = json.loads(http.request('GET', v1ApiEndpointBaseUrl(v1TrendRegion)  + "/accounts", headers=httpHeaders).data)
@@ -367,22 +375,26 @@ Resources:
                               # Stores global Trend V1 API Base URL as an SSM Parameter  "v1ApiBaseUrl".
                               setV1SsmParameter(ssmClient, "v1ApiBaseUrl", v1ApiEndpointBaseUrl(v1TrendRegion))
 
+                              # Stores global Trend V1 API Base URL as an SSM Parameter  "v1SOApiBaseUrl".
+                              #create new parameter for use in V1 SO score lambda envar
+                              setV1SsmParameter(ssmClient, "v1SOApiBaseUrl", "https://" + v1ApiEndpointBaseUrls[v1TrendRegion])
+
                               # Stores global Trend V1 API Key as an SSM Parameter  "v1ApiKey".
                               setV1SsmParameter(ssmClient, "v1ApiKey", v1AuthToken)
 
                               # Verify if all users exist in the Vision One account, raises exception if any one user fails.
-                              if v1VerifyUserAccounts(http, headers, v1TrendRegion, v1UsersList):
+                              #if v1VerifyUserAccounts(http, headers, v1TrendRegion, v1UsersList):
                                   
-                                  print("Success: User(s) exist in the Vision One account")
+                                  #print("Success: User(s) exist in the Vision One account")
 
-                                  # Stores onboarding success as an SSM Parameter "v1Onboarding" for Mission Control verification.
-                                  setV1SsmParameter(ssmClient, "v1OnboardingStatus", "Success")           
-                                  # Since task was successful, we will kick of the Post Onboarding(AKA Wrinkler) lambda
-                                  lambdaClient = boto3.client('lambda')
-                                  lambdaClient.invoke(
-                                    FunctionName=str(os.environ.get("V1_POST_ONBOARD_LAMBDA_NAME")),
-                                    InvocationType="Event"
-                                  )
+                              # Stores onboarding success as an SSM Parameter "v1Onboarding" for Mission Control verification.
+                              setV1SsmParameter(ssmClient, "v1OnboardingStatus", "Success")           
+                              # Since task was successful, we will kick of the Post Onboarding(AKA Wrinkler) lambda
+                              lambdaClient = boto3.client('lambda')
+                              lambdaClient.invoke(
+                                  FunctionName=str(os.environ.get("V1_POST_ONBOARD_LAMBDA_NAME")),
+                                  InvocationType="Event"
+                                )
               except Exception as e:
                   logger.info("Exception: {}".format(e))
                   status = cfnresponse.FAILED
