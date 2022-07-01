@@ -33,7 +33,7 @@ Resources:
           import urllib3
           import sys
           import boto3
-          from urllib.request
+          from urllib.parse import urlparse
           client = boto3.client('ssm')
           def lambda_handler(event, context):
               parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
