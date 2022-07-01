@@ -146,6 +146,12 @@ Resources:
           - HEAD
         AllowOrigins:
           - "*"
+  PayloadDropperLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !GetAtt PayloadDropperLambda.Arn
+      Action: lambda:InvokeFunction
+      Principal: "*"
 
   #### API GATEWAY ####
   ImageUploaderApi:
