@@ -396,9 +396,9 @@ Resources:
             - ec2:CreateRoute
             Effect: Allow
             Resource:
-            - !Ref PrivateSubnetRTB
-            - !Ref PublicSubnetRTB
-            - !Ref IGWRTB
+            - !GetAtt PrivateSubnetRTB.Arn
+            - !GetAtt PublicSubnetRTB.Arn
+            - !GetAtt IGWRTB.Arn
             Sid: AllowCleanupRoutes
           - Action:
             - cloudformation:DeleteStack
