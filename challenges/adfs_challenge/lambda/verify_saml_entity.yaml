@@ -1,5 +1,11 @@
 AWSTemplateFormatVersion: 2010-09-09
 
+Parameters:
+  ADFSDomain:
+    Description: ADFS Domain
+    Type: String
+    Default: techday.com
+
 Resources:
   ScoreRoleADFSTask1:
     Type: AWS::IAM::Role
@@ -27,6 +33,9 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       FunctionName: ADFSScoreLambdaTask1
+      Environment:
+        Variables:
+          ADFSDOMAIN: !Ref ADFSDomain
       Code: 
         ZipFile: |
           import json
@@ -35,6 +44,7 @@ Resources:
           import boto3
           from urllib.parse import urlparse
           client = boto3.client('ssm')
+          ADFSDOMAIN = os.environ['ADFSDOMAIN'])
           def lambda_handler(event, context):
               parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
               playerApiKey = parameter ['Parameter']['Value']
@@ -49,7 +59,7 @@ Resources:
               data = json.loads(samlEvalResponse.data.decode(utf-8))
               for i in data["identityproviders"]:
                   print(i["entityID"])
-                  if i['entityID'] == 'http://techday.com/adfs/services/trust':
+                  if i['entityID'] == 'http://'+ADFSDOMAIN+'/adfs/services/trust':
                     playerComplete = "yes"
                   else:
                     playerComplete = "no"
