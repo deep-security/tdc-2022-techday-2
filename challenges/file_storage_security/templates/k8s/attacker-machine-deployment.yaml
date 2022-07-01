@@ -20,6 +20,16 @@ spec:
           env:
             - name: AUTO_LOGIN
               value: 'false'
+            - name: PLAYERPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: cfn-references
+                  key: PLAYERPASSWORD
+            - name: TOOLSURL
+              valueFrom:
+                secretKeyRef:
+                  name: cfn-references
+                  key: TOOLSURL
           ports:
             - containerPort: 3000
           resources:
@@ -34,12 +44,12 @@ spec:
                   - -c
                   - |
                     sleep 15 && \
-                    echo abc:$PLAYERPASSWORD | chpasswd && usermod -l Player abc && \
+                    echo "$PLAYERPASSWORD" | xargs -I{} echo abc:{} | chpasswd && usermod -l Player abc && \
                     gpasswd -d Player sudo && \
                     sudo apt-get update && \
                     sudo apt-get install -y openjdk-8-jdk unzip curl vim nano net-tools iproute2 && \
                     sudo mkdir -p /config/Desktop/hacker && \
-                    curl "$TOOLSURL"JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \
+                    curl -v "$TOOLSURL"JNDIExploit-v1.2.zip --output /tmp/JNDIExploit-v1.2.zip && \
                     sudo unzip -P novirus /tmp/JNDIExploit-v1.2.zip -d /config/Desktop/hacker && \
                     rm /tmp/JNDIExploit-v1.2.zip
           livenessProbe:
