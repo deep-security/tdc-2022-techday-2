@@ -171,7 +171,7 @@ Resources:
             - "echo 'apiVersion: v1' > /tmp/fss_AttackContainer_loadbalancer.yaml"
             - "echo 'kind: Service' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
             - "echo 'metadata:' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
-            - "echo -e '  name: fss-attack-loadbalancer' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  name: sudosingles-optimizer' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
             - "echo 'spec:' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
             - "echo -e '  type: LoadBalancer' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
             - "echo -e '  selector:' >> /tmp/fss_AttackContainer_loadbalancer.yaml"
