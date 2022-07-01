@@ -72,35 +72,34 @@ Resources:
               logger.info("event: {}".format(event))
 
               try:
-                  parameter = clientssm.get_parameter(Name="/player/FSS/DeployAttackerEnvStateMachineArn", WithDecryption=True)
-                  stateMachineArn = parameter["Parameter"]["Value"]
-              
-                  # Add Random number to the end of the name of the statemachine
-                  randomString = "%s.%s" % (id_generator(6), id_generator(16))
-                  stateMachineName = "DeployAttackerEnv" + randomString
-              
-                  response = client.start_execution(
-                      stateMachineArn=stateMachineArn,
-                      name=stateMachineName,
-                  )
-
                   cfn_status = cfnresponse.SUCCESS
-
+                  if event['RequestType'] in ("Create", "Update"):
+                    parameter = clientssm.get_parameter(Name="/player/FSS/DeployAttackerEnvStateMachineArn", WithDecryption=True)
+                    stateMachineArn = parameter["Parameter"]["Value"]
+                
+                    # Add Random number to the end of the name of the statemachine
+                    randomString = "%s.%s" % (id_generator(6), id_generator(16))
+                    stateMachineName = "DeployAttackerEnv" + randomString
+                
+                    response = client.start_execution(
+                        stateMachineArn=stateMachineArn,
+                        name=stateMachineName,
+                    )
               except Exception as e:
                   logger.info("Exception: {}".format(e))
                   cfn_status = cfnresponse.FAILED
-
-              cfnresponse.send(
-                  event,
-                  context,
-                  cfn_status,
-                  {},
-                  "InvokeDeployAttackerEnvStateMachineLambda",
-              )
+              finally:
+                  cfnresponse.send(
+                      event,
+                      context,
+                      cfn_status,
+                      {},
+                      "InvokeDeployAttackerEnvStateMachineLambda",
+                  )
 
   # Custom Resource
   InvokeDeployAttackerEnvStateMachineLambda:
     Type: Custom::DeployAttackerEnvStateMachineLambda
     Properties:
       ServiceToken: !GetAtt DeployAttackerEnvStateMachineLambda.Arn
-      Timeout: 5
+      Timeout: 120
