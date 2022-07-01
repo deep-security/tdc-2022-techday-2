@@ -4,10 +4,10 @@ Description: >
 
 Parameters:
   # Service Catalog Related
-  PlayerServiceCatalogPortfolio:
-    Type: String
-  ServiceCatalogLaunchRoleArn:
-    Type: String
+  # PlayerServiceCatalogPortfolio:
+  #   Type: String
+  # ServiceCatalogLaunchRoleArn:
+  #   Type: String
   # Bucket path related
   QSS3BucketName:
     AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
