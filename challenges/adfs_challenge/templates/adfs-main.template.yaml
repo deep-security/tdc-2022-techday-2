@@ -220,6 +220,13 @@ Resources:
             SubnetId: !Ref PublicSubnet1ID
             GroupSet:
             - !Ref ADFSSecurityGroup
+
+
+  ScoreLambdaDAY1Task1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/verify_saml_entity.yaml
+
 Outputs:
   InstanceId:
     Description: 'InstanceId'
@@ -227,8 +234,3 @@ Outputs:
   PublicDNS:
     Description: Server Public DNS
     Value: !GetAtt Instance.PublicDnsName
-
-  ScoreLambdaDAY1Task1:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/verify_saml_entity.yaml
