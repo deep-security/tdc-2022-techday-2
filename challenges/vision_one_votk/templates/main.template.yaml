@@ -17,7 +17,7 @@ Parameters:
   ContainerRegistry:
     Type: String
     Description: The container registry to use for the challenge.
-    Default: q4l4n3k8
+    Default: public.ecr.aws/q4l4n3k8
   ContainerRepository:
     Type: String
     Description: The container repository to use for the challenge.
