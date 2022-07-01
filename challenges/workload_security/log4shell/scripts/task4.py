@@ -43,6 +43,10 @@ def lambda_handler(event, context):
                         raise SystemExit(e)
 
         # Return task result
+        if result_flag == False:
+            raise Exception("IPS rule 1008610 isn't assigned yet or still in Detect Mode.")
+            return result_flag
+        
         return result_flag
         
     except requests.exceptions.RequestException as e:
