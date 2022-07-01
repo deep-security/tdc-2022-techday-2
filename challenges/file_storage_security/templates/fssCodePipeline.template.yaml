@@ -104,6 +104,10 @@ Resources:
             Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:report-group/${ServiceName}-${Environment}-*"
           - Effect: Allow
             Action:
+              - codebuild:BatchGetBuilds
+            Resource: !Sub "arn:aws:codebuild:${AWS::Region}:${AWS::AccountId}:project/*"
+          - Effect: Allow
+            Action:
               - iam:PassRole
             Resource: !GetAtt CodeBuildServiceRole.Arn
 
