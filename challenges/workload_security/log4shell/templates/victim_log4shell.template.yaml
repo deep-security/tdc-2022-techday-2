@@ -141,6 +141,6 @@ Outputs:
   Log4ShellSite:
     Description: Tomcat Web App with Log4Shell Vulnerability.
     Value: !Sub http://${VictimLog4Shell.PublicDnsName}:8080
-  Log4ShellPrivateDNSName:
-    Description: Private DNS Name for the Victim Log4Shell Server.
-    Value: !GetAtt VictimLog4Shell.PrivateDnsName
+  Log4ShellPublicDNSName:
+    Description: Public DNS Name for the Victim Log4Shell Server.
+    Value: !GetAtt VictimLog4Shell.PublicDnsName

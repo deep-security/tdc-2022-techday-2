@@ -1,0 +1,152 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  Namespace:
+    Type: String
+    Default: ""
+
+Resources:
+  # Iam Role
+  FSSGetAlbHostnameRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: FSSGetAlbHostnameRole
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ssm:PutParameter
+                Resource:
+                  - arn:aws:ssm:*:*:document/AWS-RunShellScript
+                  - arn:aws:ssm:*:*:parameter/player/FSS/LoadBalancerHostname
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ec2:DescribeInstances
+                Resource:
+                  - arn:aws:ec2:*:*:instance/*
+                Condition:
+                  StringLike:
+                    ssm:resourceTag/Name:
+                      - EKSBastion
+              - Effect: Allow
+                Action:
+                  - ssm:GetCommandInvocation
+                  - ssm:ListCommandInvocations
+                Resource:
+                  - arn:aws:ssm:*:*:*
+
+  # Lambda Function
+  GetLoadBalancerHostname:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Timeout: 300
+      Handler: index.lambda_handler
+      Role: !GetAtt FSSGetAlbHostnameRole.Arn
+      Code:
+        ZipFile: !Sub
+          - |-
+            import json
+            import boto3
+            import botocore
+            import time
+            import cfnresponse
+            
+            client = boto3.client("ssm")
+            
+            def lambda_handler(event=None, context=None):
+                time.sleep(1)
+                response_data = {}
+                request_type = event["RequestType"]
+                print(event)
+                print(request_type)
+                output = "False"
+                try:
+                    if request_type in ("Create", "Update"):
+                        time.sleep(60)
+                        
+                        tries = 0
+                        while tries < 10:
+                            tries = tries + 1
+                            print(f"try number {tries}")
+                            
+                            response = client.send_command(
+                                Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                                DocumentName="AWS-RunShellScript",
+                                Parameters={
+                                    "commands": [
+                                        "sudo /usr/local/bin/kubectl get services --namespace fss-log4shell-attacker-env attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                                    ]
+                                },
+                            )
+                            print(f"response:{response}")
+                            command_id = response["Command"]["CommandId"]
+                            print(command_id)
+                            try:
+                                print("in try block")
+                                time.sleep(3)  # some delay always required...
+                                invocations_list = client.list_command_invocations(
+                                    CommandId=command_id,
+                                )["CommandInvocations"]
+                                print(invocations_list)
+                                if invocations_list == []:
+                                    continue
+                                instance_id = sorted(
+                                    invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
+                                )[0]["InstanceId"]
+                                print(instance_id)
+                                result = client.get_command_invocation(
+                                    CommandId=command_id,
+                                    InstanceId=instance_id,
+                                )
+                                print(result)
+                                if result["Status"] == "InProgress":
+                                    continue
+                                output = result["StandardOutputContent"]
+                                print(output)
+                                break
+                            except client.exceptions.InvocationDoesNotExist:
+                                continue
+                        response_data = { "FSSAttackAlbHostname": output }
+                        client.put_parameter(Name='/player/FSS/LoadBalancerHostname', Value=output, Type='String', Overwrite=True)
+                    else: # if event["RequestType"] == "Delete":
+                        cfnresponse.send(event, context, cfnresponse.SUCCESS, {}, "GetFSSAlbAttackHostname")
+                        output = "Recieved Delete command from CFN"
+                    cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+                    return output
+                except Exception as e:
+                    cfnresponse.send(event, context, cfnresponse.FAILED, {"Data": str(e)})
+                           
+          - lambda_function_role_arn: !Ref FSSGetAlbHostnameRole
+
+  #CustomResources
+  InvokeGetFSSAlbAttackHostname:
+    Type: Custom::GetFSSAlbAttackHostname
+    Properties:
+      ServiceToken: !GetAtt GetLoadBalancerHostname.Arn
+      Timeout: 120
+
+Outputs:
+  FSSAttackAlbHostname:
+    Value: !GetAtt InvokeGetFSSAlbAttackHostname.FSSAttackAlbHostname
+    Description: "Alb hostname for the FSS attack container."
