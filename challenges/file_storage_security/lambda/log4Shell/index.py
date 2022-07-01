@@ -1,22 +1,24 @@
 import boto3
-import requests
+import urllib.request
+import zipfile
 
 bucket = "${ImageUploaderS3Bucket}"
+pwned_url = "https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${ToolsPrefix}pwned.zip"
+s3 = boto3.client("s3")
+
+def get_payload():
+    download_location = "/tmp/pwned.zip"
+    with open(download_location, "wb") as control_file:
+        res = urllib.request.urlopen(
+            urllib.request.Request(url=pwned_url, method="GET"), timeout=5
+        )
+        control_file.write(res.read())
+
+    with zipfile.ZipFile(download_location, "r") as zip_ref:
+        zip_ref.extractall(path="/tmp", pwd=b"novirus")
+    return "/tmp/connectioncheck"
 
 def handler(event, context):
-    s3 = boto3.client('s3')
-    path_test = '/tmp/'         # temp path in lambda.
-    FILE_NAME = 'eicar.txt'
-    file_url = "https://secure.eicar.org/eicar.com.txt"
-    response=requests.get(file_url, stream=True)
-    with open(path_test + FILE_NAME, 'wb') as data:
-        for chunk in response.iter_content(chunk_size = 16*1024):
-            data.write(chunk)
-        print(data)
-    s3.upload_file('/tmp/eicar.txt', bucket, 'log4shell.txt')
-
-    return {
-            'status': 'True',
-       'statusCode': 200,
-       'body': 'Payload delivered'
-      }
+    connectioncheck_path = get_payload()
+    s3.upload_file(connectioncheck_path, bucket, "connectioncheck")
+    return {"status": "True", "statusCode": 200, "body": "Payload delivered"}
