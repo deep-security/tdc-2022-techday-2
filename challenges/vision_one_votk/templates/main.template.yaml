@@ -14,6 +14,37 @@ Parameters:
   PublicSubnetId:
     Type: AWS::EC2::Subnet::Id
     Description: The ID of the public subnet to use for the challenge.
+  ContainerRegistry:
+    Type: String
+    Description: The container registry to use for the challenge.
+    Default: public.ecr.aws/q4l4n3k8
+  ContainerRepository:
+    Type: String
+    Description: The container repository to use for the challenge.
+    Default: votk
+  ContainerTag:
+    Type: String
+    Description: The container tag to use for the challenge.
+    Default: v0.25.0
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2022-2
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: "latest/"
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
 
 Resources:
   VOTKInstanceRole:
@@ -61,12 +92,22 @@ Resources:
       SecurityGroupIds:
         - !GetAtt VOTKSecurityGroup.GroupId
       UserData:
-        Fn::Base64: |
+        Fn::Base64: !Sub |
           #!/bin/bash
           yum update -y && yum install docker -y
           service docker start
+          systemctl enable docker.service
+          systemctl enable containerd.service
           PUBLIC_NAME=$(curl -f http://169.254.169.254/latest/meta-data/public-hostname)
-          docker run -e PACKAGE=https://s3.us-west-2.amazonaws.com/autogen-prodops-tools.ddts-trendmicro.com/votk/packages/production/package.tar.gz -e REVERSE_MODE=true -e URL=https://${PUBLIC_NAME} --rm -p 443:80 jspdocker/webproxy:latest bash run.sh
+          PACKAGE_URL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}packages/package.tar.gz 
+          CONTAINER_NAME=${ContainerRegistry}/${ContainerRepository}:${ContainerTag}
+          docker run \
+            -e PACKAGE=$PACKAGE_URL\
+            -e REVERSE_MODE=true \
+            -e URL=https://$PUBLIC_NAME \
+            --restart always \
+            -p 443:80 \
+            $CONTAINER_NAME bash run.sh
       Tags:
         - Key: Challenge
           Value: VOTK   
@@ -74,4 +115,4 @@ Resources:
 Outputs:
   VOTKPublicDNS:
     Description: VOTK public DNS
-    Value: !GetAtt VOTKInstance.PublicDnsName
+    Value: !Sub https://${VOTKInstance.PublicDnsName}
