@@ -424,7 +424,7 @@ Outputs:
     Value: !GetAtt adfsStack.Outputs.ADFSUsername
   ADFSPassword:
     Description: ADFS Password
-    Value: !Ref adfsStack.Outputs.ADFSPassword
+    Value: !GetAtt adfsStack.Outputs.ADFSPassword
 
   V1SOtaskBucketURL:
     Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
