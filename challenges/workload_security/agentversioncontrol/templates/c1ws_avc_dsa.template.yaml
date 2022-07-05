@@ -9,20 +9,20 @@ Parameters:
     ConstraintDescription: Quick Start bucket name can include numbers, lowercase
       letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
       (-).
+    Default: techday-2021-2
     Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
       can include numbers, lowercase letters, uppercase letters, and hyphens (-).
       It cannot start or end with a hyphen (-).
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: QSS3BucketName
+    Type: String
   QSS3KeyPrefix:
     AllowedPattern: ^[0-9a-zA-Z-/.]*$
     ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), dots(.) and forward slash (/).
-    Default: QSS3KeyPrefix
+    Default: ""
     Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
-    Type: 'AWS::SSM::Parameter::Value<String>'
+    Type: String
   PublicSubnet1SSMParameter:
     Default: "PublicSubnet1"
     Description: DO NOT CHANGE THIS VALUE
@@ -175,11 +175,11 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-       BucketName: !Ref AVCWinBucket
-       ObjectNames: 'UpgradeTask.txt'
-       ObjectPrefixes: ''
-       ExpectedValues: 'True'
-       FunctionName: 'AVC-Checker-Script'
+        BucketName: !Ref AVCWinBucket
+        ObjectNames: 'UpgradeTask.txt'
+        ObjectPrefixes: ''
+        ExpectedValues: 'True'
+        FunctionName: 'AVC-Checker-Script'
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/answer_checker.template.yaml'
 
 #Outputs:
