@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: vulnerable-app
-        image: public.ecr.aws/q4l4n3k8/log4shell-vulnerable-app:latest
+        image: 255786373758.dkr.ecr.us-east-2.amazonaws.com/fss-attack:latest
         ports:
           - containerPort: 8080
         resources:
