@@ -237,3 +237,7 @@ Outputs:
   PublicDNS:
     Description: Server Public DNS
     Value: !GetAtt Instance.PublicDnsName
+  ADFSUsername:
+    Value: !Ref TechDayAdminUser
+  ADFSPassword:
+    Value: !Ref SafeModeAdministratorPassword
