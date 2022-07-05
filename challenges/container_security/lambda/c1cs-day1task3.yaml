@@ -96,7 +96,7 @@ Resources:
 
               
               # Loop through rulesets in case player assinged multiple rulesets. Output should be rulesetID so that we can query each rulesetID for the correct rules.
-              passingScore = 6
+              passingScore = 1
               playerComplete = "no"
               for ruleset in rulesetID:
                   rulesetIDtoQuery = ruleset["id"]
@@ -130,17 +130,7 @@ Resources:
                       ruleMitigation = rule["mitigation"]
                       #print(ruleID)
                       
-                      if ruleID == "TM-00000008" and ruleMitigation == "isolate": # (T1613)Contact EC2 Instance Metadata Service From Container
-                          ruleEvalScore = ruleEvalScore + 1
                       if ruleID == "TM-00000010" and ruleMitigation == "isolate": # (T1543)Launch Package Management Process in Container
-                          ruleEvalScore = ruleEvalScore + 1
-                      if ruleID == "TM-00000011" and ruleMitigation == "isolate": # (T1059.004)Netcat Remote Code Execution in Container
-                          ruleEvalScore = ruleEvalScore + 1
-                      if ruleID == "TM-00000019" and ruleMitigation == "isolate": # (T1613)Specific discovery tool executed in container
-                          ruleEvalScore = ruleEvalScore + 1
-                      if ruleID == "TM-00000014" and ruleMitigation == "isolate": # (T1068)Packet socket created in container
-                          ruleEvalScore = ruleEvalScore + 1
-                      if ruleID == "TM-00000046" and ruleMitigation == "isolate": # Out-of-namespace network access attempts
                           ruleEvalScore = ruleEvalScore + 1
 
                   if ruleEvalScore == passingScore:
