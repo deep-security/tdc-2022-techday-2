@@ -49,7 +49,7 @@ Parameters:
   TechDayAdminUser:
     Type: String
     Description: RDP user for player
-    Default: tdadmin
+    Default: Player
   SafeModeAdministratorPassword:
     MinLength: '8'
     NoEcho: 'true'
