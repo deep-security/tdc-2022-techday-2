@@ -417,7 +417,7 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketNameSSMValue
         QSS3KeyPrefix: !Ref QSS3KeyPrefixSSMValue
       TemplateURL: !Sub 'https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}templates/v1_post_onboarding.template.yaml'
-
+    DependsOn: VerifyV1OnboardingCustomResource
 
   # Task 1 - Creates an AWS Lambda function with the Vision One Onboarding verification module.
   VerifyV1OnboardingLambdaFunction:
