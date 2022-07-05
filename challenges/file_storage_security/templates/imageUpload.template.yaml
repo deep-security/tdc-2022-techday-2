@@ -376,16 +376,22 @@ Resources:
       MemorySize: 128
       Code:
         ZipFile: !Sub |
+          import base64
           import boto3
           import urllib.request
-          import base64
           import json
           import os
           import logging
           from botocore.config import Config
 
-          # Values passed in from cfn
+          # This is where we grab the profile images.
+          # Edit between the quotes if you have to change the destination ↓
           bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
+
+
+
+
+          ######## DO NOT EDIT BELOW THIS LINE ########
           region = "${AWS::Region}"
 
           logger = logging.getLogger()
