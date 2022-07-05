@@ -1,0 +1,409 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Set up Network Security challenge. Sets up networking and lambdas.
+
+# TDC 2022 Techday 2 Network Security Challenge
+# Challenge Date: July 18, 2022
+# Author: Scott Enand
+# Challenge Description: 
+#   Player must deploy Network Security Managed Service to protect their environment from the Log4J attack chain.
+#   Requires player to:
+#     1. Deploy Onboarding Service Catalog to deploy cross-account IAM role, and the respective Cloud Account object in Network Security
+#     2. Deploy a Managed Service Endpoint into the NetworkSecurity-NSMS-Endpoint-Subnet subnet
+#     3. Modify Route Tables in AWS to route traffic through this endpoint
+#     4. Click Verify
+
+Parameters:
+  QSS3BucketName:
+    Type: String
+  QSS3KeyPrefix:
+    Type: String
+  AvailabilityZone:
+    Type: String
+
+  VPCID:
+    Type: String
+  IGWID:
+    Type: String
+
+Resources:
+  ########################################################################
+  #### Store variables into SSM for Service Catalog to reference them ####
+  ########################################################################
+  EndpointSubnetSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "netsec-endpointsubnet-id"
+      Value: !Ref EndpointSubnet
+      Type: String
+
+  ########################################################################
+  ########### Create Network Security Subnets and Route Tables ###########
+  ########################################################################
+
+  # In this CFT,                      traffic goes IGW <-> NAT GW <-> Attack Lambda
+  # After player completes challenge, traffic goes IGW <-> NSMS Endpoint <-> NAT GW <-> Attack Lambda
+
+  # IGW
+  IGWRTB:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPCID
+      Tags:
+      - Key: Name
+        Value: IGW Ingress RouteTable
+      - Key: "challenge"
+        Value: "networksecurity"
+  IGWRouteAssoc:
+    Type: 'AWS::EC2::GatewayRouteTableAssociation'
+    Properties:
+      GatewayId:
+        Ref: IGWID
+      RouteTableId:
+        Ref: IGWRTB
+
+  # Public Subnet
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCID
+      CidrBlock: 10.0.224.0/26
+      AvailabilityZone: !Ref AvailabilityZone
+      Tags:
+      - Key: Name
+        Value: NetworkSecurity-PublicProtected-Subnet
+      - Key: "challenge"
+        Value: "networksecurity"
+  PublicRouteAssoc:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId:
+        Ref: PublicSubnet
+      RouteTableId:
+        Ref: PublicSubnetRTB
+  PublicSubnetRTB:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPCID
+      Tags:
+      - Key: Name
+        Value: Public RouteTable
+      - Key: "challenge"
+        Value: "networksecurity"
+  PublicSubnetPublicRoute:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId:
+        Ref: PublicSubnetRTB
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref IGWID
+  NATEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+  NATGW:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt 'NATEIP.AllocationId'
+      SubnetId: !Ref 'PublicSubnet'
+      Tags:
+      - Key: Name
+        Value: NetworkSecurity NAT Gateway
+
+  # Endpoint Subnet
+  EndpointSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCID
+      CidrBlock: 10.0.224.64/26
+      AvailabilityZone: !Ref AvailabilityZone
+      Tags:
+      - Key: Name
+        Value: NetworkSecurity-NSMS-Endpoint-Subnet
+      - Key: "challenge"
+        Value: "networksecurity"
+      - Key: "endpoint"
+        Value: "nsms"
+  EndpointRouteAssoc:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId:
+        Ref: EndpointSubnet
+      RouteTableId:
+        Ref: EndpointSubnetRTB
+  EndpointSubnetRTB:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPCID
+      Tags:
+      - Key: Name
+        Value: NSMS Endpoint RouteTable
+      - Key: "challenge"
+        Value: "networksecurity"
+
+  # Private Subnet
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VPCID
+      CidrBlock: 10.0.224.128/26
+      AvailabilityZone: !Ref AvailabilityZone
+      Tags:
+      - Key: Name
+        Value: NetworkSecurity-Private-Subnet
+      - Key: "challenge"
+        Value: "networksecurity"
+  PrivateRouteAssoc:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      SubnetId:
+        Ref: PrivateSubnet
+      RouteTableId:
+        Ref: PrivateSubnetRTB
+  PrivateSubnetRTB:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      VpcId: !Ref VPCID
+      Tags:
+      - Key: Name
+        Value: Private RouteTable
+      - Key: "challenge"
+        Value: "networksecurity"
+  PrivateSubnetPublicRoute:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      RouteTableId:
+        Ref: PrivateSubnetRTB
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NATGW
+
+
+
+  ########################################################################
+  ##################### Create lambda to send attack #####################
+  ########################################################################
+
+  # Attack Lambda -- Triggered by verify button in Game Board
+  AttackLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: "NetworkSecurityScoreLambda"
+      Description: "Lambda to determine if Network Security portion of the challenge is complete"
+      Runtime: python3.7
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt LambdaScoreIAMRole.Arn
+      VpcConfig:
+        SubnetIds:
+          - !Ref PrivateSubnet
+        SecurityGroupIds:
+          - !Ref LambdaSecurityGroup
+      Code:
+        ZipFile: |
+          import subprocess
+          import os
+          import boto3
+          import time
+          import re
+
+          ssmc = boto3.client("ssm")
+          ec2c = boto3.client("ec2")
+          ec2r = boto3.resource("ec2")
+          lambdac = boto3.client("lambda")
+
+          def sendReq(server, timeout=2):
+              return curl("curl --connect-timeout {} {}".format(timeout, server).split(' '))
+
+          def sendAttack(server, timeout=2):
+              return curl("curl --connect-timeout {} -H 'User-Agent: sdvntyer' {}/api/v88".format(timeout, server).split(' '))
+              # return curl("curl --connect-timeout {} {}".format(timeout, server).split(' '))  
+          def curl(cmd):
+              # Returns True if was able to connect to server
+              # AWS Lambda Functions block all ICMP packets, need to use curl instead.
+              try:
+                  output = subprocess.run(cmd, stderr=subprocess.PIPE, check=False).stderr.decode().strip()
+                  errcode = re.search(".*curl: \((\d+)\).*", output)
+                  print("server: {} / errcode: {}".format(server, errcode.group(1) if errcode else errcode))
+                  if errcode is None:  # No error code means we were able to connect
+                      return True
+                  else:
+                      return errcode.group(1) != "28"  # errcode 28 means connection timeout, which means Network Security blocked it, or lambda has no internet access
+              except Exception as e:
+                  print(e)
+                  return None
+
+          def handler(event, context):
+              msg = ""
+              victim = os.environ.get("VICTIM")
+              # req = sendReq(victim)
+              req = sendReq('http://www.google.com')
+              attack = sendAttack(victim)
+              if req is True and attack is False:
+                  msg = "You've successfully blocked the vulnerability!"
+                  return True
+              else:
+                  msg = "Unfortunately attacks are still occurring against your servers! Make sure you check your configuration and perhaps re-read the instructions, and try again."
+                  print(req)
+                  print(attack)
+                  raise Exception("Incomplete")
+              return msg
+      Environment:
+        Variables:
+          VICTIM: "http://www.google.com"
+  LambdaSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+        GroupDescription: Security Group for ScoreFunction Lambda Function
+        VpcId: !Ref VPCID
+        SecurityGroupIngress:
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 172.0.0.1/32
+        SecurityGroupEgress:
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0
+  LambdaScoreIAMRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Action: "sts:AssumeRole"
+          Effect: "Allow"
+          Principal:
+            Service: "lambda.amazonaws.com"
+      Policies:
+      - PolicyName: "lambda"
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - "ssm:GetParameter"
+            - "ssm:PutParameter"
+            Resource:
+            - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/netsec-*"
+            - !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/TdcDay"
+          - Effect: Allow
+            Action:
+            - "ec2:DescribeNetworkInterfaces"
+            - "ec2:CreateNetworkInterface"
+            - "ec2:AttachNetworkInterface"
+            - "ec2:DeleteNetworkInterface"
+            Resource: "*"
+          - Effect: "Allow"
+            Action:
+            - "ec2:DeleteNetworkInterface"
+            Resource: !Sub "arn:aws:ec2:${AWS::Region}:${AWS::AccountId}:*/*"
+          - Effect: "Allow"
+            Action:
+            - "lambda:InvokeFunction"
+            Resource: !GetAtt CleanupLambda.Arn
+          - Effect: "Allow"
+            Action:
+            - "logs:CreateLogGroup"
+            - "logs:CreateLogStream"
+            - "logs:PutLogEvents"
+            Resource: arn:aws:logs:*:*:*
+
+  ########################################################################
+  ####################### Create cleanup mechanism #######################
+  ########################################################################
+
+  # Cleanup Lambda -- Will be triggered by Attack Lambda
+  CleanupLambda:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      FunctionName: "NetworkSecurityCleanupLambda"
+      Description: "Lambda to clean up Network Security Managed Service Endpoint on completion of challenge"
+      Runtime: python3.7
+      Handler: index.handler
+      Timeout: 10
+      Role: !GetAtt CleanupLambdaRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import os
+          import re
+          ssmc = boto3.client("ssm")
+          ec2c = boto3.client("ec2")
+          ec2r = boto3.resource("ec2")
+          cft = boto3.client("cloudformation")
+          lambdac = boto3.client("lambda")
+
+          def handler(event, context):
+            igw = os.environ.get("IGWID")
+            nat = os.environ.get("NATGW")
+            igwrtb = os.environ.get("IGWRTB")
+            pubrtb = os.environ.get("PublicRTB")
+            privrtb = os.environ.get("PrivateRTB")
+            deleteCft = os.environ.get("DELETE_ENDPOINT", "true").lower() == "true"
+            clean(igwrtb)
+            clean(pubrtb, [{"DestinationCidrBlock": "0.0.0.0/0", "GatewayId": igw}])
+            clean(privrtb, [{"DestinationCidrBlock": "0.0.0.0/0", "NatGatewayId": nat}])
+            if deleteCft:
+              deleteCft()
+
+          def clean(rtbarn, desired=[]):
+            rtb = ec2r.RouteTable(rtbarn)
+            for r in rtb.routes:
+              r.delete()
+            for r in desired:
+              rtb.create_route(r)
+
+          def deleteCft():
+            cfts = cft.describe_stacks()
+            for s in cfts["Stacks"]:
+              if s["StackName"].startswith("TM-NS-Endpoint-"):
+                cft.delete_stack(StackName=s["StackName"])
+      Environment:
+        Variables:
+          IGWRTB: !Ref IGWRTB
+          IGWID: !Ref IGWID
+          NATGW: !Ref NATGW
+          PublicRTB: !Ref PublicSubnetRTB
+          PrivateRTB: !Ref PrivateSubnetRTB
+  CleanupLambdaRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action:
+          - sts:AssumeRole
+          Effect: Allow
+          Principal:
+            Service:
+            - lambda.amazonaws.com
+      Path: /
+      Policies:
+      - PolicyDocument:
+          Id: NetworkSecurity_CleanupLambdaInlinePolicy
+          Statement:
+          - Action:
+            - logs:PutLogEvents
+            - logs:DescribeLogStreams
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - ec2:DescribeRouteTables
+            - cloudformation:DescribeStacks
+            Effect: Allow
+            Resource: "*"
+            Sid: BasicReadPerms
+          - Action:
+            - ec2:DeleteRoute
+            - ec2:CreateRoute
+            Effect: Allow
+            Resource:
+            - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:route-table/${PrivateSubnetRTB}
+            - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:route-table/${PublicSubnetRTB}
+            - !Sub arn:${AWS::Partition}:ec2:${AWS::Region}:${AWS::AccountId}:route-table/${IGWRTB}
+            Sid: AllowCleanupRoutes
+          - Action:
+            - cloudformation:DeleteStack
+            Effect: Allow
+            Resource:
+              - !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/TM-NS-Endpoint-*/*
+          Version: 2012-10-17
+        PolicyName: NetworkSecurity_CleanupLambdaRole
