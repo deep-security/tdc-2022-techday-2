@@ -419,6 +419,12 @@ Outputs:
   
   ADFSEndpointDNS:
     Value: !GetAtt adfsStack.Outputs.PublicDNS
+  ADFSUsername:
+    Description: ADFS Username
+    Value: !GetAtt adfsStack.Outputs.ADFSUsername
+  ADFSPassword:
+    Description: ADFS Password
+    Value: !Ref adfsStack.Outputs.ADFSPassword
 
   V1SOtaskBucketURL:
     Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
