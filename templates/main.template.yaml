@@ -107,9 +107,11 @@ Resources:
           QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/adfs_challenge/'
           VPCID: !GetAtt VPCStack.Outputs.VPCID
           PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+          SafeModeAdministratorPassword: !GetAtt Passwords.Outputs.PlayerPassword
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/templates/adfs-main.template.yaml'
       DependsOn:
         - VPCStack
+        - Passwords
 
   c1csStack:
       Type: AWS::CloudFormation::Stack
