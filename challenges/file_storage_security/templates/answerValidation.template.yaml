@@ -172,6 +172,27 @@ Resources:
                 Effect: Allow
                 Resource:
                   - !Sub "arn:aws:s3:::${ImageUploaderS3Bucket}/connectioncheck"
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                Resource:
+                  - arn:aws:ssm:*:*:document/AWS-RunShellScript
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ec2:DescribeInstances
+                Resource:
+                  - arn:aws:ec2:*:*:instance/*
+                Condition:
+                  StringLike:
+                    ssm:resourceTag/Name:
+                      - EKSBastion
+              - Effect: Allow
+                Action:
+                  - ssm:GetCommandInvocation
+                  - ssm:ListCommandInvocations
+                Resource:
+                  - arn:aws:ssm:*:*:*
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
