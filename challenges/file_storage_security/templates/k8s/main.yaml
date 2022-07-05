@@ -114,7 +114,7 @@ spec:
         app: log4shell
     spec:
       containers:
-      - image: 255786373758.dkr.ecr.us-east-2.amazonaws.com/fss-attack:latest
+      - image: public.ecr.aws/q4l4n3k8/fss-attack:latest
         name: vulnerable-app
         ports:
         - containerPort: 8080
