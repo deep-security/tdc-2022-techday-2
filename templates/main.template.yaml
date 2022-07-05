@@ -447,10 +447,3 @@ Outputs:
   FSSPayloadDropperUrl:
     Value: !GetAtt FSSStack.Outputs.FSSPayloadDropperUrl
     Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.
-
-  ADFSUsername:
-    Description: ADFS Username
-    Value: !GetAtt adfsStack.Outputs.ADFSUsername
-  ADFSPassword:
-    Description: ADFS Password
-    Value: !GetAtt adfsStack.Outputs.ADFSUsername
