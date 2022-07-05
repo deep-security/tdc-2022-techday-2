@@ -116,3 +116,6 @@ Outputs:
   FSSLambdaToProtect:
     Value: !GetAtt ImageUpload.Outputs.FSSLambdaToProtect
     Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
+  FSSPayloadDropperUrl:
+    Value: !GetAtt ImageUpload.Outputs.FSSPayloadDropperUrl
+    Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.

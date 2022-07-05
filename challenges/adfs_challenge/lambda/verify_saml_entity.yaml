@@ -1,0 +1,90 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  ADFSDomain:
+    Description: ADFS Domain
+    Type: String
+    Default: techday.com
+
+Resources:
+  ScoreRoleADFSTask1:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      Policies: 
+        - PolicyName: ScoreRoleADFSTask1
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "ssm:GetParameter"
+                Resource: 
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  ADFSScoreLambdaTask1:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: ADFSScoreLambdaTask1
+      Environment:
+        Variables:
+          ADFSDOMAIN: !Ref ADFSDomain
+      Code: 
+        ZipFile: |
+          import json
+          import urllib3
+          import sys
+          import boto3
+          from urllib.parse import urlparse
+          client = boto3.client('ssm')
+          ADFSDOMAIN = os.environ['ADFSDOMAIN'])
+          def lambda_handler(event, context):
+              parameter = client.get_parameter(Name='/player/C1/c1ApiKey', WithDecryption=True)
+              playerApiKey = parameter ['Parameter']['Value']
+              urlSaml = 'https://saml.cloudone.trendmicro.com/api/identity-providers'
+              headers = {
+                  'api-version': 'v1',
+                  'Authorization': 'ApiKey '+playerApiKey+'',
+                  'Content-Type': 'application/json'
+              }
+              http = urllib3.PoolManager()
+              samlEvalResponse = http.request("GET", urlSaml, headers=headers)
+              data = json.loads(samlEvalResponse.data.decode(utf-8))
+              for i in data["identityproviders"]:
+                  print(i["entityID"])
+                  if i['entityID'] == 'http://'+ADFSDOMAIN+'/adfs/services/trust':
+                    playerComplete = "yes"
+                  else:
+                    playerComplete = "no"
+                      message = "Not yet completed"
+                      print(message)
+                      raise Exception(message)
+                      break
+                  if playerComplete == "yes":
+                      message = "Task completed"
+                      print(message)
+                      return (True)
+                  else:
+                    message = "Not yet completed"
+                    print(message)
+                    raise Exception(message)
+      Handler: index.lambda_handler
+      Role:
+        Fn::GetAtt:
+          - ScoreRoleADFSTask1
+          - Arn
+      Runtime: python3.8
+      Timeout: 60
+
+
+Outputs:
+  ADFSScoreLambdaTask1:
+    Value:
+      Ref: ADFSScoreLambdaTask1
