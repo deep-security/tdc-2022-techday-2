@@ -179,6 +179,25 @@ Resources:
         PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
 
+
+  c1nsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/network_security/templates/network_security_main.template.yaml'
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/network_security/"
+        AvailabilityZone: !Select
+          - '0'
+          - !Split
+            - ","
+            - !FindInMap
+              - RegionMap
+              - !Ref 'AWS::Region'
+              - AZs
+        VPCID: !GetAtt VPCStack.Outputs.VPCID
+        IGWID: !GetAtt VPCStack.Outputs.IGWID
+
   FSSAttackerEnv:
     Type: AWS::CloudFormation::Stack
     Condition: BuildEks
@@ -190,6 +209,7 @@ Resources:
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
     DependsOn:
       - EKSStack
+
 
   VOTKStack:
     Type: AWS::CloudFormation::Stack
@@ -270,7 +290,7 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/vpc/templates/aws-vpc.template.yaml'
       Parameters:
-        NumberOfAZs: 4
+        NumberOfAZs: 3
         AvailabilityZones: !FindInMap
           - RegionMap
           - !Ref 'AWS::Region'
@@ -407,10 +427,10 @@ Outputs:
 
   c1csAlbHostname:
     Description: ALB Hostname that the player uses to access the c1cs attack container
-    Value: !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname  
+    Value: !If [ BuildEks, !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname, "" ]
 
   FSSAttackerMachineAccessUrl:
-    Value: !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname
+    Value: !If [ BuildEks, !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname, "" ]
     Description: "Alb hostname for the FSS attack container."
   FSSWebsite:
     Value: !GetAtt FSSStack.Outputs.FSSWebsite

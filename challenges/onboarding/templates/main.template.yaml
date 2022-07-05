@@ -35,8 +35,8 @@ Resources:
   C1onboardingTask1ServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
-      Description: Cloud One Onboarding - This is one of the first steps for Tech Day 2022-1
-      Name: Cloud One Day 1 Onboarding Task
+      Description: Cloud One Onboarding - This is one of the first steps for Tech Day 2022-2
+      Name: Cloud One Onboarding Task
       Owner: Trend Micro            
       ProvisioningArtifactParameters:
         - Info:
@@ -60,8 +60,8 @@ Resources:
   V1onboardingTask1ServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
     Properties:
-      Description: Vision One Onboarding - This is one of the first steps for Tech Day 2022-1
-      Name: Vision One Day 1 Onboarding Task
+      Description: Vision One Onboarding - This is one of the first steps for Tech Day 2022-2
+      Name: Vision One Onboarding Task
       Owner: Trend Micro            
       ProvisioningArtifactParameters:
         - Info:
