@@ -414,9 +414,9 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        QSS3BucketName: !Ref QSS3BucketNameSSMKey
-        QSS3KeyPrefix: !Ref QSS3KeyPrefixSSMKey
-      TemplateURL: !Sub 'https://${QSS3BucketNameSSMKey}.s3.amazonaws.com/${QSS3KeyPrefixSSMKey}templates/v1_post_onboarding.template.yaml'
+        QSS3BucketName: !Ref QSS3BucketNameSSMValue
+        QSS3KeyPrefix: !Ref QSS3KeyPrefixSSMValue
+      TemplateURL: !Sub 'https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}templates/v1_post_onboarding.template.yaml'
 
 
   # Task 1 - Creates an AWS Lambda function with the Vision One Onboarding verification module.
