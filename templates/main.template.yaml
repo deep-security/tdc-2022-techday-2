@@ -430,7 +430,7 @@ Outputs:
     Value: !If [ BuildEks, !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname, "" ]
 
   FSSAttackerMachineAccessUrl:
-    Value: !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname
+    Value: !If [ BuildEks, !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname, "" ]
     Description: "Alb hostname for the FSS attack container."
   FSSWebsite:
     Value: !GetAtt FSSStack.Outputs.FSSWebsite
