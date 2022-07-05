@@ -94,7 +94,6 @@ Resources:
       Parameters:
         SourceBucket: !Ref QSS3BucketName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
-      TimeoutInMinutes: 10
   CopyZips:
     Type: Custom::CopyZips
     Properties:
