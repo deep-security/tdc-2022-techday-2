@@ -404,7 +404,6 @@ Resources:
   # Triggers Vision One post-onboarding stacks creation.
   PostOnboardingStack:
     Type: AWS::CloudFormation::Stack
-    DependsOn: C1OnboardingLambdaCustomResource
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketNameSSMValue
