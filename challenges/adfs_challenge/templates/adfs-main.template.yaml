@@ -133,16 +133,16 @@ Resources:
         get-files:
           files:
             'c:\s3-downloads\scripts\rdp_user.ps1':
-              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/rdp_user.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/rdp_user.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\ad_cert.ps1':
-              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/add_user_domain.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/add_user_domain.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adds_install.ps1':
-              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/adds_install.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/adds_install.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adfs_install.ps1':
-              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}/scripts/adfs_install.ps1
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/adfs_install.ps1
               authentication: S3AccessCreds
         configure-instance:
           commands:
@@ -220,6 +220,13 @@ Resources:
             SubnetId: !Ref PublicSubnet1ID
             GroupSet:
             - !Ref ADFSSecurityGroup
+
+
+  ScoreLambdaDAY1Task1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/verify_saml_entity.yaml
+
 Outputs:
   InstanceId:
     Description: 'InstanceId'
