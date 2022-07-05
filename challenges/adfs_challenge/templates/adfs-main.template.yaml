@@ -235,9 +235,11 @@ Outputs:
     Description: 'InstanceId'
     Value: !Ref Instance
   PublicDNS:
-    Description: Server Public DNS
+    Description: ADFS Server Public DNS
     Value: !GetAtt Instance.PublicDnsName
   ADFSUsername:
+    Description: ADFS Username
     Value: !Ref TechDayAdminUser
   ADFSPassword:
+    Description: ADFS Password
     Value: !Ref SafeModeAdministratorPassword
