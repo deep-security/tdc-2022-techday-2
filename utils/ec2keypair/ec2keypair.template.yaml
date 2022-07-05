@@ -62,7 +62,7 @@ Resources:
         Runtime: python3.7
         Role: !GetAtt CreateKeyPairLambdaExecutionRole.Arn
         MemorySize: 128
-        Timeout: 10
+        Timeout: 60
 
   KeyPair:
     Type: AWS::CloudFormation::CustomResource

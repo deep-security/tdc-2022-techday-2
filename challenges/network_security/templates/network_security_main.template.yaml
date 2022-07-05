@@ -190,7 +190,7 @@ Resources:
       Description: "Lambda to determine if Network Security portion of the challenge is complete"
       Runtime: python3.7
       Handler: index.handler
-      Timeout: 10
+      Timeout: 60
       Role: !GetAtt LambdaScoreIAMRole.Arn
       VpcConfig:
         SubnetIds:
@@ -320,7 +320,7 @@ Resources:
       Description: "Lambda to clean up Network Security Managed Service Endpoint on completion of challenge"
       Runtime: python3.7
       Handler: index.handler
-      Timeout: 10
+      Timeout: 60
       Role: !GetAtt CleanupLambdaRole.Arn
       Code:
         ZipFile: |

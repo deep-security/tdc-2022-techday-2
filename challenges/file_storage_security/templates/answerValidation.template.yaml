@@ -97,7 +97,7 @@ Resources:
                   raise Exception("Payload not detected! Try again.")
 
       Role: !GetAtt PayloadCheckerLambdaRole.Arn
-      Timeout: 30
+      Timeout: 60
   PayloadCheckerLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -222,4 +222,4 @@ Resources:
           
 
       Role: !GetAtt PayloadCheckerLambdaRole.Arn
-      Timeout: 30
+      Timeout: 60

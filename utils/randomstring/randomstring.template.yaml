@@ -52,7 +52,7 @@ Resources:
       Runtime: python3.7
       Role: !GetAtt LambdaExecutionRole.Arn
       MemorySize: 128
-      Timeout: 10
+      Timeout: 60
 
  # Custom Resource 1
  SecretPassword:
