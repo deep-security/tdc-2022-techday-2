@@ -184,6 +184,9 @@ Resources:
               command:
                 - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1'
     Properties:
+      Tags:
+      - Key: Name
+        Value: ADFS
       AvailabilityZone:
         Fn::Select: 
           - 0
