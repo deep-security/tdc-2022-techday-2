@@ -151,7 +151,8 @@ Resources:
                 powershell.exe -Command "Set-ExecutionPolicy UnRestricted -Force"
               waitAfterCompletion: '0'
             2-rename-computer:
-              command:
+              command: !Join
+                  - ''
                 - - powershell.exe -Command "Rename-Computer -Restart -NewName "
                   - Ref: Hostname
               waitAfterCompletion: forever  

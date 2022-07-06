@@ -10,7 +10,7 @@ param (
     [string]$TechDayAdminUser
 )
 #create cert for ADFS
-$fqdn =(Get-WmiObject win32_computersystem).DNSHostName+"."+(Get-WmiObject win32_computersystem).Domain 
+$fqdn = "techday.com"
 $password = ConvertTo-SecureString -String $SafeModeAdministratorPassword -Force -AsPlainText 
 $filename = "C:\$fqdn.pfx"
  
