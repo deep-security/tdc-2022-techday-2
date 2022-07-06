@@ -69,7 +69,7 @@ Resources:
             sudo docker build -t attacker .
             sudo docker run -d --net nodegoat_default attacker
             cd /home/ec2-user
-            sudo curl -OL https://workload.trend-us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/agent.rpm
+            sudo curl -OL https://workload.{{resolve:ssm:/player/C1/c1Region:1}}.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/agent.rpm
             sudo rpm -i agent.rpm
 
   WSContainerInstanceARN:
