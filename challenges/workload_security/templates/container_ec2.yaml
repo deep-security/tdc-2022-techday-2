@@ -9,10 +9,6 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
   AMIID:
     Type: String
-  c1RegionSSMKey:
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: /player/C1/c1Region
-    Description: DO NOT CHANGE THIS VALUE
 
 Resources:
   DSAkeysRole:
@@ -79,7 +75,7 @@ Resources:
             sudo docker build -t attacker .
             sudo docker run -d --net nodegoat_default attacker
             cd /home/ec2-user
-            sudo download -OL https://workload.${c1RegionSSMKey}.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/agent.rpm
+            sudo download -OL https://workload.us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/agent.rpm
             sudo rpm -i agent.rpm
 
   WSContainerInstanceARN:
