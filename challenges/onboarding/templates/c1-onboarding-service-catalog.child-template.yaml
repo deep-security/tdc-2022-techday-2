@@ -16,6 +16,7 @@ Metadata:
           - QSS3KeyPrefixSSMValue          
           - ssmParameterValue
           - LambdaFunctionTimeout
+          - c1SupportedRegions
       -
         Label:
           default: "DO NOT MODIFY. Game Configuration - SSM Parameter Configuration"
@@ -53,6 +54,8 @@ Metadata:
         default: "DO NOT MODIFY. Game Engine Config. SSM Key for Cloud One Services API Base URL "
       LambdaFunctionTimeout:
         default: "DO NOT MODIFY. Game Engine Config. Lambda function global timeout parameter"
+      c1SupportedRegions:
+        default: "DO NOT MODIFY. Game Engine Config. List of supported regions"
 
 Parameters:  
   c1ApiKey:
@@ -115,6 +118,10 @@ Parameters:
   LambdaFunctionTimeout:
     Type: Number
     Default: 900
+  c1SupportedRegions:
+    Type: String
+    Default: 'trend-us-1'
+    Description: DO NOT MODIFY. List of regions that are supported by Cloud One, comma separated..
 
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
@@ -328,6 +335,14 @@ Resources:
 
               print(str(parameter))
 
+          # Verify user Cloud One Region is part of the list of supported Regions
+          def regionC1IsSupported(c1Region, c1SupportedRegions):
+              if c1SupportedRegions:
+                c1SupportedRegionsList = c1SupportedRegions.split(',')
+                if c1Region in c1SupportedRegionsList:
+                    return True
+              return False
+
           def handler(event, context):
 
               # Setup
@@ -342,6 +357,7 @@ Resources:
                       awsRegion = str(os.environ.get("awsRegion"))
                       c1ApiKey = str(os.environ.get("c1ApiKey"))
                       c1UsersList = str(os.environ.get("c1UsersList")).lower()
+                      c1SupportedRegions = str(os.environ.get("c1SupportedRegions")).lower()
                       c1LicenseValidationDayCount = int(os.environ.get("c1LicenseValidationDayCount"))
 
                       if c1UsersList[-1] == ",":
@@ -369,6 +385,10 @@ Resources:
 
                           raise Exception('Error: Invalid Cloud One Account ID or Region. Please contact organizer.')
 
+                      # Checks if the used C1 Region is supported by the game.
+                      if not regionC1IsSupported(c1TrendRegion, c1SupportedRegions)
+                        raise Exception('Error: This isn't a valid Cloud One region for this game. Please contact organizer.')
+                      
                       # If valid Account Id and Trend region, store those values in AWS SSM Parameter Store for future use.
                       else:
 
@@ -422,7 +442,8 @@ Resources:
           awsRegion: !Ref AWS::Region
           c1ApiKey: !Ref c1ApiKey
           c1UsersList: !Ref c1UsersList
-          c1LicenseValidationDayCount: 3      
+          c1LicenseValidationDayCount: 3     
+          c1SupportedRegions: !Ref c1SupportedRegions 
       Role: !GetAtt TechDayC1onboardingLambdaRole.Arn
 
   # Triggers Cloud One post-onboarding stacks creation.
