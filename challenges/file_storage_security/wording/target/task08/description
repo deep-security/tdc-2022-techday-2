@@ -1,2 +1,3 @@
 Since you can’t fix the application to stop having vulnerabilities right now, we need to stop the application from returning malware to the user.
+
 To that end, you need to protect the microservice that serves the optimized images from the image bucket. That way, whenever the webpage asks for a file, if it would return malware, it instead … doesn’t do that.

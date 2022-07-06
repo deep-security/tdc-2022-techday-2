@@ -1,3 +1,5 @@
 Now that you’ve set up the malicious server, time to run the exploit.
+
 To do this, you have to make a request to http://sudosingles-optimizer. But you’re going to include a specially crafted header to call back to your malicious LDAP server and execute a command.
+
 In our case, the command will reach out to malicious url and drop a scary payload into the sudosingles-optimizer container.

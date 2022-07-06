@@ -1,3 +1,5 @@
 Looks like the attacker has been using JNDIExploit in your environment! That means they were likely trying to exploit log4j. That’s bad news, especially since you know the SudoSingles™ image optimization microservice is written in Java and uses log4j.
-You need to figure out if the <code>sudosingles-optimizer</code> service is vulnerable to the log4shell exploit. Now.
+
+You need to figure out if the sudosingles-optimizer service is vulnerable to the log4shell exploit. Now.
+
 A quick and efficient way to figure out if you’re vulnerable is to try to do the exploit yourself. (Maybe not the most secure way, though, so don’t try this at home.)

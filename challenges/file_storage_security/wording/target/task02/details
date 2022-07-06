@@ -1,4 +1,7 @@
 The intel you got also indicated that a hacker spun up an attack machine on your network. Not good. Time to check it out.
+
 Find the “FSSAttackerMachineAccessUrl” entry in the Credentials section below. You should be taken to a login screen. You can log in using the “Player” user and your “PlayerPassword,” also found in the Credentials section.
+
 You’ll know you’ve logged in successfully if you’re taken into a desktop environment in your browser, complete with programs like a Terminal Emulator, a File Browser, and a Web Browser. Feel free to click around to verify everything works.
-To complete this task, enter the <strong>hostname</strong> of the attack machine and hit “Submit.”
+
+To complete this task, enter the hostname of the attack machine and hit “Submit.”

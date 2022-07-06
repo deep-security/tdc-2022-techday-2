@@ -1,6 +1,11 @@
 Ok, looks like you’ve totally screwed yourself over and released code in the environment that causes a cryptominer to be dropped on all visitors to SudoSingles’ website… Not good.
+
 You need to A) clean this mess up, and B) fix the underlying vulnerability. There’s no way to know how much more malware might be hiding in the S3 environment!
+
 However, all the Java developers at SudoSingles™ Inc. are competing in a week-long Super Smash Brothers tournament in a gigantic Faraday cage on a remote island. Some kind of teambuilding activity, they said… Sorry, I have no idea. But you’re on your own – the devs are totally unreachable
+
 You need to make sure that even if the backend is exploited, SudoSingles™ will serve no malware to its users. Luckily you are a Trend Micro Cloud One customer and have FSS at your disposal.
+
 The only issue is that the malware is already in that bucket, and the bucket has millions of profile pictures already in it! There’s no way to scan all those existing files with FSS in the normal configuration – trust me, I’ve tried. And you need to stop this now.
+
 Luckily, there is a better way. You’ve heard about the new ScanOnGetObject feature of FSS that should help here.
