@@ -152,7 +152,7 @@ Resources:
               waitAfterCompletion: '0'
             2-rename-computer:
               command: !Join
-                  - ''
+                - ''
                 - - powershell.exe -Command "Rename-Computer -Restart -NewName "
                   - Ref: Hostname
               waitAfterCompletion: forever  
