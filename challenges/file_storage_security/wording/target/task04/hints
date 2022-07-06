@@ -16,6 +16,8 @@ Triple-check to make sure you’re using that IP address.
 
 The answer is the whole last line from the Terminal Emulator window where you first ran the JNDIExploit program. Punctuation and all.
 
+The answer is not "[+] Receive ClassRequest: SpringEchoTemplate.class"
+
 ### HINT 3
 
 1. Open a Terminal Emulator window
