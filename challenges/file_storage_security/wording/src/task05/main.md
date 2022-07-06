@@ -42,7 +42,7 @@ Verify -> PayloadCheckerLambda
 
 ### HINT 1
 
-/Basic/Command/Base64 might be a hint! And the challenge said to encode... hmm.....
+/Basic/Command/Base64 might be a hint! And the challenge said to "encode"... hmm.....
 
 ### HINT 2
 
