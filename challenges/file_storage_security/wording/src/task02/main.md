@@ -7,7 +7,7 @@ SudoSingles™ is an incredibly modern application built by genius engineers.
 And as all genius engineers know, microservices are the best thing you can do for an application. Therefore, the SudoSingles™ platform is made up of several interconnected microservices that all do specific tasks.
 
 <pre> 
-  <code> 
+  " 
                  ┌──────────────────┐ 
 
                  │                  │ 
@@ -41,12 +41,12 @@ And as all genius engineers know, microservices are the best thing you can do fo
                       │ Bucket ├──────────────┘ 
 
                       └────────┘} 
-  </code> 
+  " 
 </pre>
 
 One of the main components of SudoSingles™ is a containerized Java microservice that optimizes all images uploaded to the website for display on the web and uploads them all to one big S3 bucket full of profile pictures.
 
-A little birdie has told you that SudoSingles™’s image processing microservice is vulnerable to the log4shell attack. You’ve also found a m Well, you used to moonlight as a <code>l33t</code> haxor back in the day, so maybe you can use your skills to verify if that’s true.
+A little birdie has told you that SudoSingles™’s image processing microservice is vulnerable to the log4shell attack. You’ve also found a m Well, you used to moonlight as a "l33t" haxor back in the day, so maybe you can use your skills to verify if that’s true.
 
 ## DETAILS
 
@@ -62,7 +62,7 @@ To complete this task, enter the <strong>hostname</strong> of the attack machine
 
 ONLY ONE USER CAN BE LOGGED IN AT A TIME.
 
-If more than one user tries to log on, the first user will be frozen out. So, select the member of your team that you feel is the most <code>l33t</code> and delegate them to control the attack machine for this challenge.
+If more than one user tries to log on, the first user will be frozen out. So, select the member of your team that you feel is the most "l33t" and delegate them to control the attack machine for this challenge.
 
 If you run into trouble loading the environment, maybe switch to Chrome? I hate to be that guy, but it might help for this challenge.
 
