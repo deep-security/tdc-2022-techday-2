@@ -62,8 +62,9 @@ Resources:
               search_policy = js.loads(r.text)
               for policy in search_policy["policies"]:
                   if policy["policySettings"]["antiMalwareSettingOfflineScheduledScanEnabled"]["value"] == "true" and policy["name"] == "usethispolicy":
-                      return(True)
-              return(False) 
+                      return True
+              raise Exception("You haven't finished it...")
+              return False
       Handler: index.lambda_handler
       Role: !GetAtt C1WSEppOfflineCheckScoreRole.Arn
       Runtime: python3.7

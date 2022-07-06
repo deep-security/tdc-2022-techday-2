@@ -55,6 +55,7 @@ Resources:
               for x in files:
                   if answer in x:
                       return True
+              raise Exception("You haven't finished it...")
               return False
       Handler: index.lambda_handler
       Role: !GetAtt scoreContainerC1WS.Arn
