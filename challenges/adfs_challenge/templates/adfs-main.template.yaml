@@ -180,6 +180,8 @@ Resources:
                 - Ref: DomainNetBiosName
                 - " -TechDayAdminUser "
                 - Ref: TechDayAdminUser
+                - " -DomainDNSName "
+                - Ref: DomainDNSName
               waitAfterCompletion: forever
             6-configure-user:
               command:

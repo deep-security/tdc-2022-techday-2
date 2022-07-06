@@ -7,14 +7,17 @@ param (
     [string]$DomainNetBiosName,
 
     [Parameter(Mandatory=$true)]
-    [string]$TechDayAdminUser
+    [string]$TechDayAdminUser,
+
+    [Parameter(Mandatory=$true)]
+    [string]$DomainDNSName
+
 )
 #create cert for ADFS
-$fqdn = "techday.com"
 $password = ConvertTo-SecureString -String $SafeModeAdministratorPassword -Force -AsPlainText 
-$filename = "C:\$fqdn.pfx"
+$filename = "C:\$DomainDNSName.pfx"
  
-$selfSignedCert = New-SelfSignedCertificate -certstorelocation cert:\localmachine\my -dnsname  $fqdn
+$selfSignedCert = New-SelfSignedCertificate -certstorelocation cert:\localmachine\my -dnsname  $DomainDNSName
 $certThumbprint = $selfSignedCert.Thumbprint
 Export-PfxCertificate -cert cert:\localMachine\my\$certThumbprint -Password $password -FilePath $filename
  
@@ -34,4 +37,4 @@ $user  = "$DomainNetBiosName\$TechDayAdminUser"
 $password = ConvertTo-SecureString -String $SafeModeAdministratorPassword -AsPlainText -Force
 $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $user, $password
 
-Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $fqdn  -ServiceAccountCredential $credential
+Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $DomainDNSName  -ServiceAccountCredential $credential
