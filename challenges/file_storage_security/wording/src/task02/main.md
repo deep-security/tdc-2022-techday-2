@@ -6,44 +6,6 @@ SudoSingles™ is an incredibly modern application built by genius engineers.
 
 And as all genius engineers know, microservices are the best thing you can do for an application. Therefore, the SudoSingles™ platform is made up of several interconnected microservices that all do specific tasks.
 
-<pre> 
-  " 
-                 ┌──────────────────┐ 
-
-                 │                  │ 
-
-                 │     WEBSITE      │ 
-
-                 │                  │ 
-
-┌───────────┐    │  ┌──┐            │    ┌─────────┐ 
-
-│ Image     │    │  │  │ ┌───┐      │◄───┤ Image   │ 
-
-│ Optimizer │◄───┤  └──┘ │   │      │    │ Fetcher │ 
-
-└─────┬─────┘    │       └───┘ ┌──┐ │    └─────────┘ 
-
-      │          │             └──┘ │         ▲ 
-
-      │          │                  │         │ 
-
-      │          └──────────────────┘         │ 
-
-      │                                       │ 
-
-      │                                       │ 
-
-      │               ┌────────┐              │ 
-
-      └──────────────►│ Image  │              │ 
-
-                      │ Bucket ├──────────────┘ 
-
-                      └────────┘} 
-  " 
-</pre>
-
 One of the main components of SudoSingles™ is a containerized Java microservice that optimizes all images uploaded to the website for display on the web and uploads them all to one big S3 bucket full of profile pictures.
 
 A little birdie has told you that SudoSingles™’s image processing microservice is vulnerable to the log4shell attack. You’ve also found a m Well, you used to moonlight as a "l33t" haxor back in the day, so maybe you can use your skills to verify if that’s true.
@@ -56,7 +18,7 @@ Find the “FSSAttackerMachineAccessUrl” entry in the Credentials section belo
 
 You’ll know you’ve logged in successfully if you’re taken into a desktop environment in your browser, complete with programs like a Terminal Emulator, a File Browser, and a Web Browser. Feel free to click around to verify everything works.
 
-To complete this task, enter the <strong>hostname</strong> of the attack machine and hit “Submit.”
+To complete this task, enter the *hostname* of the attack machine and hit “Submit.”
 
 ## NOTES
 

