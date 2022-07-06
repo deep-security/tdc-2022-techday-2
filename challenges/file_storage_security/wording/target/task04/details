@@ -6,13 +6,10 @@ TLDR; you’re going to trick “sudosingles-optimizer” into connecting to a m
 
 You have to set up the server first. To do this, do the following:
 
-    Open the Terminal Emulator application from the dock on the bottom.
-
-    Navigate to the hacker folder by running “cd /config/Desktop/hacker”
-
-    Find your private ip address on the LAN network. There are many ways to find your IP address on Linux – I'll leave this one to you. Just make sure you write it down. The IP you find should look something like 10.0.XX.XX or 10.0.XX.XXX
-
-    Run the JNDIExploit-1.2-SNAPSHOT.jar file using Java, configuring it to start the malicious server listening on the private IP address you found in step 3 above.
+1.  Open the Terminal Emulator application from the dock on the bottom.
+2.  Navigate to the hacker folder by running “cd /config/Desktop/hacker”
+3.  Find your private ip address on the LAN network. There are many ways to find your IP address on Linux – I’ll leave this one to you. Just make sure you write it down. The IP you find should look something like 10.0.XX.XX or 10.0.XX.XXX
+4.  Run the JNDIExploit-1.2-SNAPSHOT.jar file using Java, configuring it to start the malicious server listening on the private IP address you found in step 3 above.
 
 If you see something like the below, you’re on the right track:
 
