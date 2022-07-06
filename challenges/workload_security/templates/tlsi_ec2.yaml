@@ -14,6 +14,10 @@ Parameters:
   #  Description: bucket arn
   AMIID:
     Type: String
+  c1RegionSSMKey:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /player/C1/c1Region
+    Description: DO NOT CHANGE THIS VALUE
 
 Resources:
   WebSecurityGroup:
@@ -94,7 +98,7 @@ Resources:
           public_host_name=`curl http://169.254.169.254/latest/meta-data/public-hostname`
           sed -i "7i ServerName $public_host_name" /etc/httpd/conf.d/ssl.conf
           sudo systemctl restart httpd
-          download -OL https://workload.{{resolve:ssm:/player/C1/c1Region:1}}.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/20.0.0.3770/agent.rpm
+          download -OL https://workload.${c1RegionSSMKey}.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/20.0.0.3770/agent.rpm
           sudo rpm -i agent.rpm
 
   WSTLSIInstanceARN:
