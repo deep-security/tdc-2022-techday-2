@@ -52,4 +52,4 @@ If the template isn’t deploying, delete the service catalog and try again, mak
 
 1. Find your external ID by launching a stack from the FSS console and copying the External ID value
 2. Fill in the service catalog template, making sure to set ScanOnGetObject to true, region to trend-us-1, bucket to the value of FSSBucketToProtect from the Credentials field of mission control, and the external ID to the external ID from step 1
-3. You’re done when the FSS stack is in CREATE_COMPLETE status.
+3. You’re done when the FSS stack is in the "Available" state.
