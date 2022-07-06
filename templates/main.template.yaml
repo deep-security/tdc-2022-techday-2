@@ -168,18 +168,17 @@ Resources:
         - OnboardingStack #Added for throttling IAM role creation
         
   FSSStack:
-
-  FSSAttackerEnv:
     Type: AWS::CloudFormation::Stack
-    Condition: BuildEks
     Properties:
       Parameters:
-          QSS3BucketName: !Ref QSS3BucketName
-          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
-          PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
-    DependsOn:
-      - EKSStack
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+        PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+        ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+        PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
+
 
   c1nsStack:
     Type: AWS::CloudFormation::Stack
@@ -198,6 +197,19 @@ Resources:
               - AZs
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         IGWID: !GetAtt VPCStack.Outputs.IGWID
+
+  FSSAttackerEnv:
+    Type: AWS::CloudFormation::Stack
+    Condition: BuildEks
+    Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+          PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
+    DependsOn:
+      - EKSStack
+
 
   VOTKStack:
     Type: AWS::CloudFormation::Stack
