@@ -54,8 +54,8 @@ Resources:
               print(files)
               for x in files:
                   if answer in x:
-                      return("True")
-              return("False")
+                      return True
+              return False 
       Handler: index.lambda_handler
       Role: !GetAtt scoreTLSIC1WS.Arn
       Runtime: python3.7
