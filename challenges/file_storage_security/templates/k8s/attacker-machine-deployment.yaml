@@ -14,6 +14,7 @@ spec:
       labels:
         app: attacker-machine
     spec:
+      hostname: attacker-machine
       containers:
         - name: attacker-machine
           image: lscr.io/linuxserver/webtop:ubuntu-xfce

@@ -96,6 +96,7 @@ spec:
             port: 3000
           initialDelaySeconds: 3
           periodSeconds: 10
+      hostname: attacker-machine
 ---
 apiVersion: apps/v1
 kind: Deployment
