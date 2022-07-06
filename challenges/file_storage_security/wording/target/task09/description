@@ -1,0 +1,2 @@
+To deploy protection, all you have to do is make the function grab objects from the FSS ScanOnGetObject Object Lambda Access Point (say that five times fast).
+Even if you don’t know Python, don’t worry. If you can type, you can deploy protection.

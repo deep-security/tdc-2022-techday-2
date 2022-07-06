@@ -45,6 +45,11 @@
             black
             mypy
             pyright
+
+            # wording
+            pandoc
+            nodePackages.cspell
+            vale
           ];
         };
       });

