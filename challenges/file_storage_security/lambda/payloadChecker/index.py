@@ -86,6 +86,7 @@ def handler(event, context):
         print(file_equality)
         assert executed_in_container == True
         assert file_equality == True
+        return True
     except Exception as e:
         print(e)
         raise Exception("Payload not detected! Try again.")
