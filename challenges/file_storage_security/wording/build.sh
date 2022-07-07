@@ -6,7 +6,7 @@ do
         DESTINATION=$(echo $file | sd "src" "target" | sd ".md" "")
         csplit --prefix='task' --suffix-format='%03d.md' $file /\#\#/ "{*}"  
         mv task000.md  $DESTINATION/title
-        sd "# Task" "FSS Task" $DESTINATION/title
+        sd "# C1" "C1" $DESTINATION/title
         pandoc --wrap=preserve --from markdown-smart --to plain task001.md > $DESTINATION/description
         pandoc --wrap=preserve --from markdown-smart --to plain task002.md > $DESTINATION/details
         pandoc --wrap=preserve --from markdown-smart --to plain task003.md > $DESTINATION/notes
