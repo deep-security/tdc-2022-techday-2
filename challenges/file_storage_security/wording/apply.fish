@@ -1,12 +1,12 @@
 #!/usr/bin/env fish
 function read_confirm
   while true
-    read -l -P 'Do you want to continue? [y/N] ' confirm
+    read -l -P 'Do you want to continue? [Y/n] ' confirm
 
     switch $confirm
-      case Y y
+      case '' Y y
         return 0
-      case '' N n
+      case N n
         return 1
     end
   end
@@ -21,30 +21,35 @@ function apply
         cat description | pbcopy
     else
         return 1
+        cd ../..
     end
     if read_confirm
         echo "details"
         cat details | pbcopy
     else
         return 1
+        cd ../..
     end
     if read_confirm
         echo "notes"
         cat notes | pbcopy
     else
         return 1
+        cd ../..
     end
     if read_confirm
         echo "scoring"
         cat scoring | pbcopy
     else
         return 1
+        cd ../..
     end
     if read_confirm
         echo "hints"
         cat hints
     else
         return 1
+        cd ../..
     end
     cd ../..
 end
