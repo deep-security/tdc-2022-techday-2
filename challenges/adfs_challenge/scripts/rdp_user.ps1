@@ -14,5 +14,5 @@ $user = New-LocalUser -AccountNeverExpires:$true -Password ( ConvertTo-SecureStr
  Add-LocalGroupMember -Group administrators -Member $user
  Add-LocalGroupMember -Group "Remote Desktop Users"  -Member $user
 $ssmuser = New-LocalUser -AccountNeverExpires:$true -Password ( ConvertTo-SecureString -AsPlainText -Force $SafeModeAdministratorPassword) -Name $SSMUserName -FullName $SSMUserName -Description "ssm-user"
-Add-LocalGroupMember -Group administrators -Member $ssmuser
-Add-LocalGroupMember -Group "Remote Desktop Users"  -Member $ssmuser
+ Add-LocalGroupMember -Group administrators -Member $ssmuser
+ Add-LocalGroupMember -Group "Remote Desktop Users"  -Member $ssmuser
