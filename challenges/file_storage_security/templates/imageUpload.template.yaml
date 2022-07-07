@@ -376,16 +376,22 @@ Resources:
       MemorySize: 128
       Code:
         ZipFile: !Sub |
+          import base64
           import boto3
           import urllib.request
-          import base64
           import json
           import os
           import logging
           from botocore.config import Config
 
-          # Values passed in from cfn
+          # This is where we grab the profile images.
+          # Edit between the quotes if you have to change the destination ↓
           bucket = "${S3BucketResources.Outputs.ImageUploaderS3BucketName}"
+
+
+
+
+          ######## DO NOT EDIT BELOW THIS LINE ########
           region = "${AWS::Region}"
 
           logger = logging.getLogger()
@@ -605,7 +611,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Policies:
-        - PolicyName: GetImgLambdaPolicy
+        - PolicyName: ExploitCheckLambdaPolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -622,6 +628,7 @@ Resources:
                 Effect: Allow
                 Resource:
                   - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
+                  - !Sub "arn:${AWS::Partition}:s3:::${QSS3BucketName}/*true.js"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
@@ -665,7 +672,7 @@ Outputs:
     Value: !GetAtt S3BucketResources.Outputs.ImageUploaderS3BucketName
     Description: The bucket to protect with FSS
   FSSLambdaToProtect:
-    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${GetImgLambda}?tab=code"
+    Value: !Sub https://${AWS::Region}.console.aws.amazon.com/lambda/home?region=${AWS::Region}#/functions/${GetImgLambda}?tab=code
     Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
   FSSPayloadDropperUrl:
     Value: !GetAtt PayloadDropperLambdaUrl.FunctionUrl

@@ -28,7 +28,7 @@ def lambda_handler(event, context):
         # Check agent   
         for i in dict_result["computers"]:
             if hostName == i["hostName"]:
-                if i["computerStatus"]["agentStatus"] == "active" and i["computerStatus"]['agentStatusMessages'][0] == "Managed (Online)":
+                if i["computerStatus"]["agentStatus"] == "active" and i["computerStatus"]['agentStatusMessages'][0] in ("Managed (Online)", "管理対象 (オンライン)"):
                     result_flag = True
                     break
         

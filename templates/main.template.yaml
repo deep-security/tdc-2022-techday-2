@@ -107,9 +107,12 @@ Resources:
           QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/adfs_challenge/'
           VPCID: !GetAtt VPCStack.Outputs.VPCID
           PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+          TechDayAdminUser: !GetAtt PlayerStack.Outputs.PlayerUserName
+          #SafeModeAdministratorPassword: !GetAtt Passwords.Outputs.PlayerPassword
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/templates/adfs-main.template.yaml'
       DependsOn:
         - VPCStack
+        - Passwords
 
   c1csStack:
       Type: AWS::CloudFormation::Stack
@@ -416,12 +419,18 @@ Outputs:
   
   ADFSEndpointDNS:
     Value: !GetAtt adfsStack.Outputs.PublicDNS
+  ADFSUsername:
+    Description: ADFS Username
+    Value: !GetAtt adfsStack.Outputs.ADFSUsername
+  ADFSPassword:
+    Description: ADFS Password
+    Value: !GetAtt adfsStack.Outputs.ADFSPassword
 
   V1SOtaskBucketURL:
     Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
     Description: Bucket for V1 SO task information (player access required)
   
-  VTOKConsole:
+  VOTKConsole:
     Value: !GetAtt VOTKStack.Outputs.VOTKPublicDNS
     Description: URL to access the VOTK Console.
 

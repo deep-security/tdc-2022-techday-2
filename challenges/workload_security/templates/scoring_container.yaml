@@ -54,8 +54,9 @@ Resources:
               print(files)
               for x in files:
                   if answer in x:
-                      return("True")
-              return("False")
+                      return True
+              raise Exception("You haven't finished it...")
+              return False
       Handler: index.lambda_handler
       Role: !GetAtt scoreContainerC1WS.Arn
       Runtime: python3.7
