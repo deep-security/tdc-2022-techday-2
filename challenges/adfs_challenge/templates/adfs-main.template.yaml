@@ -184,8 +184,10 @@ Resources:
                 - Ref: DomainDNSName
               waitAfterCompletion: forever
             6-configure-user:
-              command:
-                - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1'
+              command: !Join 
+              - ''
+              - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser '
+                - Ref: TechDayAdminUser 
     Properties:
       Tags:
       - Key: Name
