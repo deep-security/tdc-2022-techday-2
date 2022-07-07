@@ -1,9 +1,14 @@
 SudoSingles
+log4j
+log4shell
 sudosingles
 YOURIP
 PRIVATEIPADDRESS
 PAYLOADDROPPERURL
 connectioncheck
+sus
+ldap
+srv
 
 hyperscale
 JNDI
@@ -73,7 +78,6 @@ amplify
 analysis
 analytics
 analyze
-and
 anomaly
 answer
 api
@@ -481,7 +485,6 @@ endpoints
 engine
 engines
 enhanced
-enter
 entities
 entitlement
 entitlements
@@ -529,7 +532,6 @@ feedback
 fetch
 field
 fields
-file
 files
 filter
 filters
@@ -854,8 +856,6 @@ observation
 observations
 offering
 offerings
-only
-open
 operation
 operations
 ops
@@ -932,7 +932,6 @@ plans
 platform
 platforms
 playback
-player
 point
 points
 policies
@@ -1289,7 +1288,6 @@ stream
 streaming
 streams
 sts
-submit
 subnet
 subnets
 subscribe
@@ -1414,9 +1412,9 @@ upload
 uploaded
 uploads
 url
+URL
 usage
 used
-user
 users
 utilization
 utterances
@@ -1461,7 +1459,6 @@ wam
 warmup
 watch
 way
-web
 webhook
 webhooks
 website
@@ -1648,7 +1645,6 @@ test
 TEXTDOMAIN
 TEXTDOMAINDIR
 then
-time
 times
 TMOUT
 tput
