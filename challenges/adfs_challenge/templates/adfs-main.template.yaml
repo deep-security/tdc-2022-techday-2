@@ -178,7 +178,7 @@ Resources:
               waitAfterCompletion: forever
             5-check-adws-service:
               command:
-                - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1'
+                - - 'powershell.exe -Command c:\s3-downloads\scripts\check_service_adws.ps1'
             6-configure-user:
               command: !Join 
               - ''
