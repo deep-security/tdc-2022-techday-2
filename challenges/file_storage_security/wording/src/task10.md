@@ -22,8 +22,6 @@ Enter a number, not a string
 
 ## SCORING
 
-String answer:
-
 5
 
 ## HINTS

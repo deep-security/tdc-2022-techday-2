@@ -30,8 +30,6 @@ If you run into trouble loading the environment, maybe switch to Chrome? I hate 
 
 ## SCORING
 
-String answer:
-
 attacker-machine
 
 ## HINTS

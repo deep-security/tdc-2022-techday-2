@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 for i in $(seq -f %02g 10)
 do
-    for file in $(eval echo src/task$i/main.md)
+    for file in $(eval echo src/task$i.md)
     do
-        DESTINATION=$(dirname $(echo $file | sd "src" "target"))
+        DESTINATION=$(echo $file | sd "src" "target" | sd ".md" "")
         csplit --prefix='task' --suffix-format='%03d.md' $file /\#\#/ "{*}"  
         mv task000.md  $DESTINATION/title
         sd "# Task" "FSS Task" $DESTINATION/title

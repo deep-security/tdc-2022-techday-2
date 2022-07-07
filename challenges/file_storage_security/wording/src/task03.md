@@ -16,8 +16,6 @@ Include the file extension in your answer.
 
 ## SCORING
 
-String answer:
-
 JNDIExploit-1.2-SNAPSHOT.jar
 
 ## HINTS

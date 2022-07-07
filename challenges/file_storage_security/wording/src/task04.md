@@ -45,8 +45,6 @@ The answer will look something like this (fill in the blanks): [+] _______ _____
 
 ## SCORING
 
-String answer:
-
 [+] Response code: 200
 
 ## HINTS

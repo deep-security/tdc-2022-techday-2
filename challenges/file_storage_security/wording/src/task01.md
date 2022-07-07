@@ -20,8 +20,6 @@ Check the SudoSingles™ profile creation screen.
 
 ## SCORING
 
-String answer:
-
 find your special someone to kubectl with
 
 ## HINTS

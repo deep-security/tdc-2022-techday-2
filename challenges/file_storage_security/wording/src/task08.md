@@ -22,8 +22,6 @@ This is just to make sure you’re on the right page.
 
 ## SCORING
 
-String answer:
-
 import base64
 
 ## HINTS

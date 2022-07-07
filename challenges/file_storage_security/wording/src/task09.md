@@ -20,7 +20,7 @@ Click Verify once you’re done deploying protection.
 
 ## SCORING
 
-ProtectionCheckerLambda
+protectionChecker
 
 ## HINTS
 

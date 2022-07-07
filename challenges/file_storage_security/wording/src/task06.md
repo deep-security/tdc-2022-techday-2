@@ -26,8 +26,6 @@ Be sure to include the file extension.
 
 ## SCORING
 
-String answer:
-
 pwned.txt
 
 ## HINTS

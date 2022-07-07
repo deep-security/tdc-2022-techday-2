@@ -34,8 +34,6 @@ This answer is on the honor system. Don’t let it get to your head.
 
 ## SCORING
 
-String answer:
-
 I did it
 
 ## HINTS

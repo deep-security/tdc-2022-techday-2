@@ -36,7 +36,7 @@ No actual ransomware is involved in this challenge, so don’t worry. We’re ju
 
 ## SCORING
 
-Verify -> PayloadCheckerLambda
+payloadChecker
 
 ## HINTS
 
