@@ -30,8 +30,6 @@ The folder you’re looking for is “/config/Desktop/hacker”. Double-click on
 
 ### HINT 3
 
-1. Double click on the “hacker” folder on the Desktop or use the terminal to naviate to “/config/Desktop/hacker”.
-
+1. Double click on the “hacker” folder on the Desktop or use the terminal to navigate to “/config/Desktop/hacker”.
 2. There should be a folder and a file inside.
-
 3. The tool you are looking for is named “JNDIExploit-1.2-SNAPSHOT.jar”
