@@ -224,13 +224,13 @@ Resources:
         PublicSubnetId: !GetAtt VPCStack.Outputs.PublicSubnet1ID
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml'
   
-  V1SOStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/vision_one/"
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/main.template.yaml' 
+#  V1SOStack:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      Parameters:
+#        QSS3BucketName: !Ref QSS3BucketName
+#        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/vision_one/"
+#      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/main.template.yaml' 
       
   WorkloadSecurityStack:
     Type: AWS::CloudFormation::Stack
