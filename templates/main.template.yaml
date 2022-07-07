@@ -430,7 +430,7 @@ Outputs:
     Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
     Description: Bucket for V1 SO task information (player access required)
   
-  VTOKConsole:
+  VOTKConsole:
     Value: !GetAtt VOTKStack.Outputs.VOTKPublicDNS
     Description: URL to access the VOTK Console.
 
