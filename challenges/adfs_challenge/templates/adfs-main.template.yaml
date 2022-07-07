@@ -76,8 +76,6 @@ Resources:
           - !Ref QSS3BucketName
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - !Ref WriteToV1BucketManagedPolicy
-      Path: /
       Policies:
         - PolicyDocument:
             Version: 2012-10-17
