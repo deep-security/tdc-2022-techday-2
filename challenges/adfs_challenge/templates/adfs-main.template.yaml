@@ -177,7 +177,8 @@ Resources:
                 - Ref: DomainDNSName
               waitAfterCompletion: forever
             5-check-adws-service:
-              command:
+              command: !Join
+                - ''
                 - - 'powershell.exe -Command c:\s3-downloads\scripts\check_service_adws.ps1'
             6-configure-user:
               command: !Join 
