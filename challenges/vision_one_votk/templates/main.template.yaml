@@ -111,6 +111,8 @@ Resources:
       Tags:
         - Key: Challenge
           Value: VOTK   
+        - Key: Name
+          Value: "VOTK"
 
 Outputs:
   VOTKPublicDNS:
