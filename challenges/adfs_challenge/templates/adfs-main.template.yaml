@@ -173,7 +173,11 @@ Resources:
                 - " -DomainDNSName "
                 - Ref: DomainDNSName
               waitAfterCompletion: forever
-            4-install-rdp-user:
+            4-check-adws-service:
+              command: !Join
+                - ''
+                - - 'powershell.exe -Command c:\s3-downloads\scripts\check_service_adws.ps1'
+            5-install-rdp-user:
               command: !Join
                 - ''
                 - - 'powershell.exe -Command c:\s3-downloads\scripts\rdp_user.ps1 -SafeModeAdministratorPassword '
@@ -182,12 +186,12 @@ Resources:
                   - Ref: TechDayAdminUser
                   - " -SSMUserName "
                   - Ref: SSMUserName
-            5-configure-user:
+            6-configure-user:
               command: !Join 
               - ''
               - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser '
                 - Ref: TechDayAdminUser
-            6-install-ADFS:
+            7-install-ADFS:
               command: !Join 
               - ''
               - - 'powershell.exe -Command c:\s3-downloads\scripts\adfs_install.ps1 -SafeModeAdministratorPassword '
