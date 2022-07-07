@@ -8,11 +8,11 @@ Even if you don’t know Python, don’t worry. If you can type, you can deploy 
 
 ## DETAILS
 
-You can find the ScanOnGetObject Access point for the deployed “File Storage Security All in One Template” product under the “ScanOnGetObjectAccessPointARN” entry in Events -> Outputs.
+You can find the ScanOnGetObject Access point for the deployed “File Storage Security All in One Template” product under the “ScanOnGetObjectAccessPointARN” entry in Events ⇒ Outputs.
 
 Find the line that starts with “bucket =” at the top of the Python file, and replace everything inside the quotes with the ScanOnGetObjectAccessPointARN value.
 
-Once you’ve done this click “Deploy” to deploy your new function version to production.
+Once you’ve done this, click “Deploy” to deploy your new function version to production.
 
 Click Verify once you’re done deploying protection.
 

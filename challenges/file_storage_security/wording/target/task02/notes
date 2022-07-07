@@ -1,5 +1,5 @@
 ONLY ONE USER CAN BE LOGGED IN AT A TIME.
 
-If more than one user tries to log on, the first user will be frozen out. So, select the member of your team that you feel is the most "l33t" and delegate them to control the attack machine for this challenge.
+If more than one user tries to log on, the first user's session will freeze. So, select the member of your team that you feel is the most "l33t" and delegate them to control the attack machine for this challenge.
 
 If you run into trouble loading the environment, maybe switch to Chrome? I hate to be that guy, but it might help for this challenge.

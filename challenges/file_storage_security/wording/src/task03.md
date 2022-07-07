@@ -6,7 +6,7 @@ Now that you’re in the attacker’s environment, it’s time to see what they�
 
 ## DETAILS
 
-The hacker seems to have left a very suspicious folder on the desktop.
+The hacker seems to have left an extremely suspicious folder on the desktop.
 
 What is the filename of the hacking tool that the hacker has probably been using? Enter the full filename in the box below and hit “Submit” to complete this challenge.
 
@@ -22,14 +22,14 @@ JNDIExploit-1.2-SNAPSHOT.jar
 
 ### HINT 1
 
-Hm, there’s a folder on the Desktop that seems sus...
+Hm, there’s a folder on the Desktop that seems sus…
 
 ### HINT 2
 
-The folder you’re looking for is “/config/Desktop/hacker”. Double-click on it to see the files inside. Make sure to include the file extension in your answer.
+The folder you’re looking for is “/config/Desktop/hacker”. Double-click it to see the files inside. Make sure to include the file extension in your answer.
 
 ### HINT 3
 
-1. Double click on the “hacker” folder on the Desktop or use the terminal to navigate to “/config/Desktop/hacker”.
+1. Double-click the “hacker” folder on the Desktop, or use the terminal to navigate to “/config/Desktop/hacker”.
 2. There should be a folder and a file inside.
 3. The tool you are looking for is named “JNDIExploit-1.2-SNAPSHOT.jar”

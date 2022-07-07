@@ -8,9 +8,9 @@ Introducing SudoSingles™! The single-pane-of-glass app for lonely techies hopi
 
 Welcome to your new job – head of security for SudoSingles LLC, creators of the hottest new dating website for techie professionals. Today, you’ll protect the company from malware in critical S3 buckets and save a lot of time along the way.
 
-No spoilers yet, though. Your first task is to get acquainted with the product itself. Locate the “FSSWebsite” entry in the "Credentials" section below and navigate to that url.
+No spoilers yet, though. Your first task is to get acquainted with the product itself. Locate the “FSSWebsite” entry in the "Credentials" section below and navigate to that URL.
 
-This url leads to the SudoSingles™’s profile creator, where users can upload their most alluring profile pictures to show to potential mates. Feel free to upload a few images of your own to see how it works.
+This URL leads to the SudoSingles™’s profile creator, where users can upload their most alluring profile pictures to show to potential mates. Feel free to upload a few images of your own to see how it works.
 
 To complete this task: please enter the tagline for SudoSingles™ in the box below.
 
@@ -34,4 +34,4 @@ The tagline is the following, but filling in the blanks: “find your special so
 
 ### HINT 3
 
-We're looking for “find your special someone to kubectl with”
+The tagline is “find your special someone to kubectl with”
