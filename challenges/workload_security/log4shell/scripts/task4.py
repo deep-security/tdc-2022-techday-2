@@ -8,7 +8,7 @@ logger.setLevel(logging.INFO)
 def lambda_handler(event, context):
     logger.info("event: {}".format(event))
     result_flag = False
-    ips_rule_id = "7416" # IPS rule that need to be assigned.
+    ips_rule_id = "1008610" # IPS rule that need to be assigned.
     lookup_key = "ruleIDs" # To Ensure that IPS is active and got some IPS rules assigned already.
     ssmc = boto3.client('ssm')
     hostName = os.getenv("HostName")
@@ -29,15 +29,18 @@ def lambda_handler(event, context):
         
         # Get Computer ID   
         for i in dict_result["computers"]:
-            if hostName == i["hostName"] and lookup_key in i["intrusionPrevention"] and int(ips_rule_id) in i["intrusionPrevention"]["ruleIDs"]:
+            if hostName == i["hostName"] and lookup_key in i["intrusionPrevention"]:
                     ComputerID = i["ID"]
                     try:
-                        IPSURL = BaseURL + str(ComputerID) +"/intrusionprevention/rules/" + ips_rule_id
+                        IPSURL = BaseURL + str(ComputerID) +"/intrusionprevention/rules/"
                         result = requests.get(IPSURL, headers=headers)
                         dict_result = json.loads(result.text)
-                        if dict_result["detectOnly"] == False:
-                            result_flag = True
-                            break
+                        for i in dict_result["intrusionPreventionRules"]:
+                            if i["identifier"] == ips_rule_id:
+                                if i["detectOnly"] == False:
+                                    result_flag = True
+                                    break
+                        break
                         
                     except requests.exceptions.RequestException as e:
                         raise SystemExit(e)
