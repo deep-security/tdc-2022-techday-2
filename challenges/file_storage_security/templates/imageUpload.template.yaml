@@ -611,7 +611,7 @@ Resources:
     Type: AWS::IAM::Role
     Properties:
       Policies:
-        - PolicyName: GetImgLambdaPolicy
+        - PolicyName: ExploitCheckLambdaPolicy
           PolicyDocument:
             Version: 2012-10-17
             Statement:
@@ -628,6 +628,7 @@ Resources:
                 Effect: Allow
                 Resource:
                   - !Sub "arn:${AWS::Partition}:s3:::${S3BucketResources.Outputs.ImageUploaderS3BucketName}/*"
+                  - !Sub "arn:${AWS::Partition}:s3:::${QSS3BucketName}/*true.js"
       AssumeRolePolicyDocument:
         Version: 2012-10-17
         Statement:
