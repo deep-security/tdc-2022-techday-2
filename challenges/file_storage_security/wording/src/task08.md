@@ -20,6 +20,8 @@ To complete this challenge, enter the first line of code of this Lambda function
 
 This is just to make sure you’re on the right page.
 
+Deleting or messing up this code is like breaking a mirror—if you do it, you'll have seven years of bad luck. So be careful to not delete or change anything you shouldn't.
+
 ## SCORING
 
 import base64
@@ -27,9 +29,9 @@ import base64
 ## HINTS
 
 ### HINT 1
+You can find the Code on the page if you scroll down a little. Make sure you have the "Code" tab selected. Also, make sure to enter the first line of code, exactly as it appears.
 
 ### HINT 2
-
-### HINT 3
-
-Hint 3
+1. Navigate to the URL found in the "Credentials" section under "FSSLambdaToProtect."
+2. Find the "Code" section of the Lambda page.
+3. Copy the first line (import base64) into Mission Control, and hit "Submit."

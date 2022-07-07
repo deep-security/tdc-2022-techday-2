@@ -41,7 +41,7 @@ I did it
 
 ### HINT 1
 
-You can get your external ID by trying to launch an FSS template from the FSS console, and copying the value from there. Or you can use the FSS API. Your choice.
+You can get your ExternalID by trying to launch an FSS template from the FSS console, and copying the value from there. Or you can use the FSS API. Your choice.
 
 ### HINT 2
 
@@ -49,6 +49,6 @@ If the template isn’t deploying, delete the service catalog and try again, mak
 
 ### HINT 3
 
-1. Find your ExternalID by launching a stack from the FSS console and copying the External ID value
-2. Fill in the service catalog template, making sure to set "S3BucketToScan" to the value of "FSSBucketToProtect" from the "Credentials" field of Mission Control, "ScanOnGetObject" to "true," "Trend Micro Cloud One region" to "trend-us-1," and the ExternalID to the ExternalID from step 1
-3. You’re done when the FSS stack is in the "Available" state.
+1. Find your ExternalID by launching a stack from the FSS console and copying the ExternalID value.
+2. Fill in the Service Catalog product template, making sure to set "S3BucketToScan" to the value of "FSSBucketToProtect" from the "Credentials" field of Mission Control, "ScanOnGetObject" to "true," "Trend Micro Cloud One region" to "trend-us-1," and the ExternalID to the ExternalID from step 1
+3. You’re done when the FSS product is in the "Available" state.
