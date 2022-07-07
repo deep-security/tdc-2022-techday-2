@@ -15,4 +15,3 @@ Add-ADGroupMember -Identity "Enterprise Admins" -Members $TechDayAdminUser
 #Start-Process "$Download" -ArgumentList "/quiet"
 
 #enable idp signon page
-Set-AdfsProperties -EnableIdpInitiatedSignonPage $true
