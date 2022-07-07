@@ -386,8 +386,8 @@ Resources:
                           raise Exception('Error: Invalid Cloud One Account ID or Region. Please contact organizer.')
 
                       # Checks if the used C1 Region is supported by the game.
-                      if not regionC1IsSupported(c1TrendRegion, c1SupportedRegions)
-                        raise Exception('Error: This isn't a valid Cloud One region for this game. Please contact organizer.')
+                      if not regionC1IsSupported(c1TrendRegion, c1SupportedRegions):
+                        raise Exception("Error: This isn't a valid Cloud One region for this game. Please contact organizer.")
                       
                       # If valid Account Id and Trend region, store those values in AWS SSM Parameter Store for future use.
                       else:
