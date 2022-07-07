@@ -110,7 +110,9 @@ Resources:
             $CONTAINER_NAME bash run.sh
       Tags:
         - Key: Challenge
-          Value: VOTK   
+          Value: VOTK
+        - Key: Name
+          Value: VOTK
 
 Outputs:
   VOTKPublicDNS:
