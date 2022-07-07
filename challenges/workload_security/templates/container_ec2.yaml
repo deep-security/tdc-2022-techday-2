@@ -47,15 +47,21 @@ Resources:
       UserData:
         Fn::Base64: !Sub |
             #!/bin/bash -x
-            su ec2-user
+            sudo su
             sudo yum install -y docker
             sudo yum install -y curl
-            sudo curl -L "https://github.com/docker/compose/releases/download/v2.4.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+            download(){  
+            until curl -f $@ ; 
+            do
+            sleep 1
+            done
+            }
+            curl -L "https://github.com/docker/compose/releases/download/v2.4.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
             sudo chmod 755 /usr/local/bin/docker-compose
             sudo service docker start
             sudo sed -i -e 's/secure_path = \/sbin:\/bin:\/usr\/sbin:\/usr\/bin/secure_path = \/sbin:\/bin:\/usr\/sbin:\/usr\/bin:\/usr\/local\/bin/' /etc/sudoers
             cd /home/ec2-user
-            sudo curl -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-victim-NodeGoat.zip" -o NodeGoat.zip
+            download -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-victim-NodeGoat.zip" -o NodeGoat.zip
             sudo unzip NodeGoat.zip
             cd NodeGoat
             sudo docker-compose build
@@ -63,13 +69,13 @@ Resources:
             cd /home/ec2-user
             mkdir attacker
             cd attacker
-            sudo curl -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-attacker-Dockerfile" -o Dockerfile
-            sudo curl -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-attacker-run.sh" -o run.sh
-            sudo curl -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-attacker-attack.sh" -o attack.sh
+            download -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-attacker-Dockerfile" -o Dockerfile
+            download -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-attacker-run.sh" -o run.sh
+            download -L "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/container-challenge-attacker-attack.sh" -o attack.sh
             sudo docker build -t attacker .
             sudo docker run -d --net nodegoat_default attacker
             cd /home/ec2-user
-            sudo curl -OL https://workload.trend-us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/agent.rpm
+            download -OL https://workload.us-1.cloudone.trendmicro.com:443/software/agent/amzn2/x86_64/agent.rpm
             sudo rpm -i agent.rpm
 
   WSContainerInstanceARN:
