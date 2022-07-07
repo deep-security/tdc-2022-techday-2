@@ -426,9 +426,9 @@ Outputs:
     Description: ADFS Password
     Value: !GetAtt adfsStack.Outputs.ADFSPassword
 
-  V1SOtaskBucketURL:
-    Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
-    Description: Bucket for V1 SO task information (player access required)
+#  V1SOtaskBucketURL:
+#    Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
+#    Description: Bucket for V1 SO task information (player access required)
   
   VOTKConsole:
     Value: !GetAtt VOTKStack.Outputs.VOTKPublicDNS
