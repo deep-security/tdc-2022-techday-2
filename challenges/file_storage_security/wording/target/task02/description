@@ -4,4 +4,4 @@ And as all genius engineers know, microservices are the best thing you can do fo
 
 One of the main components of SudoSingles™ is a containerized Java microservice that optimizes all images uploaded to the website for display on the web and uploads them all to one big S3 bucket full of profile pictures.
 
-A little birdie has told you that SudoSingles™’s image processing microservice is vulnerable to the log4shell attack. You’ve also found a m Well, you used to moonlight as a “l33t” haxor back in the day, so maybe you can use your skills to verify if that’s true.
+A little birdie has told you that SudoSingles™’s image processing microservice is vulnerable to the log4shell attack. You’ve also found a m Well, you used to moonlight as a "l33t" haxor back in the day, so maybe you can use your skills to verify if that’s true.

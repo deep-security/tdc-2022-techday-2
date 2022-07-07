@@ -1,16 +1,16 @@
-# Task 1: Lonely Singles in Your Area! 👀
+# Task 1: Lonely Singles In Your Area! 👀
 
 ## DESCRIPTION
 
-Introducing SudoSingles™! The single-pane-of-glass application for lonely techies hoping to hyperscale their romantic connections! Whether you seek to make a new friend or find someone to "kubectl" with for the rest of your days, if you’re a tech nerd, SudoSingles™ is for you! Check it out today!
+Introducing SudoSingles™! The single-pane-of-glass app for lonely techies hoping to hyperscale their romantic connections! Whether you seek to make a new friend or find someone to "kubectl" with for the rest of your days, if you’re a tech nerd, SudoSingles™ is for you! Check it out today!
 
 ## DETAILS
 
 Welcome to your new job – head of security for SudoSingles LLC, creators of the hottest new dating website for techie professionals. Today, you’ll protect the company from malware in critical S3 buckets and save a lot of time along the way.
 
-No spoilers yet, though. Your first task is to get acquainted with the product itself. Locate the “FSSWebsite” entry in the Credentials section below and navigate to that URL.
+No spoilers yet, though. Your first task is to get acquainted with the product itself. Locate the “FSSWebsite” entry in the "Credentials" section below and navigate to that url.
 
-You will be taken to SudoSingles™’s profile creator, where users can upload their most alluring profile pictures to show to potential mates. Feel free to upload a few images of your own to see how it works.
+This url leads to the SudoSingles™’s profile creator, where users can upload their most alluring profile pictures to show to potential mates. Feel free to upload a few images of your own to see how it works.
 
 To complete this task: please enter the tagline for SudoSingles™ in the box below.
 
