@@ -56,6 +56,10 @@ Parameters:
     Type: String
     Description: SafeModeAdministrator
     Default: TechDay2022!
+  SSMUserName:
+    Type: String
+    Description: SSM User for Windows Domain
+    Default: ssm-user
 Resources:
   Profile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -176,6 +180,8 @@ Resources:
                   - Ref: SafeModeAdministratorPassword
                   - " -TechDayAdminUser "
                   - Ref: TechDayAdminUser
+                  - " -SSMUserName "
+                  - Ref: SSMUserName
             5-configure-user:
               command: !Join 
               - ''
