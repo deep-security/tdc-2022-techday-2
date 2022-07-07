@@ -74,6 +74,10 @@ Resources:
         - ''
         - - 'role-s3-read-'
           - !Ref QSS3BucketName
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+        - !Ref WriteToV1BucketManagedPolicy
+      Path: /
       Policies:
         - PolicyDocument:
             Version: 2012-10-17
@@ -97,10 +101,6 @@ Resources:
                 - ec2.amazonaws.com
             Effect: Allow
         Version: 2012-10-17
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-        - !Ref WriteToV1BucketManagedPolicy
-      Path: /
   ADFSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
