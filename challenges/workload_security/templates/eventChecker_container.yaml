@@ -48,6 +48,9 @@ Resources:
       Code:
         ZipFile: |
           import boto3
+          import os
+          import json
+          
           #Print when loading function
           print('Loading function')
           def lambda_handler(event, context):
