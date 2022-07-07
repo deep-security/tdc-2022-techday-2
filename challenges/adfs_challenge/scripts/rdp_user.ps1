@@ -4,7 +4,7 @@ param (
     [string]$TechDayAdminUser,
 
     [Parameter(Mandatory=$true)]
-    [string]$SafeModeAdministratorPassword
+    [string]$SafeModeAdministratorPassword,
 
     [Parameter(Mandatory=$true)]
     [string]$SSMUserName
