@@ -12,7 +12,8 @@ Add-ADGroupMember -Identity "Domain Admins" -Members $TechDayAdminUser
 Add-ADGroupMember -Identity "Enterprise Admins" -Members $TechDayAdminUser
 
 #set user email address
-Set-AdUser -Identity $TechDayAdminUser -EmailAddress $TechDayAdminUser@$DomainDNSName
+$email = "$TechDayAdminUser@"
+Set-AdUser -Identity $TechDayAdminUser -EmailAddress $email$DomainDNSName
 
 #add edge for user
 md -Path $env:temp\edgeinstall -erroraction SilentlyContinue | Out-Null
