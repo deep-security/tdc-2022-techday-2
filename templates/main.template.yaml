@@ -364,6 +364,8 @@ Resources:
       Parameters:
         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/player.template.yaml'
+    DependsOn: 
+      - Passwords
 
   KeyPairStack:
     Type: AWS::CloudFormation::Stack
