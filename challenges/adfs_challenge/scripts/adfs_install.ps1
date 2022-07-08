@@ -38,3 +38,6 @@ $password = ConvertTo-SecureString -String $SafeModeAdministratorPassword -AsPla
 $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $user, $password
 
 Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $DomainDNSName  -ServiceAccountCredential $credential -AdminConfiguration $adminConfig
+
+#enable idp signon page
+Set-AdfsProperties -EnableIdpInitiatedSignonPage $true
