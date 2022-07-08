@@ -36,6 +36,10 @@ sleep 10
 Add-ADGroupMember -Identity "Domain Admins" -Members $TechDayAdminUser
 Add-ADGroupMember -Identity "Enterprise Admins" -Members $TechDayAdminUser
 
+#create ssm-user
+$ssmuser = New-LocalUser -AccountNeverExpires:$true -Password ( ConvertTo-SecureString -AsPlainText -Force $SafeModeAdministratorPassword) -Name $SSMUserName -FullName $SSMUserName -Description "ssm-user"
+ Add-LocalGroupMember -Group administrators -Member $ssmuser
+
 #add ssm-user to domain admins
 Add-ADGroupMember -Identity "Domain Admins" -Members $SSMUserName
 Add-ADGroupMember -Identity "Enterprise Admins" -Members $SSMUserName
