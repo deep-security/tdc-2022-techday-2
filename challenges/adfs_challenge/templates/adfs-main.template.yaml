@@ -23,7 +23,7 @@ Parameters:
     Type: String
   LatestAmiId: 
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
-    Default: '/aws/service/ami-windows-latest/Windows_Server-2016-English-Full-Base'
+    Default: '/aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base'
     Description: DO NOT CHANGE THIS VALUE
   PublicSubnet1ID:
     Type: AWS::EC2::Subnet::Id
@@ -135,7 +135,7 @@ Resources:
             'c:\s3-downloads\scripts\rdp_user.ps1':
               source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/rdp_user.ps1
               authentication: S3AccessCreds
-            'c:\s3-downloads\scripts\ad_cert.ps1':
+            'c:\s3-downloads\scripts\add_user_domain.ps1':
               source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/add_user_domain.ps1
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adds_install.ps1':
@@ -143,6 +143,9 @@ Resources:
               authentication: S3AccessCreds
             'c:\s3-downloads\scripts\adfs_install.ps1':
               source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/adfs_install.ps1
+              authentication: S3AccessCreds
+            'c:\s3-downloads\scripts\adfs_dkm.ps1':
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/adfs_dkm.ps1
               authentication: S3AccessCreds
         configure-instance:
           commands:
@@ -183,9 +186,14 @@ Resources:
                 - " -DomainDNSName "
                 - Ref: DomainDNSName
               waitAfterCompletion: forever
-            6-configure-user:
-              command:
-                - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1'
+            # 6-configure-user:
+            #   command: !Join 
+            #   - ''
+            #   - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser '
+            #     - Ref: TechDayAdminUser 
+            #     - " -DomainDNSName "
+            #     - Ref: DomainDNSName
+
     Properties:
       Tags:
       - Key: Name
