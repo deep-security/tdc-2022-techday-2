@@ -38,4 +38,5 @@ Resources:
           HostName: !Ref HostName
       Role: !Ref ScoreLambdaRole
       Runtime: python3.8
-      Timeout: 30
+      Timeout: 60
+      MemorySize: 512

@@ -97,7 +97,7 @@ Resources:
                       dict_result = json.loads(result.text)
                       script = dict_result['scriptBody']
               
-                      activate_comand = "/opt/ds_agent/dsa_control -a dsm://agents.workload.trend-us-1.cloudone.trendmicro.com:443/ "
+                      activate_comand = "/opt/ds_agent/dsa_control -a dsm://agents.workload." + region + ".cloudone.trendmicro.com:443/ "
                       tenantid_and_token = script.split()
                       tenantid = tenantid_and_token[-2]
                       token = tenantid_and_token[-1]
