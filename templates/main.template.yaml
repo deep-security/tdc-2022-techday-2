@@ -203,7 +203,7 @@ Resources:
               - AZs
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         IGWID: !GetAtt VPCStack.Outputs.IGWID
-      DependsOn:
+    DependsOn:
         - VPCStack
 
   FSSAttackerEnv:
