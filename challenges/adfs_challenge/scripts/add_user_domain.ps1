@@ -7,6 +7,8 @@ param (
     [string]$DomainDNSName
 )
 
+sleep 60
+
 $ServiceName = 'adws'
 $arrService = Get-Service -Name $ServiceName
 
@@ -25,7 +27,7 @@ while ($arrService.Status -ne 'Running')
 
 }
 
-sleep 30
+sleep 10
 
 #add user to domain admins
 Add-ADGroupMember -Identity "Domain Admins" -Members $TechDayAdminUser
