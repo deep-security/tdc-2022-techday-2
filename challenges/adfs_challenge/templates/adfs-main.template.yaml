@@ -164,20 +164,8 @@ Resources:
                 - ''
                 - - powershell.exe -Command "Rename-Computer -Restart -NewName "
                   - Ref: Hostname
-              waitAfterCompletion: forever  
-            3-install-ADDS:
-              command: !Join
-              - ''
-              - - 'powershell.exe -Command c:\s3-downloads\scripts\adds_install.ps1 -SafeModeAdministratorPassword '
-                - Ref: SafeModeAdministratorPassword
-                - " -DomainDNSName "
-                - Ref: DomainDNSName
               waitAfterCompletion: forever
-            4-check-adws-service:
-              command: !Join
-                - ''
-                - - 'powershell.exe -Command c:\s3-downloads\scripts\check_service_adws.ps1'
-            5-install-rdp-user:
+            3-install-rdp-user:
               command: !Join
                 - ''
                 - - 'powershell.exe -Command c:\s3-downloads\scripts\rdp_user.ps1 -SafeModeAdministratorPassword '
@@ -186,6 +174,18 @@ Resources:
                   - Ref: TechDayAdminUser
                   - " -SSMUserName "
                   - Ref: SSMUserName
+            4-install-ADDS:
+              command: !Join
+              - ''
+              - - 'powershell.exe -Command c:\s3-downloads\scripts\adds_install.ps1 -SafeModeAdministratorPassword '
+                - Ref: SafeModeAdministratorPassword
+                - " -DomainDNSName "
+                - Ref: DomainDNSName
+              waitAfterCompletion: forever
+            5-check-adws-service:
+              command: !Join
+                - ''
+                - - 'powershell.exe -Command c:\s3-downloads\scripts\check_service_adws.ps1'
             6-configure-user:
               command: !Join 
               - ''
