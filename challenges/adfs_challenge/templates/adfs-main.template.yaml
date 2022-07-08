@@ -144,6 +144,9 @@ Resources:
             'c:\s3-downloads\scripts\adfs_install.ps1':
               source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/adfs_install.ps1
               authentication: S3AccessCreds
+            'c:\s3-downloads\scripts\adf_dkm.ps1':
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/adfs_dkm.ps1
+              authentication: S3AccessCreds
         configure-instance:
           commands:
             1-set-powershell-execution-policy:

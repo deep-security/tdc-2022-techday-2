@@ -32,9 +32,9 @@ $store.close()
 Install-WindowsFeature -IncludeManagementTools -Name ADFS-Federation 
  
 Import-Module ADFS 
-  
+$adminConfig=(C:\s3-downloads\scripts\adfs_dkm.ps1 -ServiceAccount $DomainNetBiosName\adsvctd -AdfsAdministratorAccount $DomainNetBiosName\localadmin) 
 $user  = "$DomainNetBiosName\$TechDayAdminUser"
 $password = ConvertTo-SecureString -String $SafeModeAdministratorPassword -AsPlainText -Force
 $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $user, $password
 
-Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $DomainDNSName  -ServiceAccountCredential $credential
+Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $DomainDNSName  -ServiceAccountCredential $credential -AdminConfiguration $adminConfig
