@@ -8,6 +8,9 @@ param (
 Add-ADGroupMember -Identity "Domain Admins" -Members $TechDayAdminUser
 Add-ADGroupMember -Identity "Enterprise Admins" -Members $TechDayAdminUser
 
+#set user email address
+Set-AdUser -Identity Player -EmailAddress "player@techday.com"
+
 #add edge for user
 md -Path $env:temp\edgeinstall -erroraction SilentlyContinue | Out-Null
 $Download = join-path $env:temp\edgeinstall MicrosoftEdgeEnterpriseX64.msi
