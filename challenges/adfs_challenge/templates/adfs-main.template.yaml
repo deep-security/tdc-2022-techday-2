@@ -191,6 +191,8 @@ Resources:
               - ''
               - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser '
                 - Ref: TechDayAdminUser 
+                - " -DomainDNSName "
+                - Ref: DomainDNSName
 
     Properties:
       Tags:

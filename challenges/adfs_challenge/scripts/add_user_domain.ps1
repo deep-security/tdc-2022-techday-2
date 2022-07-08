@@ -1,7 +1,10 @@
 [CmdletBinding()]
 param (
     [Parameter(Mandatory=$true)]
-    [string]$TechDayAdminUser
+    [string]$TechDayAdminUser,
+
+    [Parameter(Mandatory=$true)]
+    [string]$DomainDNSName
 )
 
 #add user to domain admins
@@ -9,7 +12,7 @@ Add-ADGroupMember -Identity "Domain Admins" -Members $TechDayAdminUser
 Add-ADGroupMember -Identity "Enterprise Admins" -Members $TechDayAdminUser
 
 #set user email address
-Set-AdUser -Identity Player -EmailAddress "player@techday.com"
+Set-AdUser -Identity $TechDayAdminUser -EmailAddress $TechDayAdminUser@$DomainDNSName
 
 #add edge for user
 md -Path $env:temp\edgeinstall -erroraction SilentlyContinue | Out-Null
