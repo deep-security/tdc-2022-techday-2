@@ -4,7 +4,10 @@ param (
     [string]$TechDayAdminUser,
 
     [Parameter(Mandatory=$true)]
-    [string]$DomainDNSName
+    [string]$DomainDNSName,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SSMUserName
 )
 
 sleep 60
@@ -29,9 +32,17 @@ while ($arrService.Status -ne 'Running')
 
 sleep 10
 
-#add user to domain admins
+#add player user to domain admins
 Add-ADGroupMember -Identity "Domain Admins" -Members $TechDayAdminUser
 Add-ADGroupMember -Identity "Enterprise Admins" -Members $TechDayAdminUser
+
+#create ssm-user
+$ssmuser = New-LocalUser -AccountNeverExpires:$true -Password ( ConvertTo-SecureString -AsPlainText -Force $SafeModeAdministratorPassword) -Name $SSMUserName -FullName $SSMUserName -Description "ssm-user"
+ Add-LocalGroupMember -Group administrators -Member $ssmuser
+
+#add ssm-user to domain admins
+Add-ADGroupMember -Identity "Domain Admins" -Members $SSMUserName
+Add-ADGroupMember -Identity "Enterprise Admins" -Members $SSMUserName
 
 #set user email address
 $email = "$TechDayAdminUser@"
