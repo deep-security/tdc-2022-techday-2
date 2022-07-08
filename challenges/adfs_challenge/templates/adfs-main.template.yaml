@@ -172,8 +172,6 @@ Resources:
                   - Ref: SafeModeAdministratorPassword
                   - " -TechDayAdminUser "
                   - Ref: TechDayAdminUser
-                  - " -SSMUserName "
-                  - Ref: SSMUserName
             4-install-ADDS:
               command: !Join
               - ''
