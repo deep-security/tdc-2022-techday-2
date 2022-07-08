@@ -1,0 +1,25 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Shared common IAM Role for Lambda functions that only require AWSLambdaBasicExecutionRole
+
+Resources:
+  DefaultLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal: {Service: [lambda.amazonaws.com]}
+          Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  DefaultLambdaExecutionRoleSsm:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "DefaultLambdaExecutionRole"
+      Value: !GetAtt DefaultLambdaExecutionRole.Arn
+      Type: String
+
+  # Use it like this: '{{resolve:ssm:DefaultLambdaExecutionRole:1}}'

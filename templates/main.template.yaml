@@ -375,6 +375,11 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/
       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/main.template.yaml'
 
+  CommonLambdaIamRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/shared_iam.yaml'
+
 Outputs:
   PrivateSubnet2AID:
     Value: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
