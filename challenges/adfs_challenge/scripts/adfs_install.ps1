@@ -41,3 +41,7 @@ Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $
 
 #enable idp signon page
 Set-AdfsProperties -EnableIdpInitiatedSignonPage $true
+
+#reboot after ADFS install
+Start-Sleep -Seconds 10
+Restart-Computer -Force
