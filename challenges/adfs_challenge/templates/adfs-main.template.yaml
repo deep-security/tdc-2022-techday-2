@@ -174,12 +174,7 @@ Resources:
                 - " -DomainDNSName "
                 - Ref: DomainDNSName
               waitAfterCompletion: forever
-            5-configure-user:
-              command: !Join 
-              - ''
-              - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser '
-                - Ref: TechDayAdminUser 
-            6-install-ADFS:
+            5-install-ADFS:
               command: !Join 
               - ''
               - - 'powershell.exe -Command c:\s3-downloads\scripts\adfs_install.ps1 -SafeModeAdministratorPassword '
@@ -191,6 +186,11 @@ Resources:
                 - " -DomainDNSName "
                 - Ref: DomainDNSName
               waitAfterCompletion: forever
+            6-configure-user:
+              command: !Join 
+              - ''
+              - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser '
+                - Ref: TechDayAdminUser 
 
     Properties:
       Tags:
