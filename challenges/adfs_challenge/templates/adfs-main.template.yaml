@@ -56,6 +56,10 @@ Parameters:
     Type: String
     Description: SafeModeAdministrator
     Default: TechDay2022!
+  SSMUserName:
+    Type: String
+    Description: SSM User for Windows Domain
+    Default: ssm-user
 Resources:
   Profile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -74,6 +78,8 @@ Resources:
         - ''
         - - 'role-s3-read-'
           - !Ref QSS3BucketName
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
         - PolicyDocument:
             Version: 2012-10-17
@@ -185,6 +191,8 @@ Resources:
                 - Ref: TechDayAdminUser
                 - " -DomainDNSName "
                 - Ref: DomainDNSName
+                - " -SSMUserName "
+                - Ref: SSMUserName
               waitAfterCompletion: forever
             # 6-configure-user:
             #   command: !Join 

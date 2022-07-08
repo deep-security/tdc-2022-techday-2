@@ -10,7 +10,10 @@ param (
     [string]$TechDayAdminUser,
 
     [Parameter(Mandatory=$true)]
-    [string]$DomainDNSName
+    [string]$DomainDNSName,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SSMUserName
 
 )
 #create cert for ADFS
@@ -43,7 +46,7 @@ Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $
 Set-AdfsProperties -EnableIdpInitiatedSignonPage $true
 
 #Run add_user_domain before reboot
-C:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser $TechDayAdminUser -DomainDNSName $DomainDNSName
+C:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser $TechDayAdminUser -DomainDNSName $DomainDNSName -SSMUserName $SSMUserName
 
 #reboot after ADFS install
 Start-Sleep -Seconds 10
