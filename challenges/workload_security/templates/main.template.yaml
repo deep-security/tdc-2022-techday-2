@@ -144,6 +144,8 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_EppOfflineScan.yaml
+      Parameters:
+        C1WSEppOfflineCheckScoreRole: !Ref SharedIAMRole
 
 Outputs:
   SNSTopicARN:

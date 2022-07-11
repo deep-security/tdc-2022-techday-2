@@ -1,38 +1,43 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Resources:
+Parameters:
   C1WSEppOfflineCheckScoreRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: "2012-10-17"
-      ManagedPolicyArns:
-        - Fn::Join:
-            - ""
-            - - "arn:"
-              - Ref: AWS::Partition
-              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Path: /
-      Policies: 
-        - PolicyName: C1WSEppOfflineCheckScorePolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action: 
-                  - ssm:DescribeParameters
-                  - ssm:GetParameter
-                  - ssm:GetParameters
-                  - ssm:GetParameterHistory
-                  - ssm:GetParametersByPath
-                Resource: 
-                - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1ApiKey
-                - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1Region
+    Type: String
+    Description: Shared IAM Role Arn
+
+Resources:
+  # C1WSEppOfflineCheckScoreRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Action: sts:AssumeRole
+  #           Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #       Version: "2012-10-17"
+  #     ManagedPolicyArns:
+  #       - Fn::Join:
+  #           - ""
+  #           - - "arn:"
+  #             - Ref: AWS::Partition
+  #             - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  #     Path: /
+  #     Policies: 
+  #       - PolicyName: C1WSEppOfflineCheckScorePolicy
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: "Allow"
+  #               Action: 
+  #                 - ssm:DescribeParameters
+  #                 - ssm:GetParameter
+  #                 - ssm:GetParameters
+  #                 - ssm:GetParameterHistory
+  #                 - ssm:GetParametersByPath
+  #               Resource: 
+  #               - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1ApiKey
+  #               - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1Region
                 
   C1WSEppOfflineCheckScoreLambda:
     Type: AWS::Lambda::Function
@@ -66,11 +71,11 @@ Resources:
               raise Exception("You haven't finished it...")
               return False
       Handler: index.lambda_handler
-      Role: !GetAtt C1WSEppOfflineCheckScoreRole.Arn
+      Role: !Ref C1WSEppOfflineCheckScoreRole
       Runtime: python3.7
       MemorySize: 512
-    DependsOn:
-      - C1WSEppOfflineCheckScoreRole
+    # DependsOn:
+    #   - C1WSEppOfflineCheckScoreRole
 Outputs:
   C1WSEppOfflineCheckScoreLambdaName:
     Value: !Ref C1WSEppOfflineCheckScoreLambda
