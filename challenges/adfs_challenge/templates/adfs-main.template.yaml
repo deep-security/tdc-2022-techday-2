@@ -60,6 +60,13 @@ Parameters:
     Type: String
     Description: SSM User for Windows Domain
     Default: ssm-user
+  ADFSScoreLambdaRole:
+    Type: String
+    Description: Shared IAM Role
+  ADFSScoreLambdaRoleArn:
+    Type: String
+    Description: Shared Iam Role Arn
+
 Resources:
   Profile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -247,6 +254,8 @@ Resources:
   ScoreLambdaDAY1Task1:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+        ScoreRoleADFSTask1: !Ref ADFSScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/verify_saml_entity.yaml
 
 Outputs:
