@@ -105,7 +105,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        scoreroleday1task1C1CS: !Ref: ContainerSecurityScoreLambdaRoleArn
+        scoreroleday1task1C1CS: !Ref ContainerSecurityScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task1.yaml
 
 
@@ -119,7 +119,7 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        scoreroleday1task3C1CS: !Ref: ContainerSecurityScoreLambdaRoleArn
+        scoreroleday1task3C1CS: !Ref ContainerSecurityScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task3.yaml
 
 
@@ -137,13 +137,13 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        scoreroleday1task4C1CS: !Ref: ContainerSecurityScoreLambdaRoleArn
+        scoreroleday1task4C1CS: !Ref ContainerSecurityScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task4.yaml
     DependsOn: ContainerSecurityScoreLambdaRoleSsm
   ScoreLambdaDAY1Task2:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        C1CSScoreLambdarday1task2: !Ref: ContainerSecurityScoreLambdaRoleArn
+        C1CSScoreLambdarday1task2: !Ref ContainerSecurityScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task2.yaml
     DependsOn: ContainerSecurityScoreLambdaRoleSsm
