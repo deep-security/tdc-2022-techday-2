@@ -112,7 +112,7 @@ Resources:
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/templates/adfs-main.template.yaml'
       DependsOn:
         - VPCStack
-        - Passwords
+        - PlayerStack
 
   c1csStack:
       Type: AWS::CloudFormation::Stack
@@ -141,7 +141,7 @@ Resources:
         awsAccountID: !Ref "AWS::AccountId"
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_deploy_attack_container.template.yaml'
     DependsOn:
-      - EKSStack
+      - EKSStack #Required for build
 
 # Moved to c1-post-onboarding
   # c1wsAVCStack:
@@ -169,9 +169,8 @@ Resources:
           SNSTopicArn: !GetAtt WorkloadSecurityStack.Outputs.SNSTopicARN
         TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/log4shell/templates/c1ws_log4shell_main.template.yaml'
       DependsOn: 
-        - PlayerStack
-        - ServiceCatalogPortfolioStack
-        - OnboardingStack #Added for throttling IAM role creation
+        - VPCStack
+        - WorkloadSecurityStack 
         
   FSSStack:
     Type: AWS::CloudFormation::Stack
@@ -184,7 +183,10 @@ Resources:
         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
         PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
-
+    DependsOn:
+      - ServiceCatalogPortfolioStack
+      - Passwords
+      - PlayerStack
 
   c1nsStack:
     Type: AWS::CloudFormation::Stack
@@ -203,6 +205,8 @@ Resources:
               - AZs
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         IGWID: !GetAtt VPCStack.Outputs.IGWID
+    DependsOn:
+        - VPCStack
 
   FSSAttackerEnv:
     Type: AWS::CloudFormation::Stack
@@ -214,7 +218,8 @@ Resources:
           PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
     DependsOn:
-      - EKSStack
+      - EKSStack #Required for build
+      - Passwords
 
 
   VOTKStack:
@@ -245,7 +250,6 @@ Resources:
         PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/main.template.yaml'
     DependsOn: 
-      - ServiceCatalogPortfolioStack
       - VPCStack
 
   # ☠️ DON'T TOUCH - Or Webster might have a talk with you... or worse, Amanda! ☠️
@@ -362,6 +366,8 @@ Resources:
       Parameters:
         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/player.template.yaml'
+    DependsOn: 
+      - Passwords
 
   KeyPairStack:
     Type: AWS::CloudFormation::Stack
