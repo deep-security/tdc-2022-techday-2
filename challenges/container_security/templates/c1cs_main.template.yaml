@@ -144,6 +144,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
-        C1CSScoreLambdarday1task2: !Ref ContainerSecurityScoreLambdaRoleArn
+        scoreroleday1task2C1CS: !Ref ContainerSecurityScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task2.yaml
     DependsOn: ContainerSecurityScoreLambdaRoleSsm
