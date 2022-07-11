@@ -57,21 +57,21 @@ Resources:
               }
               http = urllib3.PoolManager()
               samlEvalResponse = http.request("GET", urlSaml, headers=headers)
-              data = json.loads(samlEvalResponse.data.decode(utf-8))
+              data = json.loads(samlEvalResponse.data.decode("utf-8"))
               for i in data["identityproviders"]:
                   print(i["entityID"])
                   if i['entityID'] == 'http://'+ADFSDOMAIN+'/adfs/services/trust':
                     playerComplete = "yes"
                   else:
                     playerComplete = "no"
-                      message = "Not yet completed"
-                      print(message)
-                      raise Exception(message)
-                      break
+                    message = "Not yet completed"
+                    print(message)
+                    raise Exception(message)
+                    break
                   if playerComplete == "yes":
-                      message = "Task completed"
-                      print(message)
-                      return (True)
+                    message = "Task completed"
+                    print(message)
+                    return (True)
                   else:
                     message = "Not yet completed"
                     print(message)
