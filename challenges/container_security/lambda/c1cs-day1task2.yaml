@@ -1,7 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 
 Parameters:
-  C1CSScoreLambdarday1task2:
+  scoreroleday1task2C1CS:
     Type: String
     Description: Shared lambda arn
 
@@ -98,7 +98,7 @@ Resources:
 
       Handler: index.lambda_handler
       Role:
-        Ref: C1CSScoreLambdarday1task2
+        Ref: scoreroleday1task2C1CS
       Runtime: python3.8
       Timeout: 60
     # DependsOn:
