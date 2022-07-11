@@ -42,6 +42,7 @@ Resources:
           import urllib3
           import sys
           import boto3
+          import os
           from urllib.parse import urlparse
           client = boto3.client('ssm')
           ADFSDOMAIN = os.environ['ADFSDOMAIN']
