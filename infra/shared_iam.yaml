@@ -20,7 +20,12 @@ Resources:
             Version: "2012-10-17"
             Statement:
               - Effect: "Allow"
-                Action: "ssm:GetParameter"
+                Action:
+                  - ssm:DescribeParameters
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParameterHistory
+                  - ssm:GetParametersByPath
                 Resource: 
                   - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
                   - arn:aws:ssm:*:*:parameter/player/C1/c1Region
