@@ -23,6 +23,9 @@ Parameters:
     Type: AWS::EC2::VPC::Id
   PublicSubnet1ID:
     Type: AWS::EC2::Subnet::Id
+  SharedIAMRole:
+    Type: String
+    Description: Shared IAM Role Arn
     
 Mappings:
   #Amazon Linux 2 x86_64 
@@ -96,6 +99,7 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}templates/
         VPCID: !Ref VPCID
         PublicSubnet1ID: !Ref PublicSubnet1ID
+        AttackerRole: !Ref SharedIAMRole
         AMIID:
           !FindInMap
           - AMZN
