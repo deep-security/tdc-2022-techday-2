@@ -236,9 +236,9 @@ Resources:
         VOTKInstanceRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
         VOTKInstanceRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml'
-      DependsOn: 
-        - VPCStack
-        - CommonLambdaIamRole
+    DependsOn: 
+      - VPCStack
+      - CommonLambdaIamRole
   
 #  V1SOStack:
 #    Type: AWS::CloudFormation::Stack
