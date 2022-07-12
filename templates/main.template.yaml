@@ -214,7 +214,7 @@ Resources:
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         IGWID: !GetAtt VPCStack.Outputs.IGWID
     DependsOn:
-        - VPCStack #inherient
+        - VPCStack #inherent
         - FSSStack #added for throttling
         - CommonLambdaIamRole #already depended by FSSStack
         - VOTKStack #already depended by FSSStack
