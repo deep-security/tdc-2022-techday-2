@@ -48,9 +48,6 @@ Parameters:
   VOTKInstanceRole:
     Type: String
     Description: Shared IAM Role
-  VOTKInstanceRoleARN:
-    Type: String
-    Description: Shared IAM Role ARN
 
 Resources:
   # VOTKInstanceRole:

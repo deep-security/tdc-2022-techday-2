@@ -9,7 +9,12 @@ Resources:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
-          Principal: {Service: [lambda.amazonaws.com]}
+          Principal: {
+            "Service": [
+              "lambda.amazonaws.com",
+              "ec2.amazonaws.com"
+            ]
+            }
           Action: ['sts:AssumeRole']
       Path: /
       ManagedPolicyArns:
