@@ -169,6 +169,7 @@ Resources:
           PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
           SNSTopicArn: !GetAtt WorkloadSecurityStack.Outputs.SNSTopicARN
           scoreroleC1WS: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
+          VictimLog4ShellRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
         TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/log4shell/templates/c1ws_log4shell_main.template.yaml'
       DependsOn: 
         - VPCStack

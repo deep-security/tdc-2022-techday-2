@@ -31,6 +31,9 @@ Parameters:
   scoreroleC1WS:
     Type: String
     Description: Shared Lambda Role Arn
+  VictimLog4ShellRole:
+    Type: String
+    Description: Shared IAM Role
 
 Resources:
   verificationBucket:
@@ -135,6 +138,7 @@ Resources:
         AllowIP: 0.0.0.0/0
         VPC: !Ref VPCID
         PublicSubnet1: !Ref PublicSubnet1ID
+        VictimLog4ShellRole: !Ref VictimLog4ShellRole
 
   ScoreLambdaTask1:
     Type: AWS::CloudFormation::Stack
