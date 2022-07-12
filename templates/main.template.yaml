@@ -132,6 +132,7 @@ Resources:
         - ServiceCatalogPortfolioStack
         - CommonLambdaIamRole
         - OnboardingStack #Added for throttling IAM role creation
+
   deployC1csAttacks:
     Type: AWS::CloudFormation::Stack
     Condition: BuildEks
@@ -175,7 +176,7 @@ Resources:
         - VPCStack
         - WorkloadSecurityStack
         - CommonLambdaIamRole
-        
+
   FSSStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -239,7 +240,7 @@ Resources:
     DependsOn: 
       - VPCStack
       - CommonLambdaIamRole
-  
+
 #  V1SOStack:
 #    Type: AWS::CloudFormation::Stack
 #    Properties:
@@ -247,7 +248,7 @@ Resources:
 #        QSS3BucketName: !Ref QSS3BucketName
 #        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/vision_one/"
 #      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/main.template.yaml' 
-      
+
   WorkloadSecurityStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -441,12 +442,14 @@ Outputs:
   C1WSLog4ShellSite:
     Value: !GetAtt c1wsLog4ShellStack.Outputs.Log4ShellSite
     Description: Tomcat Web App with Log4Shell Vulnerability.
-  
+
   ADFSEndpointDNS:
     Value: !GetAtt adfsStack.Outputs.PublicDNS
+
   ADFSUsername:
     Description: ADFS Username
     Value: !GetAtt adfsStack.Outputs.ADFSUsername
+
   ADFSPassword:
     Description: ADFS Password
     Value: !GetAtt adfsStack.Outputs.ADFSPassword
@@ -466,15 +469,19 @@ Outputs:
   FSSAttackerMachineAccessUrl:
     Value: !If [ BuildEks, !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname, "" ]
     Description: "Alb hostname for the FSS attack container."
+
   FSSWebsite:
     Value: !GetAtt FSSStack.Outputs.FSSWebsite
     Description: URL of SudoSingles, the vulnerable application to protect
+
   FSSBucketToProtect:
     Value: !GetAtt FSSStack.Outputs.FSSBucketToProtect
     Description: The bucket to protect with FSS
+
   FSSLambdaToProtect:
     Value: !GetAtt FSSStack.Outputs.FSSLambdaToProtect
     Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
+
   FSSPayloadDropperUrl:
     Value: !GetAtt FSSStack.Outputs.FSSPayloadDropperUrl
     Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.
