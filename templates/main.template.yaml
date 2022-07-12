@@ -256,7 +256,8 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/workload_security/
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
-        SharedIAMRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
+        SharedIamRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
+        SharedIamRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/main.template.yaml'
     DependsOn: 
       - VPCStack

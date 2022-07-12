@@ -9,21 +9,24 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
   AMIID:
     Type: String
+  DSAkeysRole:
+    Type: String
+    Description: Shared IAM Role
 
 Resources:
-  DSAkeysRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  # DSAkeysRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #       - Effect: Allow
+  #         Principal:
+  #           Service:
+  #           - ec2.amazonaws.com
+  #         Action:
+  #         - sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   DSAkeysProfile:
     Type: AWS::IAM::InstanceProfile

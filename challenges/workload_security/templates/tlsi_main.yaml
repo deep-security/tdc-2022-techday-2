@@ -25,7 +25,10 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
   AMIID:
     Type: String
-  AttackerRole:
+  AttackerRoleArn:
+    Type: String
+    Description: Shared IAM Role Arn
+  DSAkeysRole:
     Type: String
     Description: Shared IAM Role
     
@@ -42,6 +45,7 @@ Resources:
         PublicSubnet1: !Ref PublicSubnet1ID
         AllowIP: 0.0.0.0/0
         AMIID: !Ref AMIID
+        DSAkeysRole: !Ref DSAkeysRole
 
   attackerLambda:
     Type: AWS::CloudFormation::Stack
@@ -49,4 +53,4 @@ Resources:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tlsi_attacker.yaml
       Parameters:
         targetURL: !GetAtt Agent.Outputs.PublicDNS
-        AttackerRole: !Ref AttackerRole
+        AttackerRole: !Ref AttackerRoleArn
