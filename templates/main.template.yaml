@@ -112,9 +112,9 @@ Resources:
           #SafeModeAdministratorPassword: !GetAtt Passwords.Outputs.PlayerPassword
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/templates/adfs-main.template.yaml'
       DependsOn:
-        - VPCStack
-        - PlayerStack
-        - CommonLambdaIamRole
+        - VPCStack #inherent
+        - PlayerStack #inherent
+        - CommonLambdaIamRole #inherent
 
   c1csStack:
       Type: AWS::CloudFormation::Stack
@@ -128,10 +128,9 @@ Resources:
           ContainerSecurityScoreLambdaRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_main.template.yaml'
       DependsOn: 
-        - PlayerStack
-        - ServiceCatalogPortfolioStack
-        - CommonLambdaIamRole
-        - OnboardingStack #Added for throttling IAM role creation
+        - PlayerStack #inherent
+        - ServiceCatalogPortfolioStack #inherent
+        - CommonLambdaIamRole #inherent
 
   deployC1csAttacks:
     Type: AWS::CloudFormation::Stack
@@ -173,9 +172,9 @@ Resources:
           VictimLog4ShellRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
         TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/log4shell/templates/c1ws_log4shell_main.template.yaml'
       DependsOn: 
-        - VPCStack
-        - WorkloadSecurityStack
-        - CommonLambdaIamRole
+        - VPCStack #inherent
+        - WorkloadSecurityStack #inherent
+        - CommonLambdaIamRole #inherent
 
   FSSStack:
     Type: AWS::CloudFormation::Stack
@@ -189,9 +188,13 @@ Resources:
         PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
     DependsOn:
-      - ServiceCatalogPortfolioStack
-      - Passwords
-      - PlayerStack
+      - ServiceCatalogPortfolioStack #inherent
+      - Passwords #inherent
+      - PlayerStack #inherent
+      - c1wsLog4ShellStack # added for throttling
+      - VPCStack # already depended by c1wsLog4ShellStack
+      - WorkloadSecurityStack # already depended by c1wsLog4ShellStack
+      - CommonLambdaIamRole # already depended by c1wsLog4ShellStack
 
   c1nsStack:
     Type: AWS::CloudFormation::Stack
@@ -211,7 +214,15 @@ Resources:
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         IGWID: !GetAtt VPCStack.Outputs.IGWID
     DependsOn:
-        - VPCStack
+        - VPCStack #inherient
+        - FSSStack #added for throttling
+        - CommonLambdaIamRole #already depended by FSSStack
+        - VOTKStack #already depended by FSSStack
+        - ServiceCatalogPortfolioStack #already depended by FSSStack
+        - Passwords #already depended by FSSStack
+        - PlayerStack #already depended by FSSStack
+        - c1wsLog4ShellStack #already depended by FSSStack
+        - WorkloadSecurityStack #already depended by FSSStack
 
   FSSAttackerEnv:
     Type: AWS::CloudFormation::Stack
@@ -224,7 +235,7 @@ Resources:
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
     DependsOn:
       - EKSStack #Required for build
-      - Passwords
+      - Passwords # Inherent
 
 
   VOTKStack:
@@ -238,8 +249,8 @@ Resources:
         VOTKInstanceRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml'
     DependsOn: 
-      - VPCStack
-      - CommonLambdaIamRole
+      - VPCStack #inherent
+      - CommonLambdaIamRole #inherent
 
 #  V1SOStack:
 #    Type: AWS::CloudFormation::Stack
@@ -261,8 +272,9 @@ Resources:
         SharedIamRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/main.template.yaml'
     DependsOn: 
-      - VPCStack
-      - CommonLambdaIamRole
+      - VPCStack #inherent
+      - CommonLambdaIamRole #inherent
+      - VOTKStack #Added for throttling
 
   # ☠️ DON'T TOUCH - Or Webster might have a talk with you... or worse, Amanda! ☠️
   QSS3BucketNameSsm:
@@ -355,8 +367,8 @@ Resources:
         EKSPublicAccessEndpoint: "Enabled"
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/eks/templates/amazon-eks-entrypoint-existing-vpc.template.yaml'
     DependsOn: 
-      - VPCStack
-      - KeyPairStack
+      - VPCStack #inherent
+      - KeyPairStack #inherent
 
   LockoutInfraStack:
     Type: AWS::CloudFormation::Stack
@@ -371,6 +383,7 @@ Resources:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/service_catalog_portfolio.template.yaml'
       Parameters:
         GroupAssociationPrincipalArn: !GetAtt PlayerStack.Outputs.PlayerGroupArn
+    DependsOn: PlayerStack #inherent
 
   PlayerStack:
     Type: AWS::CloudFormation::Stack
@@ -379,7 +392,7 @@ Resources:
         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/player.template.yaml'
     DependsOn: 
-      - Passwords
+      - Passwords #inherent
 
   KeyPairStack:
     Type: AWS::CloudFormation::Stack
@@ -395,7 +408,7 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/
       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/main.template.yaml'
-    DependsOn: ServiceCatalogPortfolioStack 
+    DependsOn: ServiceCatalogPortfolioStack #inherent
 
   CommonLambdaIamRole:
     Type: AWS::CloudFormation::Stack
