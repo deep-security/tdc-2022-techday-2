@@ -123,12 +123,14 @@ Resources:
           QSS3BucketName: !Ref QSS3BucketName
           QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/container_security/'
           GroupAssociationPrincipalArn: !GetAtt PlayerStack.Outputs.PlayerGroupArn
+          ContainerSecurityScoreLambdaRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIAMRole
+          ContainerSecurityScoreLambdaRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_main.template.yaml'
       DependsOn: 
         - PlayerStack
         - ServiceCatalogPortfolioStack
-        #- OnboardingStack #Added for throttling IAM role creation
-
+        - CommonLambdaIamRole
+        - OnboardingStack #Added for throttling IAM role creation
   deployC1csAttacks:
     Type: AWS::CloudFormation::Stack
     Condition: BuildEks
@@ -381,6 +383,11 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/
       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/main.template.yaml'
+
+  CommonLambdaIamRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/shared_iam.yaml'
 
 Outputs:
   PrivateSubnet2AID:
