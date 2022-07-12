@@ -108,7 +108,6 @@ Resources:
           VPCID: !GetAtt VPCStack.Outputs.VPCID
           PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
           TechDayAdminUser: !GetAtt PlayerStack.Outputs.PlayerUserName
-          ADFSScoreLambdaRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIAMRole
           ADFSScoreLambdaRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
           #SafeModeAdministratorPassword: !GetAtt Passwords.Outputs.PlayerPassword
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/templates/adfs-main.template.yaml'
@@ -126,7 +125,6 @@ Resources:
           QSS3BucketName: !Ref QSS3BucketName
           QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/container_security/'
           GroupAssociationPrincipalArn: !GetAtt PlayerStack.Outputs.PlayerGroupArn
-          ContainerSecurityScoreLambdaRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIAMRole
           ContainerSecurityScoreLambdaRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_main.template.yaml'
       DependsOn: 

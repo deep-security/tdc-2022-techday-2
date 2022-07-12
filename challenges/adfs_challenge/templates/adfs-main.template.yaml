@@ -60,9 +60,6 @@ Parameters:
     Type: String
     Description: SSM User for Windows Domain
     Default: ssm-user
-  ADFSScoreLambdaRole:
-    Type: String
-    Description: Shared IAM Role
   ADFSScoreLambdaRoleArn:
     Type: String
     Description: Shared Iam Role Arn
