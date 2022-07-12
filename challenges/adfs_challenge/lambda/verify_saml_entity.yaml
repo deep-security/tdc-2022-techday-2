@@ -5,29 +5,32 @@ Parameters:
     Description: ADFS Domain
     Type: String
     Default: techday.com
+  ScoreRoleADFSTask1:
+    Description: Shared IAM Role Arn
+    Type: String
 
 Resources:
-  ScoreRoleADFSTask1:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: "2012-10-17"
-      Policies: 
-        - PolicyName: ScoreRoleADFSTask1
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action: "ssm:GetParameter"
-                Resource: 
-                  - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  # ScoreRoleADFSTask1:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Action: sts:AssumeRole
+  #           Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #       Version: "2012-10-17"
+  #     Policies: 
+  #       - PolicyName: ScoreRoleADFSTask1
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: "Allow"
+  #               Action: "ssm:GetParameter"
+  #               Resource: 
+  #                 - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   ADFSScoreLambdaTask1:
     Type: AWS::Lambda::Function
@@ -78,9 +81,7 @@ Resources:
                     raise Exception(message)
       Handler: index.lambda_handler
       Role:
-        Fn::GetAtt:
-          - ScoreRoleADFSTask1
-          - Arn
+        Ref: ScoreRoleADFSTask1
       Runtime: python3.8
       Timeout: 60
 

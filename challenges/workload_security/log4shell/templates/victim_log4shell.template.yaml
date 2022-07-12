@@ -30,6 +30,9 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
   AllowIP:
     Type: String
+  VictimLog4ShellRole:
+    Type: String
+    Description: Shared IAM Role
 
 Resources:
   VictimSecurityGroup:
@@ -49,20 +52,20 @@ Resources:
       ToPort: 8080
       CidrIp: !Ref AllowIP
 
-  VictimLog4ShellRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-      Path: /
+  # VictimLog4ShellRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #       - Effect: Allow
+  #         Principal:
+  #           Service:
+  #           - ec2.amazonaws.com
+  #         Action:
+  #         - sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  #     Path: /
 
   VictimLog4ShellProfile:
     Type: AWS::IAM::InstanceProfile

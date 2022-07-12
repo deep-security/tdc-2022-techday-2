@@ -108,11 +108,13 @@ Resources:
           VPCID: !GetAtt VPCStack.Outputs.VPCID
           PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
           TechDayAdminUser: !GetAtt PlayerStack.Outputs.PlayerUserName
+          ADFSScoreLambdaRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
           #SafeModeAdministratorPassword: !GetAtt Passwords.Outputs.PlayerPassword
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/templates/adfs-main.template.yaml'
       DependsOn:
         - VPCStack
         - PlayerStack
+        - CommonLambdaIamRole
 
   c1csStack:
       Type: AWS::CloudFormation::Stack
@@ -123,7 +125,6 @@ Resources:
           QSS3BucketName: !Ref QSS3BucketName
           QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/container_security/'
           GroupAssociationPrincipalArn: !GetAtt PlayerStack.Outputs.PlayerGroupArn
-          ContainerSecurityScoreLambdaRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIAMRole
           ContainerSecurityScoreLambdaRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_main.template.yaml'
       DependsOn: 
@@ -167,10 +168,13 @@ Resources:
           VPCID: !GetAtt VPCStack.Outputs.VPCID
           PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
           SNSTopicArn: !GetAtt WorkloadSecurityStack.Outputs.SNSTopicARN
+          scoreroleC1WS: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
+          VictimLog4ShellRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
         TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/log4shell/templates/c1ws_log4shell_main.template.yaml'
       DependsOn: 
         - VPCStack
-        - WorkloadSecurityStack 
+        - WorkloadSecurityStack
+        - CommonLambdaIamRole
         
   FSSStack:
     Type: AWS::CloudFormation::Stack
@@ -230,7 +234,11 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/vision_one_votk/
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         PublicSubnetId: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+        VOTKInstanceRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml'
+    DependsOn: 
+      - VPCStack
+      - CommonLambdaIamRole
   
 #  V1SOStack:
 #    Type: AWS::CloudFormation::Stack
@@ -248,9 +256,12 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/workload_security/
         VPCID: !GetAtt VPCStack.Outputs.VPCID
         PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+        SharedIamRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
+        SharedIamRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/main.template.yaml'
     DependsOn: 
       - VPCStack
+      - CommonLambdaIamRole
 
   # ☠️ DON'T TOUCH - Or Webster might have a talk with you... or worse, Amanda! ☠️
   QSS3BucketNameSsm:

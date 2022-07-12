@@ -28,6 +28,12 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
   SNSTopicArn:
     Type: String
+  scoreroleC1WS:
+    Type: String
+    Description: Shared Lambda Role Arn
+  VictimLog4ShellRole:
+    Type: String
+    Description: Shared IAM Role
 
 Resources:
   verificationBucket:
@@ -35,37 +41,37 @@ Resources:
     Properties: 
       AccessControl: Private
 
-  scoreroleC1WS:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: "2012-10-17"
-      ManagedPolicyArns:
-        - Fn::Join:
-            - ""
-            - - "arn:"
-              - Ref: AWS::Partition
-              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
-      Policies:
-        - PolicyName: C1WSLog4ShellScore
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action:
-                  - ssm:DescribeParameters
-                  - ssm:GetParameter
-                  - ssm:GetParameters
-                  - ssm:GetParameterHistory
-                  - ssm:GetParametersByPath
-                Resource:
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1ApiKey
-                  - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1Region
+  # scoreroleC1WS:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Action: sts:AssumeRole
+  #           Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #       Version: "2012-10-17"
+  #     ManagedPolicyArns:
+  #       - Fn::Join:
+  #           - ""
+  #           - - "arn:"
+  #             - Ref: AWS::Partition
+  #             - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  #     Policies:
+  #       - PolicyName: C1WSLog4ShellScore
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: "Allow"
+  #               Action:
+  #                 - ssm:DescribeParameters
+  #                 - ssm:GetParameter
+  #                 - ssm:GetParameters
+  #                 - ssm:GetParameterHistory
+  #                 - ssm:GetParametersByPath
+  #               Resource:
+  #                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1ApiKey
+  #                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1Region
 
   snslambdaroleC1WS:
     Type: AWS::IAM::Role
@@ -132,6 +138,7 @@ Resources:
         AllowIP: 0.0.0.0/0
         VPC: !Ref VPCID
         PublicSubnet1: !Ref PublicSubnet1ID
+        VictimLog4ShellRole: !Ref VictimLog4ShellRole
 
   ScoreLambdaTask1:
     Type: AWS::CloudFormation::Stack
@@ -141,7 +148,7 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3Key: !Ref QSS3KeyPrefix
         HostName: !GetAtt VictimLog4Shell.Outputs.Log4ShellPublicDNSName
-        ScoreLambdaRole: !GetAtt scoreroleC1WS.Arn
+        ScoreLambdaRole: !Ref scoreroleC1WS
 
   SNSLambdaTask2:
     Type: AWS::CloudFormation::Stack
@@ -193,7 +200,7 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3Key: !Ref QSS3KeyPrefix
         HostName: !GetAtt VictimLog4Shell.Outputs.Log4ShellPublicDNSName
-        ScoreLambdaRole: !GetAtt scoreroleC1WS.Arn
+        ScoreLambdaRole: !Ref scoreroleC1WS
         
 Outputs:
   Log4ShellSite:
