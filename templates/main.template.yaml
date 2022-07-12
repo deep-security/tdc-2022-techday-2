@@ -395,6 +395,7 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/
       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/main.template.yaml'
+    DependsOn: ServiceCatalogPortfolioStack 
 
   CommonLambdaIamRole:
     Type: AWS::CloudFormation::Stack
