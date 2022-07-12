@@ -27,8 +27,6 @@ Parameters:
     Type: String
   ServiceCatalogLaunchRoleArn:
     Type: String
-  ContainerSecurityScoreLambdaRole:
-    Type: String
   ContainerSecurityScoreLambdaRoleArn:
     Type: String
 
