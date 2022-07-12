@@ -45,22 +45,29 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
     Type: String
+  VOTKInstanceRole:
+    Type: String
+    Description: Shared IAM Role
+  VOTKInstanceRoleARN:
+    Type: String
+    Description: Shared IAM Role ARN
 
 Resources:
-  VOTKInstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-      Path: /
+  # VOTKInstanceRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #       - Effect: Allow
+  #         Principal:
+  #           Service:
+  #           - ec2.amazonaws.com
+  #         Action:
+  #         - sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  #     Path: /
+
   VOTKInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
