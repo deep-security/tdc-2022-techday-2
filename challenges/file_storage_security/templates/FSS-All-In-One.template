@@ -125,7 +125,7 @@ Parameters:
   CloudOneRegion:
     Description: The region of the Trend Micro Cloud One services.
     Type: String
-    Default: us-1
+    Default: trend-us-1
   ExternalID:
     Description: "The External ID is for future use with updating Lambdas and also to address and prevent the 'confused deputy' problem."
     Type: String
