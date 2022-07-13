@@ -2,7 +2,7 @@
 
 ## DESCRIPTION
 
-Now that you’ve set up the malicious server, it's time to run the exploit.
+Great! It looks like your malicious server is functioning properly. Not it's time to use it to run the exploit.
 
 To do this, you have to make a request to http://sudosingles-optimizer. But you’re going to include a specially crafted header to call back to your malicious LDAP server and execute a command.
 
