@@ -25,6 +25,15 @@ class PayloadNotBlockedError(Exception):
         super().__init__(self.message)
 
 
+class ApplicationError(Exception):
+    def __init__(
+        self,
+        message="GetImg is not returning properly! This is an infrastructure issue. Call support.",
+    ):
+        self.message = message
+        super().__init__(self.message)
+
+
 def get_payload():
     download_location = "/tmp/pwned.zip"
     with open(download_location, "wb") as control_file:
@@ -38,11 +47,11 @@ def get_payload():
     return "/tmp/connectioncheck"
 
 
-def scan_on_get_response():
+def scan_on_get_response(file):
     try:
-        url = f"{endpoint}/{file_key}"
+        url = f"{endpoint}/getimg/{file}"
         res = urllib.request.urlopen(
-            urllib.request.Request(url=f"{endpoint}/getimg/{file_key}", method="GET"),
+            urllib.request.Request(url=url, method="GET"),
             timeout=5,
         )
         data = {"code": res.code, "data": res.read()}
@@ -66,8 +75,8 @@ def payload_check(control_file_path):
 
 def protection_check(control_file_path):
     try:
-        data = scan_on_get_response()
-        contents = data.get("data")
+        payload_data = scan_on_get_response(file_key)
+        contents = payload_data.get("data")
         with open(control_file_path, "rb") as control_file:
             file_is_clean: bool = contents not in control_file.read()
         assert file_is_clean
@@ -77,6 +86,31 @@ def protection_check(control_file_path):
         return file_is_clean
 
 
+def application_check(clean_key):
+    try:
+        download_location = f"/tmp/{clean_key}"
+        with open(download_location, "wb") as control_file:
+            res = urllib.request.urlopen(
+                urllib.request.Request(url=pwned_url, method="GET"), timeout=5
+            )
+            control_file.write(res.read())
+        clean_data = scan_on_get_response(control_file)
+        contents = clean_data.get("data")
+        with open(download_location, "rb") as control_file:
+            file_is_correct: bool = contents not in control_file.read()
+        assert file_is_correct
+    except:
+        raise ApplicationError
+    else:
+        return True
+
+
 def handler(event, context):
-    control_file_path = get_payload()
-    return payload_check(control_file_path) and protection_check(control_file_path)
+    payload_control_file_path = get_payload()
+    clean_file_key = "peep-6.png"
+
+    payload_file_present: bool = payload_check(payload_control_file_path)
+    payload_blocked: bool = protection_check(payload_control_file_path)
+    getimg_functioning_normally: bool = application_check(clean_file_key)
+
+    return payload_file_present and payload_blocked and getimg_functioning_normally
