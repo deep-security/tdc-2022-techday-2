@@ -130,8 +130,7 @@ Parameters:
   # Altered for Tech Day 2022-2
   ExternalID:
     Description: "The External ID is for future use with updating Lambdas and also to address and prevent the 'confused deputy' problem."
-    Type: 'AWS::SSM::Parameter::Value<String>'
-    Default: /player/FSS/ExternalID
+    Type: String
   FSSBucketName:
     ConstraintDescription:
       File Storage Security bucket name can include numbers, lowercase
