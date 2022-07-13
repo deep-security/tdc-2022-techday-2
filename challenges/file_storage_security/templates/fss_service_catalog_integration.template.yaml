@@ -41,6 +41,25 @@ Parameters:
     Type: String
 
 Resources:
+  # FSS AIO Stack
+  FSSAllInOneServiceCatalogProduct:
+    Type: AWS::ServiceCatalog::CloudFormationProduct
+    Properties:
+      Description:
+        This template create the All in One FSS stack deployment for the service
+        catalog.
+      Name: File Storage Security All in One Template
+      Owner: Trend Micro
+      ProvisioningArtifactParameters:
+        - Info:
+            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}fss_AIO_service_catalog.template.yaml"
+  FSSAllInOneProductID:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: "FSSAllInOneProductID"
+      Value: !Ref FSSAllInOneServiceCatalogProduct
+      Type: String
+
   # Populate the /player/FSS/ExternalID SSM parameter
   PopulateFSSExternalIDRole:
     Type: AWS::IAM::Role
@@ -157,24 +176,3 @@ Resources:
       ServiceToken: !GetAtt PopulateFSSExternalIDLambda.Arn
       Timeout: 120
 
-
-  # FSS AIO Stack
-  FSSAllInOneServiceCatalogProduct:
-    Type: AWS::ServiceCatalog::CloudFormationProduct
-    Properties:
-      Description:
-        This template create the All in One FSS stack deployment for the service
-        catalog.
-      Name: File Storage Security All in One Template
-      Owner: Trend Micro
-      ProvisioningArtifactParameters:
-        - Info:
-            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}fss_AIO_service_catalog.template.yaml"
-    DependsOn: PopulateFSSExternalID
-
-  FSSAllInOneProductID:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "FSSAllInOneProductID"
-      Value: !Ref FSSAllInOneServiceCatalogProduct
-      Type: String
