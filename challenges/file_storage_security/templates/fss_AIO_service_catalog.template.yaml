@@ -122,13 +122,16 @@ Parameters:
     Default: ''
     Description: The SQS ARN for BucketListenerLambda DLQ.
     Type: String
+  # Altered for Tech Day 2022-2
   CloudOneRegion:
     Description: The region of the Trend Micro Cloud One services.
-    Type: String
-    Default: trend-us-1
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /player/C1/c1Region
+  # Altered for Tech Day 2022-2
   ExternalID:
     Description: "The External ID is for future use with updating Lambdas and also to address and prevent the 'confused deputy' problem."
-    Type: String
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: /player/FSS/ExternalID
   FSSBucketName:
     ConstraintDescription:
       File Storage Security bucket name can include numbers, lowercase

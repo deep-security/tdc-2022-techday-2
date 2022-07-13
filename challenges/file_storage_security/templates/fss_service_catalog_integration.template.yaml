@@ -41,6 +41,123 @@ Parameters:
     Type: String
 
 Resources:
+  # Populate the /player/FSS/ExternalID SSM parameter
+  PopulateFSSExternalIDRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: LambdaFunctionPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:PutParameter
+                Resource:
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1Region
+                  - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+                  - arn:aws:ssm:*:*:parameter/player/FSS/ExternalID
+              # Uncomment for deubg logs
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+  PopulateFSSExternalIDLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.9
+      Timeout: 60
+      Handler: index.handler
+      Role: !GetAtt PopulateFSSExternalIDRole.Arn
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import cfnresponse
+          import json
+          from urllib3 import PoolManager
+          
+          
+          # Retrieve SSM Parameter value based on parameter key passed.
+          def getC1SsmParameter(ssmClient, paramKey):
+              parameter = ssmClient.get_parameter(
+                  Name="/player/C1/" + paramKey, WithDecryption=True
+              )
+              return parameter["Parameter"]["Value"]
+          
+          
+          # Store SSM Parameter key and value on the AWS backend for future use.
+          def setFSSSsmParameter(ssmClient, paramKey, paramValue):
+              parameter = ssmClient.put_parameter(
+                  Name="/player/FSS/" + paramKey, Value=paramValue, Type="String", Overwrite=True
+              )
+              print(str(parameter))
+          
+          
+          ssm_client = boto3.client("ssm", region_name="${AWS::Region}")
+          
+          
+          def handler(event, context):
+              region = getC1SsmParameter(ssm_client, "c1Region")
+              api_key = getC1SsmParameter(ssm_client, "c1ApiKey")
+          
+              url = f"https://filestorage.{region}.cloudone.trendmicro.com/api/external-id"
+          
+              # Init ...
+              the_event = event["RequestType"]
+              print("The event is: ", str(the_event))
+              response_data = {}
+          
+              try:
+                  if the_event in ("Create", "Update"):
+                      print("Preparing API request env...")
+                      http = PoolManager()
+                      headers = {
+                          "Content-Type": "application/json;charset=utf-8",
+                          "Authorization": f"ApiKey {api_key}",
+                          "Api-Version": "v1",
+                      }
+          
+                      print("Getting FSS external ID...")
+                      get_external_id_response = json.loads(
+                          http.request(
+                              "GET",
+                              url=url,
+                              headers=headers,
+                          ).data
+                      )
+                      external_id: str = get_external_id_response.get("externalID")
+          
+                      print("Adding external ID to SSM...")
+                      setFSSSsmParameter(ssm_client, "ExternalID", external_id)
+          
+                  # Everything OK... send the signal back
+                  print("Operation successful!")
+                  cfnresponse.send(event, context, cfnresponse.SUCCESS, response_data)
+              except Exception as e:
+                  print("Operation failed...")
+                  print(str(e))
+                  response_data["Data"] = str(e)
+                  cfnresponse.send(event, context, cfnresponse.FAILED, response_data)
+  PopulateFSSExternalID:
+    Type: Custom::PopulateFSSExternalIDLambda
+    Properties:
+      ServiceToken: !GetAtt PopulateFSSExternalIDLambda.Arn
+      Timeout: 120
+
+
   # FSS AIO Stack
   FSSAllInOneServiceCatalogProduct:
     Type: AWS::ServiceCatalog::CloudFormationProduct
@@ -52,7 +169,9 @@ Resources:
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}FSS-All-In-One.template"
+            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}fss_AIO_service_catalog.template.yaml"
+    DependsOn: PopulateFSSExternalID
+
   FSSAllInOneProductID:
     Type: AWS::SSM::Parameter
     Properties:
