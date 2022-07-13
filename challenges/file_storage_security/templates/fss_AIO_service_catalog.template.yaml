@@ -127,8 +127,8 @@ Parameters:
     Description: The region of the Trend Micro Cloud One services.
     Type: 'AWS::SSM::Parameter::Value<String>'
     Default: /player/C1/c1Region
-  # Altered for Tech Day 2022-2
   ExternalID:
+    Default: ''
     Description: "The External ID is for future use with updating Lambdas and also to address and prevent the 'confused deputy' problem."
     Type: String
   FSSBucketName:
