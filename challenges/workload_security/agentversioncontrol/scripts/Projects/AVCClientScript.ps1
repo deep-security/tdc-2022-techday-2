@@ -26,7 +26,7 @@ $headers.Add("api-version", "v1")
 $headers.Add("Authorization", "ApiKey $C1WSAPIKey")
 $headers.Add("Content-Type", "application/json")
 #Set the Payload to retrieve the Players C1WS Deployment Script
-$body = "{`n`"platform`": `"windows`",`n`"validateCertificateRequired`": true,`n`"validateDigitalSignatureRequired`": true,`n`"activationRequired`": true`n}"
+$body = "{`n`"platform`": `"windows`",`n`"validateCertificateRequired`": false,`n`"validateDigitalSignatureRequired`": false,`n`"activationRequired`": true`n}"
 #Retrieve the C1WS Agent Deployment Script from the Players environment
 $response = Invoke-RestMethod -URI $URI -Method 'POST' -Headers $headers -Body $body
 #Store **JUST** the deployment script text
