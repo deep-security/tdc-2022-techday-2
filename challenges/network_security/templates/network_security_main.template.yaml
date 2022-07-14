@@ -238,7 +238,7 @@ Resources:
               attack = sendAttack(victim)
               if req is True and attack is False:
                   msg = "You've successfully blocked the vulnerability!"
-                  lambdac.invoke(FunctionName='NetworkSecurityCleanupLambda', InvocationType='Event', Payload="{}")
+                  lambdac.invoke(FunctionName=os.environ.get("CLEANUPLAMBDA"), InvocationType='Event', Payload="{}")
                   return True
               else:
                   msg = "Unfortunately attacks are still occurring against your servers! Make sure you check your configuration and perhaps re-read the instructions, and try again."
@@ -249,6 +249,7 @@ Resources:
       Environment:
         Variables:
           VICTIM: "http://www.google.com"
+          CLEANUPLAMBDA: !Select [ 6, !Split [ ":", !GetAtt CleanupLambda.Arn ] ]
   LambdaSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
