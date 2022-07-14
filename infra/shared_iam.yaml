@@ -9,18 +9,29 @@ Resources:
         Version: '2012-10-17'
         Statement:
         - Effect: Allow
-          Principal: {Service: [lambda.amazonaws.com]}
+          Principal: {
+            "Service": [
+              "lambda.amazonaws.com",
+              "ec2.amazonaws.com"
+            ]
+            }
           Action: ['sts:AssumeRole']
       Path: /
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies: 
         - PolicyName: ssmaccesspolicy
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
               - Effect: "Allow"
-                Action: "ssm:GetParameter"
+                Action:
+                  - ssm:DescribeParameters
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParameterHistory
+                  - ssm:GetParametersByPath
                 Resource: 
                   - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
                   - arn:aws:ssm:*:*:parameter/player/C1/c1Region
@@ -36,7 +47,7 @@ Resources:
 Outputs:
   SharedIamRoleArn:
     Value: !GetAtt DefaultLambdaExecutionRole.Arn
-  SharedIAMRole:
+  SharedIamRole:
     Value: !Ref DefaultLambdaExecutionRole 
 
   # Use it like this: '{{resolve:ssm:DefaultLambdaExecutionRole:1}}'
