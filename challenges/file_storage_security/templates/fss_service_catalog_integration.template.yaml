@@ -52,10 +52,11 @@ Resources:
       Owner: Trend Micro
       ProvisioningArtifactParameters:
         - Info:
-            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}FSS-All-In-One.template"
+            LoadTemplateFromURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}fss_AIO_service_catalog.template.yaml"
   FSSAllInOneProductID:
     Type: AWS::SSM::Parameter
     Properties:
       Name: "FSSAllInOneProductID"
       Value: !Ref FSSAllInOneServiceCatalogProduct
       Type: String
+
