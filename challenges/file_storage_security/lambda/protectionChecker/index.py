@@ -83,20 +83,16 @@ def protection_check(control_file_path):
     except:
         raise PayloadNotBlockedError
     else:
+        with open("/tmp/placeholder", "wb") as placeholder_file:
+            placeholder_file.write(contents)
         return file_is_clean
 
 
 def application_check(clean_key):
     try:
-        download_location = f"/tmp/{clean_key}"
-        with open(download_location, "wb") as control_file:
-            res = urllib.request.urlopen(
-                urllib.request.Request(url=pwned_url, method="GET"), timeout=5
-            )
-            control_file.write(res.read())
-        clean_data = scan_on_get_response(control_file)
+        clean_data = scan_on_get_response(clean_key)
         contents = clean_data.get("data")
-        with open(download_location, "rb") as control_file:
+        with open("/tmp/placeholder", "rb") as control_file:
             file_is_correct: bool = contents not in control_file.read()
         assert file_is_correct
     except:
