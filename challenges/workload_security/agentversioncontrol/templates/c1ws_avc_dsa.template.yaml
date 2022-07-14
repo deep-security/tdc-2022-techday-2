@@ -171,6 +171,8 @@ Resources:
             Set-Content -Path 'C:\Projects\C1Region.txt' -Value '${c1RegionSSMKey}' -NoNewline
             Set-Content -Path 'C:\Projects\C1WSAPIKey.txt' -Value '${c1ApiKeySSMKey}' -NoNewline
             c:\Projects\AVCClientScript.ps1
+            c:\Projects\C1WSInstaller.ps1
+            C:\Projects\CreateSchTask.ps1
             Stop-Transcript
           </powershell>
   TaskCheckCustomScript:

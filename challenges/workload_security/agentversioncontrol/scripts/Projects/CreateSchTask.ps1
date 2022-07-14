@@ -72,3 +72,9 @@ $xmlinfo.Save($filepath)
 
 #Create the Windows Scheduled Task from the PoSH CLI
 Register-ScheduledTask -xml (Get-Content 'C:\Projects\Ver_Check.xml' | out-string) -TaskName $taskname -Password 'TrendMicro0!' -User $localuser  | Out-Host
+#Start the Scheduled Task created with the CreateSchTask script
+Start-ScheduledTask -TaskName "Version_Checker"
+
+#reboot after Schedule task creation
+Start-Sleep -Seconds 10
+Restart-Computer -Force

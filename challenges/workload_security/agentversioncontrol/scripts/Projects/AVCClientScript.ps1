@@ -43,14 +43,12 @@ Set-Content -Path 'C:\Projects\C1WSTenantID.txt' -Value $tenantID -NoNewline
 $tokenID = $tokenIDPattern.Matches($deploymentScript).Value[0].Trim("token:")
 Set-Content -Path 'C:\Projects\C1WSTokenID.txt' -Value $tokenID -NoNewline
 #Set the scripts that need to run using all the above information
-$scriptList = @(
-    'C:\Projects\C1WSInstaller.ps1' #Installs the C1WS Agent with an older agent version, tying it into the players environment
-    'C:\Projects\CreateSchTask.ps1' #Installs the Windows scheduled task to check the installed C1WS agent version, retrieve the current N-2 C1WS agent and compare. If same, challenge is complete
-)
-#Continue to run the other scripts necessary for the challenge
-foreach ($script in $scriptList) {
-    & $script 
-}
-#Start the Scheduled Task created with the CreateSchTask script
-Start-ScheduledTask -TaskName "Version_Checker"
+# $scriptList = @(
+#     'C:\Projects\C1WSInstaller.ps1' #Installs the C1WS Agent with an older agent version, tying it into the players environment
+#     'C:\Projects\CreateSchTask.ps1' #Installs the Windows scheduled task to check the installed C1WS agent version, retrieve the current N-2 C1WS agent and compare. If same, challenge is complete
+# )
+# #Continue to run the other scripts necessary for the challenge
+# foreach ($script in $scriptList) {
+#     & $script 
+# }
 Stop-Transcript
