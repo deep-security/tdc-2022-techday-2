@@ -5,32 +5,35 @@ Parameters:
   targetURL:
     Type: String
     Description: attacker target instance public URL
+  AttackerRole:
+    Type: String
+    Description: Shared IAM Role
 
 Resources:
   # Resources which make up your wrinkle
-  AttackerRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: "2012-10-17"
-      ManagedPolicyArns:
-        - Fn::Join:
-            - ""
-            - - "arn:"
-              - Ref: AWS::Partition
-              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  # AttackerRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Action: sts:AssumeRole
+  #           Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #       Version: "2012-10-17"
+  #     ManagedPolicyArns:
+  #       - Fn::Join:
+  #           - ""
+  #           - - "arn:"
+  #             - Ref: AWS::Partition
+  #             - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   Attacker:
     Type: AWS::Lambda::Function
     Properties:
       Handler: index.lambda_handler
       MemorySize: 128
-      Role: !GetAtt AttackerRole.Arn
+      Role: !Ref AttackerRole
       Runtime: python3.7
       Timeout: 60
       Environment:

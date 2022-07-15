@@ -27,6 +27,8 @@ Parameters:
     Type: String
   ServiceCatalogLaunchRoleArn:
     Type: String
+  ContainerSecurityScoreLambdaRoleArn:
+    Type: String
 
 Resources:
   c1csssmparameters:
@@ -65,41 +67,43 @@ Resources:
       Type: String
     
 # Scoring
-  ContainerSecurityScoreLambdaRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: "2012-10-17"
-      Policies: 
-        - PolicyName: ContainerSecurityScoreLambdaPolicy
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action: "ssm:GetParameter"
-                Resource: 
-                  - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
-                  - arn:aws:ssm:*:*:parameter/player/C1/c1Region
-                  - arn:aws:ssm:*:*:parameter/player/C1CS/clusterID
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  # ContainerSecurityScoreLambdaRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Action: sts:AssumeRole
+  #           Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #       Version: "2012-10-17"
+  #     Policies: 
+  #       - PolicyName: ContainerSecurityScoreLambdaPolicy
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: "Allow"
+  #               Action: "ssm:GetParameter"
+  #               Resource: 
+  #                 - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+  #                 - arn:aws:ssm:*:*:parameter/player/C1/c1Region
+  #                 - arn:aws:ssm:*:*:parameter/player/C1CS/clusterID
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   ContainerSecurityScoreLambdaRoleSsm:
     Type: AWS::SSM::Parameter
     Properties:
       Name: "ContainerSecurityScoreLambdaRole"
-      Value: !GetAtt ContainerSecurityScoreLambdaRole.Arn
+      Value: !Ref ContainerSecurityScoreLambdaRoleArn
       Type: String
 
   
   ScoreLambdaDAY1Task1:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+        scoreroleday1task1C1CS: !Ref ContainerSecurityScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task1.yaml
 
 
@@ -112,6 +116,8 @@ Resources:
   ScoreLambdaDAY1Task3:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+        scoreroleday1task3C1CS: !Ref ContainerSecurityScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task3.yaml
 
 
@@ -128,10 +134,14 @@ Resources:
   ScoreLambdaDAY1Task4:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+        scoreroleday1task4C1CS: !Ref ContainerSecurityScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task4.yaml
     DependsOn: ContainerSecurityScoreLambdaRoleSsm
   ScoreLambdaDAY1Task2:
     Type: AWS::CloudFormation::Stack
     Properties:
+      Parameters:
+        scoreroleday1task2C1CS: !Ref ContainerSecurityScoreLambdaRoleArn
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/c1cs-day1task2.yaml
     DependsOn: ContainerSecurityScoreLambdaRoleSsm

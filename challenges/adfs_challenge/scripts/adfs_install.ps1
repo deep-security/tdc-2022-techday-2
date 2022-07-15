@@ -10,7 +10,10 @@ param (
     [string]$TechDayAdminUser,
 
     [Parameter(Mandatory=$true)]
-    [string]$DomainDNSName
+    [string]$DomainDNSName,
+
+    [Parameter(Mandatory=$true)]
+    [string]$SSMUserName
 
 )
 #create cert for ADFS
@@ -32,9 +35,25 @@ $store.close()
 Install-WindowsFeature -IncludeManagementTools -Name ADFS-Federation 
  
 Import-Module ADFS 
-  
+$adminConfig=(C:\s3-downloads\scripts\adfs_dkm.ps1 -ServiceAccount $DomainNetBiosName\adsvctd -AdfsAdministratorAccount $DomainNetBiosName\localadmin) 
 $user  = "$DomainNetBiosName\$TechDayAdminUser"
 $password = ConvertTo-SecureString -String $SafeModeAdministratorPassword -AsPlainText -Force
 $credential = New-Object -TypeName System.Management.Automation.PSCredential -ArgumentList $user, $password
 
-Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $DomainDNSName  -ServiceAccountCredential $credential
+Install-AdfsFarm -CertificateThumbprint $certThumbprint -FederationServiceName $DomainDNSName  -ServiceAccountCredential $credential -AdminConfiguration $adminConfig
+
+#enable idp signon page
+Set-AdfsProperties -EnableIdpInitiatedSignonPage $true
+
+#add edge for user
+md -Path $env:temp\edgeinstall -erroraction SilentlyContinue | Out-Null
+$Download = join-path $env:temp\edgeinstall MicrosoftEdgeEnterpriseX64.msi
+(new-object System.Net.WebClient).DownloadFile('https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/a2662b5b-97d0-4312-8946-598355851b3b/MicrosoftEdgeEnterpriseX64.msi',$Download)
+Start-Process "$Download" -ArgumentList "/quiet"
+
+#Run add_user_domain before reboot
+C:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser $TechDayAdminUser -DomainDNSName $DomainDNSName -SSMUserName $SSMUserName
+
+#reboot after ADFS install
+Start-Sleep -Seconds 10
+Restart-Computer -Force

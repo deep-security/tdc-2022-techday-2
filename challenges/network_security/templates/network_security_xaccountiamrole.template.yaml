@@ -12,7 +12,7 @@ Resources:
       Type: AWS::CloudFormation::Stack
       Properties:
         Parameters:
-          ExternalID: '{{resolve:ssm:/player/C1/c1AccountId:1}}'
+          ExternalID: '{{resolve:ssm:/player/C1/c1AccountId}}'
           NSaaSAccountId: "852329647234"
           NetworkSecurityAwsAccountId: "737318609257"
         TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/network_security_connector_cft.yaml'
@@ -118,7 +118,7 @@ Resources:
     Properties:
       ServiceToken: !GetAtt NetSecAwsConnectorCreator.Arn
       Region: !Ref AWS::Region
-      env: '{{resolve:ssm:/player/C1/c1Region:1}}'
+      env: '{{resolve:ssm:/player/C1/c1Region}}'
       accountId: !Ref AWS::AccountId
-      apiKey: '{{resolve:ssm:/player/C1/c1ApiKey:1}}'
+      apiKey: '{{resolve:ssm:/player/C1/c1ApiKey}}'
       roleArn: !GetAtt IamRole.Outputs.NetworkSecurityRoleArn
