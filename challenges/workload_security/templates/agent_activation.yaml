@@ -102,12 +102,16 @@ Resources:
                       tenantid = tenantid_and_token[-2]
                       token = tenantid_and_token[-1]
                       activationcode = activate_comand + tenantid + " " + token
+                      agent_reset_code = "/opt/ds_agent/dsa_control -r"
               
                       response = ssmcliant.send_command(
                           InstanceIds = ec2_instance_id_list,
                           DocumentName = "AWS-RunShellScript",
                           Parameters = {
-                              "commands": [activationcode]
+                              "commands": [
+                                  agent_reset_code,
+                                  activationcode
+                              ]
                           },
                       )
                   sendResponseCfn(event, context, cfnresponse.SUCCESS)
