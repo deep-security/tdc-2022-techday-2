@@ -147,7 +147,7 @@ Resources:
     Type: AWS::EC2::Instance
     Properties:
       ImageId: !Ref 'LatestAmiId'
-      InstanceType: m6a.large
+      InstanceType: m5.large
       IamInstanceProfile: !Ref AVCClientSSMProfile
       NetworkInterfaces:
         - AssociatePublicIpAddress: true
