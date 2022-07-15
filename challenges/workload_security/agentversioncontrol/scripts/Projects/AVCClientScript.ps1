@@ -37,7 +37,8 @@ net user Administrator TrendMicro0! | Out-Host
 $activationURL = $activationURLPattern.Matches($deploymentScript).Value[0]
 Set-Content -Path 'C:\Projects\C1WSActivationURL.txt' -Value $activationURL -NoNewline
 #Store the C1WS Agent Tenant ID as a variable
-$tenantID = $tenantIDPattern.Matches($deploymentScript).Value[0].Trim("tenantID:")
+$tenantID = $tenantIDPattern.Matches($deploymentScript).Value[0].TrimStart("tenantID")
+$tenantID = $tenantID.Trim(":")
 Set-Content -Path 'C:\Projects\C1WSTenantID.txt' -Value $tenantID -NoNewline
 #Store the C1WS Agent Token as a variable
 $tokenID = $tokenIDPattern.Matches($deploymentScript).Value[0].Trim("token:")
