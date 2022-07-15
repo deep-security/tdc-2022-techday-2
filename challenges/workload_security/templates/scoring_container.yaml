@@ -1,0 +1,73 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Parameters:
+  TargetBucketName:
+    Type: String
+
+Resources:
+  scoreContainerC1WS:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies: 
+        - PolicyName: ScoreContainer
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: "s3:ListBucket"
+                Resource: 
+                  - Fn::Join:
+                    - ""
+                    - - "arn:aws:s3:::"
+                      - !Ref TargetBucketName
+
+  C1WSScoreLambdaContainer:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: C1WSScoreLambdaContainer
+      Code: 
+        ZipFile: |
+          import boto3
+          import os
+          target_bucket = os.environ['TARGETBucket']
+          s3 = boto3.resource('s3')
+          answer = "container_correct"
+          def lambda_handler(event, context):
+              my_bucket = s3.Bucket(target_bucket)
+              files = []
+              for object in my_bucket.objects.all():
+                  files.append(object.key)
+                  
+              print(files)
+              for x in files:
+                  if answer in x:
+                      return True
+              raise Exception("You haven't finished it...")
+              return False
+      Handler: index.lambda_handler
+      Role: !GetAtt scoreContainerC1WS.Arn
+      Runtime: python3.7
+      Timeout: 30
+      Environment:
+        Variables:
+          TARGETBucket:
+            Ref: TargetBucketName
+    DependsOn:
+      - scoreContainerC1WS
+Outputs:
+  C1WSScoreLambdaContainer:
+    Value:
+      Ref: C1WSScoreLambdaContainer

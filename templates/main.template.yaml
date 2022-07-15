@@ -80,21 +80,6 @@ Parameters:
       can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
       forward slash (/).
     Type: String
-  # AdminIngressLocation:
-  #   Description: >-
-  #     CIDR block (IP address range) to allow SSH access to the bastion host and
-  #     HTTPS access to the Kubernetes API. Use 0.0.0.0/0 to allow access from all
-  #     locations.
-  #   Type: String
-  #   Default: 0.0.0.0/0
-  #   MinLength: '9'
-  #   MaxLength: '18'
-  #   AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
-  #   ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-  # DSActivationCode:
-  #   Description: DS key
-  #   Type: String
-  #   Default: 'DX-XQCT-JQW26-GQ5TS-AZ8KS-3HEWQ-F274C'
   MissionControlAccountId:
     Type: Number
     Default: 728151039736
@@ -103,7 +88,7 @@ Parameters:
   BuildEks:
     Type: String
     AllowedValues: [true, false]
-    Default: false
+    Default: true
 
 Conditions:
   BuildEks:
@@ -114,6 +99,23 @@ Conditions:
 
 Resources:
 
+  adfsStack:
+      Type: AWS::CloudFormation::Stack
+      Properties:
+        Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/adfs_challenge/'
+          VPCID: !GetAtt VPCStack.Outputs.VPCID
+          PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+          TechDayAdminUser: !GetAtt PlayerStack.Outputs.PlayerUserName
+          ADFSScoreLambdaRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
+          #SafeModeAdministratorPassword: !GetAtt Passwords.Outputs.PlayerPassword
+        TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/adfs_challenge/templates/adfs-main.template.yaml'
+      DependsOn:
+        - VPCStack
+        - PlayerStack
+        - CommonLambdaIamRole
+
   c1csStack:
       Type: AWS::CloudFormation::Stack
       Properties:
@@ -123,77 +125,143 @@ Resources:
           QSS3BucketName: !Ref QSS3BucketName
           QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/container_security/'
           GroupAssociationPrincipalArn: !GetAtt PlayerStack.Outputs.PlayerGroupArn
+          ContainerSecurityScoreLambdaRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
         TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_main.template.yaml'
       DependsOn: 
         - PlayerStack
         - ServiceCatalogPortfolioStack
+        - CommonLambdaIamRole
         - OnboardingStack #Added for throttling IAM role creation
+  deployC1csAttacks:
+    Type: AWS::CloudFormation::Stack
+    Condition: BuildEks
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/container_security/'
+        awsAccountID: !Ref "AWS::AccountId"
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/container_security/templates/c1cs_deploy_attack_container.template.yaml'
+    DependsOn:
+      - EKSStack #Required for build
 
-  c1wsAVCStack:
+# Moved to c1-post-onboarding
+  # c1wsAVCStack:
+  #     Type: AWS::CloudFormation::Stack
+  #     Properties:
+  #       Parameters:
+  #         PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+  #         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+  #         QSS3BucketName: !Ref QSS3BucketName
+  #         QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/'
+  #       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/c1ws_avc_main.template.yaml'
+  #     DependsOn: 
+  #       - PlayerStack
+  #       - ServiceCatalogPortfolioStack
+  #       - OnboardingStack #Added for throttling IAM role creation
+
+  c1wsLog4ShellStack:
       Type: AWS::CloudFormation::Stack
       Properties:
         Parameters:
-          PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
-          ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
           QSS3BucketName: !Ref QSS3BucketName
-          QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/'
-        TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/agentversioncontrol/templates/c1ws_avc_main.template.yaml'
+          QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}challenges/workload_security/log4shell/'
+          VPCID: !GetAtt VPCStack.Outputs.VPCID
+          PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+          SNSTopicArn: !GetAtt WorkloadSecurityStack.Outputs.SNSTopicARN
+          scoreroleC1WS: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
+          VictimLog4ShellRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
+        TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/log4shell/templates/c1ws_log4shell_main.template.yaml'
       DependsOn: 
-        - PlayerStack
-        - ServiceCatalogPortfolioStack
-        - OnboardingStack #Added for throttling IAM role creation
+        - VPCStack
+        - WorkloadSecurityStack
+        - CommonLambdaIamRole
         
   FSSStack:
     Type: AWS::CloudFormation::Stack
-    Condition: BuildEks
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
         PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+        PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
+    DependsOn:
+      - ServiceCatalogPortfolioStack
+      - Passwords
+      - PlayerStack
 
-  # SAMPLE: Load Challenges and Infra for Challenges
-  # Sample:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     Parameters:
-  #       PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
-  #       ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
-  #     TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/challenges/sample/templates/main.template.yaml'
+  c1nsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/network_security/templates/network_security_main.template.yaml'
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/network_security/"
+        AvailabilityZone: !Select
+          - '0'
+          - !Split
+            - ","
+            - !FindInMap
+              - RegionMap
+              - !Ref 'AWS::Region'
+              - AZs
+        VPCID: !GetAtt VPCStack.Outputs.VPCID
+        IGWID: !GetAtt VPCStack.Outputs.IGWID
+    DependsOn:
+        - VPCStack
 
-# Comment Out DSM and DSA Stack - likely unused this year.
-#   DSMStack:
-#     Type: AWS::CloudFormation::Stack
-#     Properties:
-#       Parameters:
-#         DSActivationCode: !Ref DSActivationCode
-#         QSS3BucketName: !Ref QSS3BucketName
-#         QSS3KeyPrefix: !Ref QSS3KeyPrefix
-#         VPC: !GetAtt VPCStack.Outputs.VPCID
-#         PublicSubnet1: !GetAtt VPCStack.Outputs.PublicSubnet1ID
-# #        ReadS3BucketProfile: !GetAtt Infra.Outputs.ReadS3BucketProfile
-#         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-#         SecretPassword: !GetAtt Passwords.Outputs.SecretPassword
-#         KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
-#       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/dsm/templates/dsm.template.yaml'
+  FSSAttackerEnv:
+    Type: AWS::CloudFormation::Stack
+    Condition: BuildEks
+    Properties:
+      Parameters:
+          QSS3BucketName: !Ref QSS3BucketName
+          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+          PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
+    DependsOn:
+      - EKSStack #Required for build
+      - Passwords
 
-  # DSAStack:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     Parameters:
-  #       QSS3BucketName: !Ref QSS3BucketName
-  #       QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}dsm/'
-  #       VPC: !GetAtt VPCStack.Outputs.VPCID
-  #       PrivateSubnet1: !GetAtt VPCStack.Outputs.PrivateSubnet1AID
-  #       PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-  #       SecretPassword: !GetAtt Passwords.Outputs.SecretPassword
-  #       DSMFQDN: !GetAtt DSMStack.Outputs.DSMFQDN
-  #       KeyName: !GetAtt KeyPairStack.Outputs.KeyPairName
-  #       VPCCIDR: !GetAtt VPCStack.Outputs.VPCCIDR
-  #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/infra/dsm/templates/ds_clients.template.yaml'
 
+  VOTKStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/vision_one_votk/
+        VPCID: !GetAtt VPCStack.Outputs.VPCID
+        PublicSubnetId: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+        VOTKInstanceRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one_votk/templates/main.template.yaml'
+    DependsOn: 
+      - VPCStack
+      - CommonLambdaIamRole
+  
+#  V1SOStack:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      Parameters:
+#        QSS3BucketName: !Ref QSS3BucketName
+#        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/vision_one/"
+#      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/vision_one/templates/main.template.yaml' 
+      
+  WorkloadSecurityStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/workload_security/
+        VPCID: !GetAtt VPCStack.Outputs.VPCID
+        PublicSubnet1ID: !GetAtt VPCStack.Outputs.PublicSubnet1ID
+        SharedIamRole: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRole
+        SharedIamRoleArn: !GetAtt CommonLambdaIamRole.Outputs.SharedIamRoleArn
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/workload_security/templates/main.template.yaml'
+    DependsOn: 
+      - VPCStack
+      - CommonLambdaIamRole
 
   # ☠️ DON'T TOUCH - Or Webster might have a talk with you... or worse, Amanda! ☠️
   QSS3BucketNameSsm:
@@ -243,7 +311,7 @@ Resources:
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/vpc/templates/aws-vpc.template.yaml'
       Parameters:
-        NumberOfAZs: 4
+        NumberOfAZs: 3
         AvailabilityZones: !FindInMap
           - RegionMap
           - !Ref 'AWS::Region'
@@ -289,34 +357,6 @@ Resources:
       - VPCStack
       - KeyPairStack
 
-  C1PostOnboardTrigger:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        MainStackId: !Ref AWS::StackId
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1_postonboard_trigger.template.yaml'
-
-  C1PostOnboardFunctionNameSsmParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "C1PostOnboardFunctionName"
-      Value: !GetAtt C1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
-      Type: String
-  
-  V1PostOnboardTrigger:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        MainStackId: !Ref AWS::StackId
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/v1_postonboard_trigger.template.yaml'
-
-  V1PostOnboardFunctionNameSsmParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: "V1PostOnboardFunctionName"
-      Value: !GetAtt V1PostOnboardTrigger.Outputs.PostOnboardTriggerLambdaName
-      Type: String
-
   LockoutInfraStack:
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -337,19 +377,13 @@ Resources:
       Parameters:
         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/player.template.yaml'
+    DependsOn: 
+      - Passwords
 
   KeyPairStack:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/ec2keypair/ec2keypair.template.yaml'
-
-#  Day2Resources:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      Parameters:
-#        QSS3BucketName: !Ref QSS3BucketName
-#        QSS3KeyPrefix: !Sub '${QSS3KeyPrefix}'
-#      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/templates/day2_main.template.yaml'
 
   OnboardingStack:
     Type: AWS::CloudFormation::Stack
@@ -361,18 +395,15 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}challenges/
       TemplateURL:  !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/onboarding/templates/main.template.yaml'
 
+  CommonLambdaIamRole:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}infra/shared_iam.yaml'
+
 Outputs:
   PrivateSubnet2AID:
     Value: !GetAtt VPCStack.Outputs.PrivateSubnet2AID
     Description: PrivateSubnet2A ID
-
-  # DSMURL:
-  #   Value: !GetAtt DSMStack.Outputs.DSMURL
-  #   Description: DSM Public URL
-
-  # DSMFQDN:
-  #   Value: !GetAtt DSMStack.Outputs.DSMFQDN
-  #   Description: DSM public FQDN
     
   ScoreCheckerArn:
     Value: !GetAtt ScoreChecker.Outputs.MissionControlNotifierFunctionName
@@ -407,6 +438,43 @@ Outputs:
     Value: !Sub 'https://${AWS::AccountId}.signin.aws.amazon.com/console?region=${AWS::Region}'
     Description: URL to access this AWS Account dashboard
 
-# #Sample Challenge Outputs
-#   SampleChallengeBucket:
-#     Value: !GetAtt Sample.Outputs.CoolBucketName
+  C1WSLog4ShellSite:
+    Value: !GetAtt c1wsLog4ShellStack.Outputs.Log4ShellSite
+    Description: Tomcat Web App with Log4Shell Vulnerability.
+  
+  ADFSEndpointDNS:
+    Value: !GetAtt adfsStack.Outputs.PublicDNS
+  ADFSUsername:
+    Description: ADFS Username
+    Value: !GetAtt adfsStack.Outputs.ADFSUsername
+  ADFSPassword:
+    Description: ADFS Password
+    Value: !GetAtt adfsStack.Outputs.ADFSPassword
+
+#  V1SOtaskBucketURL:
+#    Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
+#    Description: Bucket for V1 SO task information (player access required)
+  
+  VOTKConsole:
+    Value: !GetAtt VOTKStack.Outputs.VOTKPublicDNS
+    Description: URL to access the VOTK Console.
+
+  c1csAlbHostname:
+    Description: ALB Hostname that the player uses to access the c1cs attack container
+    Value: !If [ BuildEks, !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname, "" ]
+
+  FSSAttackerMachineAccessUrl:
+    Value: !If [ BuildEks, !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname, "" ]
+    Description: "Alb hostname for the FSS attack container."
+  FSSWebsite:
+    Value: !GetAtt FSSStack.Outputs.FSSWebsite
+    Description: URL of SudoSingles, the vulnerable application to protect
+  FSSBucketToProtect:
+    Value: !GetAtt FSSStack.Outputs.FSSBucketToProtect
+    Description: The bucket to protect with FSS
+  FSSLambdaToProtect:
+    Value: !GetAtt FSSStack.Outputs.FSSLambdaToProtect
+    Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
+  FSSPayloadDropperUrl:
+    Value: !GetAtt FSSStack.Outputs.FSSPayloadDropperUrl
+    Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.

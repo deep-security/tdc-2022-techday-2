@@ -28,12 +28,19 @@ Parameters:
     ConstraintDescription:
       Quick Start key prefix can include numbers, lowercase letters, uppercase
       letters, hyphens (-), and forward slash (/).
-    # REFERENCE (tdc-2022-2): Value in this file ↓
-    Default: "latest/challenges/file_storage_security/"
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/
+    Default: ""
     Description:
       Update to where you hold the scripts. S3 bucket name for the Tech Day
       assets. Quick Start key prefix can include numbers, lowercase letters,
       uppercase letters, hyphens (-), and forward slash (/).
+    Type: String
+
+  PlayerPassword:
+    Description: The Player's password
+    Type: String
+  PlayerGroupName:
+    Description: The Player's group name
     Type: String
 
   # Service Catalog related
@@ -52,3 +59,62 @@ Resources:
         PlayerServiceCatalogPortfolio: !Ref PlayerServiceCatalogPortfolio
         ServiceCatalogLaunchRoleArn: !Ref ServiceCatalogLaunchRoleArn
       TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/fss_service_catalog_integration.template.yaml"
+
+  ImageUpload:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        PlayerGroupName: !Ref PlayerGroupName
+        LambdaPrefix: !Sub "${QSS3KeyPrefix}lambda/"
+        ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
+        CopyZipsS3Bucket: !GetAtt CopyZipsStack.Outputs.DestinationBucket
+        CopyZipsPrefix: !Sub "${QSS3KeyPrefix}lambda/"
+        ProfilePictureDropperCodeZip: "profilePictureDropper/profilePictureDropper.zip"
+        WebsiteCodeZip: "imageUpload/imageUpload.zip"
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/imageUpload.template.yaml"
+
+  # Answers
+  AnswerValidation:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}templates/"
+        ToolsPrefix: !Sub "${QSS3KeyPrefix}tools/"
+        ImageUploaderS3Bucket: !GetAtt ImageUpload.Outputs.FSSBucketToProtect 
+        SudoSinglesEndpoint: !GetAtt ImageUpload.Outputs.FSSWebsite
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/answerValidation.template.yaml'
+
+  # CopyZips
+  CopyZipsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        SourceBucket: !Ref QSS3BucketName
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/copyzips/copyzips.template.yaml'
+  CopyZips:
+    Type: Custom::CopyZips
+    Properties:
+      ServiceToken: !GetAtt 'CopyZipsStack.Outputs.FunctionArn'
+      DestBucket: !GetAtt 'CopyZipsStack.Outputs.DestinationBucket'
+      SourceBucket: !Ref QSS3BucketName
+      Prefix: !Sub "${QSS3KeyPrefix}lambda/"
+      Objects:
+      - "imageUpload/imageUpload.zip"
+      - "profilePictureDropper/profilePictureDropper.zip"
+
+Outputs:
+  FSSWebsite:
+    Value: !GetAtt ImageUpload.Outputs.FSSWebsite
+    Description: URL of SudoSingles, the vulnerable application to protect
+  FSSBucketToProtect:
+    Value: !GetAtt ImageUpload.Outputs.FSSBucketToProtect
+    Description: The bucket to protect with FSS
+  FSSLambdaToProtect:
+    Value: !GetAtt ImageUpload.Outputs.FSSLambdaToProtect
+    Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
+  FSSPayloadDropperUrl:
+    Value: !GetAtt ImageUpload.Outputs.FSSPayloadDropperUrl
+    Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.

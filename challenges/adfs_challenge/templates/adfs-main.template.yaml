@@ -1,0 +1,270 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: CloudFormation Template to deploy an EC2 instance and then install ADDS
+Parameters:
+  # Bucket path related
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+    Default: techday-2022-2
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  LatestAmiId: 
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-windows-latest/Windows_Server-2019-English-Full-Base'
+    Description: DO NOT CHANGE THIS VALUE
+  PublicSubnet1ID:
+    Type: AWS::EC2::Subnet::Id
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+  Hostname: 
+    Type: String
+    Description: Hostname 
+    MaxLength: '15' 
+    Default: ADFS-SERVER   
+  InstanceSize: 
+    Type: String
+    Description: Instance Size
+    Default: m5.large
+  DomainDNSName:
+    Type: String
+    Description: Fully Qualified Domain Name
+    Default: techday.com
+  DomainNetBiosName:
+    Type: String
+    Description: NETBIOS Domain Name
+    Default: techday
+  TechDayAdminUser:
+    Type: String
+    Description: RDP user for player
+    Default: Player
+  SafeModeAdministratorPassword:
+    MinLength: '8'
+    NoEcho: 'true'
+    Type: String
+    Description: SafeModeAdministrator
+    Default: TechDay2022!
+  SSMUserName:
+    Type: String
+    Description: SSM User for Windows Domain
+    Default: ssm-user
+  ADFSScoreLambdaRoleArn:
+    Type: String
+    Description: Shared Iam Role Arn
+
+Resources:
+  Profile:
+    Type: 'AWS::IAM::InstanceProfile'
+    Properties:
+      Roles:
+        - !Ref HostRole
+      Path: /
+      InstanceProfileName: !Join
+        - ''
+        - - 'instance-profile-'
+          - !Ref QSS3BucketName
+  HostRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: !Join
+        - ''
+        - - 'role-s3-read-'
+          - !Ref QSS3BucketName
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 's3:GetObject'
+                Resource: !Join
+                  - ''
+                  - - 'arn:aws:s3:::'
+                    - !Ref QSS3BucketName
+                    - '/*'
+                Effect: Allow
+          PolicyName: s3-policy-read
+      Path: /
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Effect: Allow
+        Version: 2012-10-17
+  ADFSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: adfs-techday-sg
+      GroupDescription: "Allow HTTP/HTTPS and SSH inbound and outbound traffic"
+      VpcId: !Ref VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0   
+  Instance:
+    Type: 'AWS::EC2::Instance'
+    Metadata:
+      'AWS::CloudFormation::Authentication':
+        S3AccessCreds:
+          type: S3
+          buckets:
+            - !Ref QSS3BucketName
+          roleName: !Ref HostRole
+      'AWS::CloudFormation::Init':
+        configSets: 
+          config:
+            - get-files 
+            - configure-instance
+        get-files:
+          files:
+            'c:\s3-downloads\scripts\rdp_user.ps1':
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/rdp_user.ps1
+              authentication: S3AccessCreds
+            'c:\s3-downloads\scripts\add_user_domain.ps1':
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/add_user_domain.ps1
+              authentication: S3AccessCreds
+            'c:\s3-downloads\scripts\adds_install.ps1':
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/adds_install.ps1
+              authentication: S3AccessCreds
+            'c:\s3-downloads\scripts\adfs_install.ps1':
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/adfs_install.ps1
+              authentication: S3AccessCreds
+            'c:\s3-downloads\scripts\adfs_dkm.ps1':
+              source: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}scripts/adfs_dkm.ps1
+              authentication: S3AccessCreds
+        configure-instance:
+          commands:
+            1-set-powershell-execution-policy:
+              command: >-
+                powershell.exe -Command "Set-ExecutionPolicy UnRestricted -Force"
+              waitAfterCompletion: '0'
+            2-rename-computer:
+              command: !Join
+                - ''
+                - - powershell.exe -Command "Rename-Computer -Restart -NewName "
+                  - Ref: Hostname
+              waitAfterCompletion: forever  
+            3-install-rdp-user:
+              command: !Join
+                - ''
+                - - 'powershell.exe -Command c:\s3-downloads\scripts\rdp_user.ps1 -SafeModeAdministratorPassword '
+                  - Ref: SafeModeAdministratorPassword
+                  - " -TechDayAdminUser "
+                  - Ref: TechDayAdminUser
+            4-install-ADDS:
+              command: !Join
+              - ''
+              - - 'powershell.exe -Command c:\s3-downloads\scripts\adds_install.ps1 -SafeModeAdministratorPassword '
+                - Ref: SafeModeAdministratorPassword
+                - " -DomainDNSName "
+                - Ref: DomainDNSName
+              waitAfterCompletion: forever
+            5-install-ADFS:
+              command: !Join 
+              - ''
+              - - 'powershell.exe -Command c:\s3-downloads\scripts\adfs_install.ps1 -SafeModeAdministratorPassword '
+                - Ref: SafeModeAdministratorPassword
+                - " -DomainNetBiosName "
+                - Ref: DomainNetBiosName
+                - " -TechDayAdminUser "
+                - Ref: TechDayAdminUser
+                - " -DomainDNSName "
+                - Ref: DomainDNSName
+                - " -SSMUserName "
+                - Ref: SSMUserName
+              waitAfterCompletion: forever
+            # 6-configure-user:
+            #   command: !Join 
+            #   - ''
+            #   - - 'powershell.exe -Command c:\s3-downloads\scripts\add_user_domain.ps1 -TechDayAdminUser '
+            #     - Ref: TechDayAdminUser 
+            #     - " -DomainDNSName "
+            #     - Ref: DomainDNSName
+
+    Properties:
+      Tags:
+      - Key: Name
+        Value: ADFS
+      AvailabilityZone:
+        Fn::Select: 
+          - 0
+          - Fn::GetAZs: ""
+      InstanceInitiatedShutdownBehavior: stop
+      IamInstanceProfile: !Ref Profile
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref InstanceSize
+      UserData: !Base64
+        'Fn::Join': 
+          - ''
+          - - "<powershell>\n"
+            - "cfn-init.exe "
+            - " --stack "
+            - "Ref": "AWS::StackId"
+            - " --resource Instance"
+            - " --region "
+            - "Ref": "AWS::Region"
+            - " --configsets config"
+            - " -v \n"
+            - "cfn-signal.exe  "
+            - " ---exit-code 0"
+            - " --region "
+            - "Ref": "AWS::Region"
+            - " --resource Instance" 
+            - " --stack "
+            - "Ref": "AWS::StackName"
+            - "\n"           
+            - "</powershell>\n"
+      NetworkInterfaces:
+          - DeleteOnTermination: 'true'
+            DeviceIndex: 0
+            Description: Primary network interface
+            SubnetId: !Ref PublicSubnet1ID
+            GroupSet:
+            - !Ref ADFSSecurityGroup
+
+
+  ScoreLambdaDAY1Task1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        ScoreRoleADFSTask1: !Ref ADFSScoreLambdaRoleArn
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}lambda/verify_saml_entity.yaml
+
+Outputs:
+  InstanceId:
+    Description: 'InstanceId'
+    Value: !Ref Instance
+  PublicDNS:
+    Description: ADFS Server Public DNS
+    Value: !GetAtt Instance.PublicDnsName
+  ADFSUsername:
+    Description: ADFS Username
+    Value: !Ref TechDayAdminUser
+  ADFSPassword:
+    Description: ADFS Password
+    Value: !Ref SafeModeAdministratorPassword

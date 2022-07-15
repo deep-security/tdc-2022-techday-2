@@ -1,0 +1,330 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: All answer validation functions for the FSS challenge for tdc-2022-techday-2
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase letters, uppercase
+      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Default: none
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start bucket name can include numbers, lowercase letters,
+      uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), and forward slash (/).
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/templates/
+    Default: ""
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Type: String
+
+  ImageUploaderS3Bucket:
+    Default: ""
+    Type: String
+    Description: The S3 Bucket that will contain the payload to be checked
+  ToolsPrefix:
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/tools/
+    Default: ""
+    Type: String
+    Description: The S3 Bucket that will contain the payload to be checked
+  SudoSinglesEndpoint:
+    Default: ""
+    Type: String
+    Description: The API gateway endpoint for the SudoSingles services
+
+Resources:
+  PayloadCheckerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: payloadChecker
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 512
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import time
+          import filecmp
+          import zipfile
+          import urllib.request
+          
+          
+          bucket = "${ImageUploaderS3Bucket}"
+          pwned_url = "https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${ToolsPrefix}pwned.zip"
+          file_key = "connectioncheck"
+          
+          s3 = boto3.client("s3")
+          ssm = boto3.client("ssm")
+          
+          
+          def get_payload():
+              download_location = "/tmp/pwned.zip"
+              with open(download_location, "wb") as control_file:
+                  res = urllib.request.urlopen(
+                      urllib.request.Request(url=pwned_url, method="GET"), timeout=5
+                  )
+                  control_file.write(res.read())
+          
+              with zipfile.ZipFile(download_location, "r") as zip_ref:
+                  zip_ref.extractall(path="/tmp", pwd=b"novirus")
+              return "/tmp/connectioncheck"
+          
+          
+          def check_container_filesystem():
+              tries = 0
+              while tries < 10:
+                  time.sleep(0.5)
+                  tries = tries + 1
+                  print(f"try number {tries}")
+                  response = ssm.send_command(
+                      Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                      DocumentName="AWS-RunShellScript",
+                      Parameters={
+                          # the below returns an error exit code if file doesnt exist
+                          "commands": [
+                              "sudo /usr/local/bin/kubectl exec -n fss-log4shell-attacker-env deployment/log4shell-deployment -- md5sum /srv/connectioncheck"
+                          ]
+                      },
+                  )
+                  print(f"response:{response}")
+                  command_id = response["Command"]["CommandId"]
+                  print(command_id)
+                  try:
+                      time.sleep(3)  # some delay always required...
+                      invocations_list = ssm.list_command_invocations(
+                          CommandId=command_id,
+                      )["CommandInvocations"]
+                      print(invocations_list)
+                      if invocations_list == []:
+                          continue
+                      instance_id = sorted(
+                          invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
+                      )[0]["InstanceId"]
+                      print(instance_id)
+                      result = ssm.get_command_invocation(
+                          CommandId=command_id,
+                          InstanceId=instance_id,
+                      )
+                      print(result)
+                      if result["Status"] == "InProgress":
+                          continue
+                      else:
+                          if result["Status"] != "Success":
+                              return False
+                          else:
+                              output = result["StandardOutputContent"]
+                              print(output)
+                              return True
+                  except ssm.exceptions.InvocationDoesNotExist:
+                      continue
+          
+          
+          def handler(event, context):
+              player_file = "/tmp/player_file"
+              control_file = get_payload()
+              try:
+                  executed_in_container = check_container_filesystem()
+                  print(executed_in_container)
+                  s3.download_file(bucket, file_key, player_file)
+                  file_equality = filecmp.cmp(control_file, player_file)
+                  print(file_equality)
+                  assert executed_in_container == True
+                  assert file_equality == True
+                  return True
+              except Exception as e:
+                  print(e)
+                  raise Exception("Payload not detected! Try again.")
+
+      Role: !GetAtt PayloadCheckerLambdaRole.Arn
+      Timeout: 30
+  PayloadCheckerLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Policies:
+        - PolicyName: PayloadCheckerLambdaPolicy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - "logs:CreateLogGroup"
+                  - "logs:CreateLogStream"
+                  - "logs:PutLogEvents"
+                Resource:
+                  - "arn:aws:logs:*:*:*"
+                Effect: Allow
+              - Action:
+                  - "s3:GetObject"
+                Effect: Allow
+                Resource:
+                  - !Sub "arn:aws:s3:::${ImageUploaderS3Bucket}/connectioncheck"
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                Resource:
+                  - arn:aws:ssm:*:*:document/AWS-RunShellScript
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ec2:DescribeInstances
+                Resource:
+                  - arn:aws:ec2:*:*:instance/*
+                Condition:
+                  StringLike:
+                    ssm:resourceTag/Name:
+                      - EKSBastion
+              - Effect: Allow
+                Action:
+                  - ssm:GetCommandInvocation
+                  - ssm:ListCommandInvocations
+                Resource:
+                  - arn:aws:ssm:*:*:*
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+
+  ProtectionCheckerLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: protectionChecker
+      Handler: index.handler
+      Runtime: python3.9
+      MemorySize: 512
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import filecmp
+          import zipfile
+          import urllib.request
+          from urllib.error import HTTPError
+          
+          
+          bucket = "${ImageUploaderS3Bucket}"
+          pwned_url = "https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${ToolsPrefix}pwned.zip"
+          endpoint = "${SudoSinglesEndpoint}"
+          file_key = "connectioncheck"
+          
+          s3 = boto3.client("s3")
+          
+          
+          class PayloadNotFoundError(Exception):
+              def __init__(self, message="Payload not detected! Try again."):
+                  self.message = message
+                  super().__init__(self.message)
+          
+          
+          class PayloadNotBlockedError(Exception):
+              def __init__(self, message="Payload was not blocked by FSS! Try again."):
+                  self.message = message
+                  super().__init__(self.message)
+          
+          
+          class ApplicationError(Exception):
+              def __init__(
+                  self,
+                  message="GetImg is not returning properly! This is an infrastructure issue. Call support.",
+              ):
+                  self.message = message
+                  super().__init__(self.message)
+          
+          
+          def get_payload():
+              download_location = "/tmp/pwned.zip"
+              with open(download_location, "wb") as control_file:
+                  res = urllib.request.urlopen(
+                      urllib.request.Request(url=pwned_url, method="GET"), timeout=5
+                  )
+                  control_file.write(res.read())
+          
+              with zipfile.ZipFile(download_location, "r") as zip_ref:
+                  zip_ref.extractall(path="/tmp", pwd=b"novirus")
+              return "/tmp/connectioncheck"
+          
+          
+          def scan_on_get_response(file):
+              try:
+                  url = f"{endpoint}/getimg/{file}"
+                  res = urllib.request.urlopen(
+                      urllib.request.Request(url=url, method="GET"),
+                      timeout=5,
+                  )
+                  data = {"code": res.code, "data": res.read()}
+              except HTTPError as e:
+                  data = {"code": e.code, "reason": e.reason, "headers": e.headers.items()}
+              finally:
+                  return data
+          
+          
+          def payload_check(control_file_path):
+              try:
+                  player_file_path = "/tmp/player_file_path"
+                  s3.download_file(bucket, file_key, player_file_path)
+                  files_are_equal: bool = filecmp.cmp(control_file_path, player_file_path)
+                  assert files_are_equal
+              except:
+                  raise PayloadNotFoundError
+              else:
+                  return files_are_equal
+          
+          
+          def protection_check(control_file_path):
+              try:
+                  payload_data = scan_on_get_response(file_key)
+                  contents = payload_data.get("data")
+                  with open(control_file_path, "rb") as control_file:
+                      file_is_clean: bool = contents not in control_file.read()
+                  assert file_is_clean
+              except:
+                  raise PayloadNotBlockedError
+              else:
+                  with open("/tmp/placeholder", "wb") as placeholder_file:
+                      placeholder_file.write(contents)
+                  return file_is_clean
+          
+          
+          def application_check(clean_key):
+              try:
+                  clean_data = scan_on_get_response(clean_key)
+                  contents = clean_data.get("data")
+                  with open("/tmp/placeholder", "rb") as control_file:
+                      file_is_correct: bool = contents not in control_file.read()
+                  assert file_is_correct
+              except:
+                  raise ApplicationError
+              else:
+                  return True
+          
+          
+          def handler(event, context):
+              payload_control_file_path = get_payload()
+              clean_file_key = "peep-6.png"
+          
+              payload_file_present: bool = payload_check(payload_control_file_path)
+              payload_blocked: bool = protection_check(payload_control_file_path)
+              getimg_functioning_normally: bool = application_check(clean_file_key)
+          
+              return payload_file_present and payload_blocked and getimg_functioning_normally
+                    
+      Role: !GetAtt PayloadCheckerLambdaRole.Arn
+      Timeout: 30

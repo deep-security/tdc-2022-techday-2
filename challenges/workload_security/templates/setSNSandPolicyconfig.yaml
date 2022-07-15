@@ -1,0 +1,129 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+  SetSNSandPolicyconfigLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Path: /
+      Policies: 
+        - PolicyName: SetSNSandPolicyconfigPolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action: 
+                  - ssm:DescribeParameters
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParameterHistory
+                  - ssm:GetParametersByPath
+                Resource: 
+                - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1ApiKey
+                - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1Region
+                  
+  SetSNSandPolicyconfigLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Code: 
+        ZipFile: |
+          import boto3, os
+          import requests as rq
+          import json as js
+          import cfnresponse
+
+          print('Loading function')
+    
+          def lambda_handler(event, context):
+              try:
+                  if event['RequestType'] == 'Create':
+                      ssmcliant = boto3.client('ssm')
+                      api_key = ssmcliant.get_parameter(Name='/player/C1/c1ApiKey')["Parameter"]["Value"]
+                      region = ssmcliant.get_parameter(Name='/player/C1/c1Region')["Parameter"]["Value"]
+                      URL_policy = "https://workload." + region + ".cloudone.trendmicro.com/api/policies"
+                      URL_sns = "https://workload." + region + ".cloudone.trendmicro.com/api/systemsettings"
+                      APIkey = "Apikey " + api_key     
+                      policyname = "usethispolicy"
+                      #SNS keys
+                      SNS_access_key = os.environ['ACCESS_KEY']
+                      SNS_secret_key = os.environ['SECRET_KEY']
+                      SNS_Topic_ARN = os.environ['TOPICARN']
+
+                      header = {
+                          "Content-Type": "application/json",
+                          "Authorization" : APIkey,
+                          "api-version": "v1"
+                      }    
+
+                      json_data_policy = {
+                          "parentID": 0,
+                          "name": policyname,   
+                          "policySettings": { 
+                              "intrusionPreventionSettingVirtualAndContainerNetworkScanEnabled": {"value": "false"}, 
+                              "intrusionPreventionSettingInspectTlsTrafficEnabled": {"value": "false"}
+                          }
+                      }
+    
+                      json_data_sns = {
+                          "platformSettingEventForwardingSnsEnabled": {"value": "true"},
+                          'platformSettingEventForwardingSnsAdvancedConfigEnabled': {'value': 'true'},
+                          'platformSettingEventForwardingSnsConfigJson': {'value': '{\r\n  "Version": "2014-09-24",\r\n  "Statement": [\r\n    {\r\n      "Topic": "' + SNS_Topic_ARN + '",\r\n      "Condition": {\r\n        "StringEquals" : {\r\n          "EventType" : ["SystemEvent", "AntiMalwareEvent", "WebReputationEvent", "DeviceControlEvent", "AppControlEvent", "IntegrityEvent", "LogInspectionEvent", "PacketLog", "PayloadLog"]\r\n        }\r\n      }\r\n    }\r\n  ]\r\n}'},
+                          "platformSettingEventForwardingSnsTopicArn": {"value": SNS_Topic_ARN},
+                          "platformSettingEventForwardingSnsSecretKey": {"value": SNS_secret_key},
+                          "platformSettingEventForwardingSnsAccessKey": {"value": SNS_access_key }
+                      }
+    
+                      response = rq.post(URL_policy,headers=header, data=js.dumps(json_data_policy))
+    
+                      print(response.status_code) 
+                      status_code = response.status_code
+                      if status_code == 200:
+                          print("Policy Configured")
+                      else:
+                          print("Policy error")
+    
+                      response = rq.post(URL_sns,headers=header, data=js.dumps(json_data_sns))
+    
+                      print(response.status_code) 
+                      status_code = response.status_code
+                      if status_code == 200:
+                          print("SNS Configured")
+                      else:
+                          print("SNS error")  
+                  
+                  sendResponseCfn(event, context, cfnresponse.SUCCESS)
+
+              except Exception as e:
+                  print(e)
+                  sendResponseCfn(event, context, cfnresponse.FAILED)
+
+          def sendResponseCfn(event, context, responseStatus):
+              responseData = {}
+              responseData['Data'] = {}
+              cfnresponse.send(event, context, responseStatus, responseData, "CustomResourcePhysicalID")                       
+      Handler: index.lambda_handler
+      Role: !GetAtt SetSNSandPolicyconfigLambdaRole.Arn
+      Runtime: python3.7
+      Timeout: 300
+      Environment:
+        Variables:
+          ACCESS_KEY: "{{resolve:ssm:WSAccessKey:1}}"
+          SECRET_KEY: "{{resolve:ssm:WSSecretKey:1}}"
+          TOPICARN: "{{resolve:ssm:WSSNSTopicARN:1}}"
+
+  SetSNSandPolicyconfig:
+    Type: AWS::CloudFormation::CustomResource
+    Properties:
+      ServiceToken: !GetAtt SetSNSandPolicyconfigLambda.Arn

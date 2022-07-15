@@ -7,6 +7,25 @@ Parameters:
     Default: ""
     Description: AWS Account ID 
     Type: String
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2022-2
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
 
 Resources:
 
@@ -126,7 +145,7 @@ Resources:
             - "echo -e '    spec:' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '      containers:' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '      - name: gotty' >> /tmp/c1cs_AttackContainer.yaml"
-            - "echo -e '        image: {{playerawsAccountID}}.dkr.ecr.us-east-1.amazonaws.com/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
+            - "echo -e '        image: public.ecr.aws/q4l4n3k8/c1cs-attack:tdc_2022_2_c1csAttack' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '        imagePullPolicy: Always' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '        ports:' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '        - containerPort: 8080' >> /tmp/c1cs_AttackContainer.yaml"
@@ -147,22 +166,6 @@ Resources:
             - "echo -e '            - cat' >> /tmp/c1cs_AttackContainer.yaml"
             - "echo -e '            - /run_gotty.sh' >> /tmp/c1cs_AttackContainer.yaml"
             - "sudo /usr/local/bin/kubectl apply -f /tmp/c1cs_AttackContainer.yaml"
-        livenessProbe:
-          failureThreshold: 3
-          periodSeconds: 3
-          initialDelaySeconds: 3
-          exec:
-            command:
-            - cat
-            - /run_gotty.sh
-        startupProbe:
-          failureThreshold: 20
-          periodSeconds: 10
-          initialDelaySeconds: 3
-          exec:
-            command:
-            - cat
-            - /run_gotty.sh
       DocumentType: Command
       Name: 'CreateC1csAttackContainer'
 
@@ -181,7 +184,7 @@ Resources:
             - "echo 'apiVersion: v1' > /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo 'kind: Service' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo 'metadata:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
-            - "echo -e '  name: nginx-service-loadbalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
+            - "echo -e '  name: c1cs-attack-loadbalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo 'spec:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo -e '  type: LoadBalancer' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
             - "echo -e '  selector:' >> /tmp/c1cs_AttackContainer_loadbalancer.yaml"
@@ -199,7 +202,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csAttackContainerLambdaFunctionRole.Arn
         Code:
@@ -231,7 +234,7 @@ Resources:
       Type: AWS::Lambda::Function
       Properties:
         Runtime: python3.8
-        Timeout: 20
+        Timeout: 60
         Handler: index.lambda_handler
         Role: !GetAtt c1csAttackContainerLambdaFunctionRole.Arn
         Code:
@@ -316,6 +319,28 @@ Resources:
         }
       RoleArn: !GetAtt [ c1csAttackStateMachineRole, Arn ]
 
+# Invoke State Machine
+  invokeAttackContainerStateMatchine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_invoke_attack_container_state_matchine.template.yaml'
+
+# Wait 60 seconds for c1cs_invoke_attack_container_state_matchine.template.yaml to finish invoking: Deployc1csAttackContainerstateMachine
+#  deployC1csAttackWaitHandle:
+#    Type: AWS::CloudFormation::WaitConditionHandle
+#  deployC1csAttackWaitCondition:
+#    DependsOn: invokeAttackContainerStateMatchine
+#    Type: AWS::CloudFormation::WaitCondition
+#    Properties:
+#      Handle: !Ref deployC1csAttackWaitHandle
+#      Timeout: '60'
+#      Count: 1
+  getC1csAttackAlb:
+    Type: AWS::CloudFormation::Stack
+    DependsOn: invokeAttackContainerStateMatchine
+    Properties:
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/c1cs_get_alb_hostname.yaml'
+
 Outputs:
   lambdaFunctionRunSSMCommandCreateC1csAttackContainer:
     Description: Run SSM Command to uninstall C1CS
@@ -326,3 +351,6 @@ Outputs:
   Deployc1csAttackContainerstateMachine:
     Description: Step function that deploys C1CS in EKS
     Value: !GetAtt Deployc1csAttackContainerstateMachine.Arn
+  c1csAttackAlbHostname:
+    Description: ALB Hostname that the player uses to access the c1cs attack container
+    Value: !GetAtt getC1csAttackAlb.Outputs.c1csAttackAlbHostname

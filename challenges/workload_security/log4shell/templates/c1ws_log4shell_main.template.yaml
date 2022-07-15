@@ -1,0 +1,207 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  tdc-2022-techday-1 Cloud One Workload Security Log4Shell Main Template.
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+    Default: tdc-challenges
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: ""
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnet1ID:
+    Type: AWS::EC2::Subnet::Id
+  SNSTopicArn:
+    Type: String
+  scoreroleC1WS:
+    Type: String
+    Description: Shared Lambda Role Arn
+  VictimLog4ShellRole:
+    Type: String
+    Description: Shared IAM Role
+
+Resources:
+  verificationBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccessControl: Private
+
+  # scoreroleC1WS:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Action: sts:AssumeRole
+  #           Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #       Version: "2012-10-17"
+  #     ManagedPolicyArns:
+  #       - Fn::Join:
+  #           - ""
+  #           - - "arn:"
+  #             - Ref: AWS::Partition
+  #             - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+  #     Policies:
+  #       - PolicyName: C1WSLog4ShellScore
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: "Allow"
+  #               Action:
+  #                 - ssm:DescribeParameters
+  #                 - ssm:GetParameter
+  #                 - ssm:GetParameters
+  #                 - ssm:GetParameterHistory
+  #                 - ssm:GetParametersByPath
+  #               Resource:
+  #                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1ApiKey
+  #                 - !Sub arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter/player/C1/c1Region
+
+  snslambdaroleC1WS:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: C1WSLog4ShellSNSLambda
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - s3:PutObject*
+                Resource:
+                  - !GetAtt verificationBucket.Arn
+                  - !Join ["", [!GetAtt verificationBucket.Arn, "/*"]]
+
+  s3verifylambdaroleC1WS:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+        Version: "2012-10-17"
+      ManagedPolicyArns:
+        - Fn::Join:
+            - ""
+            - - "arn:"
+              - Ref: AWS::Partition
+              - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: C1WSLog4ShellS3VerificationLambda
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: "Allow"
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - !GetAtt verificationBucket.Arn
+
+  VictimLog4Shell:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/victim_log4shell.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        AllowIP: 0.0.0.0/0
+        VPC: !Ref VPCID
+        PublicSubnet1: !Ref PublicSubnet1ID
+        VictimLog4ShellRole: !Ref VictimLog4ShellRole
+
+  ScoreLambdaTask1:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task1.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        HostName: !GetAtt VictimLog4Shell.Outputs.Log4ShellPublicDNSName
+        ScoreLambdaRole: !Ref scoreroleC1WS
+
+  SNSLambdaTask2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task2_sns.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        bucketName: !Ref verificationBucket
+        SNSLambdaRole: !GetAtt snslambdaroleC1WS.Arn
+        SNSTopicArn: !Ref SNSTopicArn
+
+  S3VerifyLambdaTask2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task2_verify.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        bucketName: !Ref verificationBucket
+        S3VerifyLambdaRole: !GetAtt s3verifylambdaroleC1WS.Arn
+
+  SNSLambdaTask3:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task3_sns.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        bucketName: !Ref verificationBucket
+        SNSLambdaRole: !GetAtt snslambdaroleC1WS.Arn
+        SNSTopicArn: !Ref SNSTopicArn
+
+  S3VerifyLambdaTask3:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task3_verify.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        bucketName: !Ref verificationBucket
+        S3VerifyLambdaRole: !GetAtt s3verifylambdaroleC1WS.Arn
+
+  ScoreLambdaTask4:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/lambda_task4.template.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3Key: !Ref QSS3KeyPrefix
+        HostName: !GetAtt VictimLog4Shell.Outputs.Log4ShellPublicDNSName
+        ScoreLambdaRole: !Ref scoreroleC1WS
+        
+Outputs:
+  Log4ShellSite:
+    Value: !GetAtt VictimLog4Shell.Outputs.Log4ShellSite

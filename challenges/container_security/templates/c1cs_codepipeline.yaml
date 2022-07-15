@@ -75,7 +75,7 @@ Resources:
               - s3:GetBucketAcl
               - s3:GetBucketLocation
             Resource:
-              - !Sub "arn:aws:s3:::${QSS3BucketName}*"
+              - !Sub "arn:aws:s3:::${QSS3BucketName}/${QSS3KeyPrefix}*"
           - Effect: Allow
             Action:
               - codecommit:GitPull
@@ -199,7 +199,7 @@ Resources:
             Value: !Ref ServiceName
       Source:
         Type: S3
-        Location: !Sub ${QSS3BucketName}/${QSS3KeyPrefix}challenges/container_security/templates/dockerFiles.zip
+        Location: !Sub ${QSS3BucketName}/${QSS3KeyPrefix}templates/dockerFiles.zip
       TimeoutInMinutes: 10
     DependsOn: c1csECR
 
@@ -207,7 +207,7 @@ Resources:
         Type: AWS::Lambda::Function
         Properties:
           Runtime: python3.8
-          Timeout: 20
+          Timeout: 60
           Handler: index.lambda_handler
           Role: !GetAtt startCodeBuildRole.Arn
           Code:
@@ -343,5 +343,5 @@ Resources:
     Type: Custom::InvokeStartCodeBuildLambda
     Properties:
       ServiceToken: !GetAtt lambdaFunctionStartCodeBuild.Arn
-      Timeout: 10
+      Timeout: 600
         # The code build process takes about 4.5 minuts.  This timeout could be reduced from 10 minutes if needed.

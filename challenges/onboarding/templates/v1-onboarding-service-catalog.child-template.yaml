@@ -89,6 +89,14 @@ Parameters:
     Default: QSS3KeyPrefix
     AllowedValues: ["QSS3KeyPrefix"]
     Description: DO NOT CHANGE THIS VALUE
+  QSS3BucketNameSSMValue:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3BucketName
+    Description: DO NOT CHANGE THIS VALUE
+  QSS3KeyPrefixSSMValue:
+    Type: 'AWS::SSM::Parameter::Value<String>'
+    Default: QSS3KeyPrefix
+    Description: DO NOT CHANGE THIS VALUE
   c1OnboardingStatusSSMKey:
     Default: "/player/C1/c1OnboardingStatus"
     Description: DO NOT MODIFY. SSM Parameter Key for validating Cloud One onboarding status.
@@ -100,6 +108,10 @@ Parameters:
   v1ApiBaseUrlSSMKey:
     Default: "/player/V1/v1ApiBaseUrl"
     Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One API Base URL.
+    Type: String
+  v1SOApiBaseUrlSSMKey:
+    Default: "/player/V1/v1SOApiBaseUrl"
+    Description: DO NOT MODIFY. SSM Parameter Key for fetching Vision One SO API Base URL.
     Type: String
   v1ApiKeySSMKey:
     Default: "/player/V1/v1ApiKey"
@@ -120,10 +132,6 @@ Parameters:
   LambdaFunctionTimeout:
     Type: Number
     Default: 900
-  V1PostOnboardFunctionName:
-    Default: "V1PostOnboardFunctionName"
-    Description: DO NOT MODIFY. Expected value of the SSM Parameter Value for the Post Onboard function name.
-    Type: 'AWS::SSM::Parameter::Value<String>'
 
 Resources:
   # Creates an IAM role for the AWS Lambda functions.
@@ -168,6 +176,9 @@ Resources:
                   - !Sub
                     - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${v1ApiBaseUrlSSMKey}
                     - v1ApiBaseUrlSSMKey: !Ref v1ApiBaseUrlSSMKey
+                  - !Sub
+                    - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${v1SOApiBaseUrlSSMKey}
+                    - v1SOApiBaseUrlSSMKey: !Ref v1SOApiBaseUrlSSMKey
                   - !Sub
                     - arn:${AWS::Partition}:ssm:${AWS::Region}:${AWS::AccountId}:parameter${v1ApiKeySSMKey}
                     - v1ApiKeySSMKey: !Ref v1ApiKeySSMKey
@@ -215,12 +226,12 @@ Resources:
           # Returns the Vision One region-based API Endpoint Base URL.
           def v1ApiEndpointBaseUrl(v1TrendRegion):
 
-              return "https://" + v1ApiEndpointBaseUrls[v1TrendRegion] + "/beta/xdr/portal"
+              return "https://" + v1ApiEndpointBaseUrls[v1TrendRegion] #+ "/beta/xdr/portal"
 
           # Validates the Vision One Auth token passed to this function by listing roles in the Vision One account, returns True if success, otherwise False.
           def v1VerifyAuthToken(ssmClient, http, httpHeaders, v1TrendRegion):
 
-              r = http.request('GET', v1ApiEndpointBaseUrl(v1TrendRegion) + "/accounts/roles", headers=httpHeaders)
+              r = http.request('GET', v1ApiEndpointBaseUrl(v1TrendRegion) + "/v2.0/xdr/portal/accounts/roles", headers=httpHeaders)
 
               v1ListAccountsResponse = json.loads(r.data)
               
@@ -256,7 +267,7 @@ Resources:
                   "role": str(v1Role)
               }
 
-              v1InvitePlayerResponse = json.loads(http.request('POST', v1ApiEndpointBaseUrl(v1TrendRegion) + "/accounts/" + urllib.parse.quote_plus(str(emailId)) , headers=httpHeaders, body=json.dumps(httpBody)).data)
+              v1InvitePlayerResponse = json.loads(http.request('POST', v1ApiEndpointBaseUrl(v1TrendRegion) + "/v2.0/xdr/portal/accounts/" + urllib.parse.quote_plus(str(emailId)) , headers=httpHeaders, body=json.dumps(httpBody)).data)
 
               if "error" in v1InvitePlayerResponse:
 
@@ -274,6 +285,7 @@ Resources:
                       raise Exception('Error: Invitation unsuccessful.')
 
           # Verify User Accounts exist in the Vision One account.
+          # This only exists in Beta
           def v1VerifyUserAccounts(http, httpHeaders, v1TrendRegion, v1UsersList):
 
               v1UserAccountsResponse = json.loads(http.request('GET', v1ApiEndpointBaseUrl(v1TrendRegion)  + "/accounts", headers=httpHeaders).data)
@@ -362,22 +374,20 @@ Resources:
                               # Stores global Trend V1 API Base URL as an SSM Parameter  "v1ApiBaseUrl".
                               setV1SsmParameter(ssmClient, "v1ApiBaseUrl", v1ApiEndpointBaseUrl(v1TrendRegion))
 
+                              # Stores global Trend V1 API Base URL as an SSM Parameter  "v1SOApiBaseUrl".
+                              #create new parameter for use in V1 SO score lambda envar
+                              setV1SsmParameter(ssmClient, "v1SOApiBaseUrl", "https://" + v1ApiEndpointBaseUrls[v1TrendRegion])
+
                               # Stores global Trend V1 API Key as an SSM Parameter  "v1ApiKey".
                               setV1SsmParameter(ssmClient, "v1ApiKey", v1AuthToken)
 
                               # Verify if all users exist in the Vision One account, raises exception if any one user fails.
-                              if v1VerifyUserAccounts(http, headers, v1TrendRegion, v1UsersList):
+                              #if v1VerifyUserAccounts(http, headers, v1TrendRegion, v1UsersList):
                                   
-                                  print("Success: User(s) exist in the Vision One account")
+                                  #print("Success: User(s) exist in the Vision One account")
 
-                                  # Stores onboarding success as an SSM Parameter "v1Onboarding" for Mission Control verification.
-                                  setV1SsmParameter(ssmClient, "v1OnboardingStatus", "Success")           
-                                  # Since task was successful, we will kick of the Post Onboarding(AKA Wrinkler) lambda
-                                  lambdaClient = boto3.client('lambda')
-                                  lambdaClient.invoke(
-                                    FunctionName=str(os.environ.get("V1_POST_ONBOARD_LAMBDA_NAME")),
-                                    InvocationType="Event"
-                                  )
+                              # Stores onboarding success as an SSM Parameter "v1Onboarding" for Mission Control verification.
+                              setV1SsmParameter(ssmClient, "v1OnboardingStatus", "Success")           
               except Exception as e:
                   logger.info("Exception: {}".format(e))
                   status = cfnresponse.FAILED
@@ -396,9 +406,18 @@ Resources:
           awsRegion: !Ref AWS::Region
           v1TrendRegion: !Ref v1TrendRegion
           v1AuthToken: !Ref v1AuthToken
-          v1UsersList: !Ref v1UsersList        
-          V1_POST_ONBOARD_LAMBDA_NAME: !Ref V1PostOnboardFunctionName
+          v1UsersList: !Ref v1UsersList
       Role: !GetAtt TechDayV1onboardingLambdaRole.Arn
+
+  # Triggers Vision One post-onboarding stacks creation.
+  PostOnboardingStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketNameSSMValue
+        QSS3KeyPrefix: !Ref QSS3KeyPrefixSSMValue
+      TemplateURL: !Sub 'https://${QSS3BucketNameSSMValue}.s3.amazonaws.com/${QSS3KeyPrefixSSMValue}templates/v1_post_onboarding.template.yaml'
+    DependsOn: VerifyV1OnboardingCustomResource
 
   # Task 1 - Creates an AWS Lambda function with the Vision One Onboarding verification module.
   VerifyV1OnboardingLambdaFunction:

@@ -1,0 +1,157 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  Tech Day C1WS day1 main Template
+Parameters:
+  # Bucket path related
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnet1ID:
+    Type: AWS::EC2::Subnet::Id
+  SharedIamRoleArn:
+    Type: String
+    Description: Shared IAM Role Arn
+  SharedIamRole:
+    Type: String
+    Description: Shared IAM Role
+    
+Mappings:
+  #Amazon Linux 2 x86_64 
+  AMZN:
+    us-east-1:
+      AMZN: ami-0022f774911c1d690
+    us-east-2:
+      AMZN: ami-0fa49cc9dc8d62c84
+    us-west-1:
+      AMZN: ami-02541b8af977f6cdd
+    us-west-2:
+      AMZN: ami-0ca285d4c2cda3300
+    af-south-1:
+      AMZN: ami-03003e6476312b667      
+    ap-east-1:
+      AMZN: ami-08a1347eb79b693e4      
+    ap-southeast-3:
+      AMZN: ami-0e61512a31c90a8a5      
+    ap-south-1:
+      AMZN: ami-079b5e5b3971bd10d      
+    ap-northeast-3:
+      AMZN: ami-0ca3b0faa0c4c4bbd      
+    ap-northeast-2:
+      AMZN: ami-0cbec04a61be382d9     
+    ap-southeast-1:
+      AMZN: ami-0bd6906508e74f692      
+    ap-southeast-2:
+      AMZN: ami-0c6120f461d6b39e9      
+    ap-northeast-1:
+      AMZN: ami-02c3627b04781eada      
+    ca-central-1:
+      AMZN: ami-0843f7c45354d48b5      
+    eu-central-1:
+      AMZN: ami-09439f09c55136ecf      
+    eu-west-1:
+      AMZN: ami-0c1bc246476a5572b     
+    eu-west-2:
+      AMZN: ami-0d729d2846a86a9e7    
+    eu-south-1:
+      AMZN: ami-0811f38eb070bf860
+    eu-west-3:
+      AMZN: ami-021d41cbdefc0c994
+    eu-north-1:
+      AMZN: ami-08bdc08970fcbd34a
+    me-south-1:
+      AMZN: ami-0e0d82dfd5f84879e
+    sa-east-1:
+      AMZN: ami-0800f9916b7655289
+
+Resources:
+  ############################################ 
+  ################ Onbording ################ 
+  ############################################
+  Onbording:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/onbording_main.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}templates/
+
+  ############################################ 
+  ############## TLS Inspection ############## 
+  ############################################
+  TLSI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/tlsi_main.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}templates/
+        VPCID: !Ref VPCID
+        PublicSubnet1ID: !Ref PublicSubnet1ID
+        AttackerRoleArn: !Ref SharedIamRoleArn
+        DSAkeysRole: !Ref SharedIamRole
+        AMIID:
+          !FindInMap
+          - AMZN
+          - !Ref AWS::Region
+          - AMZN
+          
+  ############################################ 
+  ################ Container ################ 
+  ############################################
+  Container:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/container_ec2.yaml
+      Parameters:
+        QSS3BucketName: !Ref QSS3BucketName
+        QSS3KeyPrefix: !Ref QSS3KeyPrefix
+        PublicSubnet1: !Ref PublicSubnet1ID
+        DSAkeysRole: !Ref SharedIamRole
+        AMIID:
+          !FindInMap
+          - AMZN
+          - !Ref AWS::Region
+          - AMZN
+        
+  ############################################ 
+  ################# Scoring ################# 
+  ############################################
+  ScoreLambdaTLSI:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_tlsi.yaml
+      Parameters:
+        TargetBucketName: !GetAtt Onbording.Outputs.S3BucketName
+
+  ScoreLambdaContainer:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_container.yaml
+      Parameters:
+        TargetBucketName: !GetAtt Onbording.Outputs.S3BucketName
+
+  ScoreLambdaOffline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_EppOfflineScan.yaml
+      Parameters:
+        C1WSEppOfflineCheckScoreRole: !Ref SharedIamRoleArn
+
+Outputs:
+  SNSTopicARN:
+    Value: !GetAtt Onbording.Outputs.SNSTopicARN

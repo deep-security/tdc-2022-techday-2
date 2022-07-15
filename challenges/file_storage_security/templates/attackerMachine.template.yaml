@@ -1,0 +1,351 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description:
+  tdc-2022-2 FSS. Creates a state machine to deploy the attacker environment
+
+Metadata:
+  # cfn_lint: Disable warning for unused parameters
+  cfn-lint:
+    config:
+      ignore_checks:
+        - "W2001"
+
+Parameters:
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription:
+      Quick Start bucket name can include numbers, lowercase letters, uppercase
+      letters, and hyphens (-). It cannot start or end with a hyphen (-).
+    Default: none
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start bucket name can include numbers, lowercase letters,
+      uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*$
+    ConstraintDescription:
+      Quick Start key prefix can include numbers, lowercase letters, uppercase
+      letters, hyphens (-), and forward slash (/).
+    # REFERENCE (tdc-2022-2): Value in this file = latest/challenges/file_storage_security/
+    Default: ""
+    Description:
+      Update to where you hold the scripts. S3 bucket name for the Tech Day
+      assets. Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), and forward slash (/).
+    Type: String
+  PlayerPassword:
+    Description: The Player's password
+    Type: String
+
+Resources:
+  # Create iAM Roles
+  K8sAdminRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      Policies:
+        - PolicyName: K8sAdminRole
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                  - ssm:PutParameter
+                Resource:
+                  - !Sub "arn:aws:ssm:*:*:document/${LaunchK8sManifests}"
+                  - arn:aws:ssm:*:*:document/AWS-RunShellScript
+                  - arn:aws:ssm:*:*:parameter/player/FSS/AttackerLBHostname
+              - Effect: Allow
+                Action:
+                  - ssm:SendCommand
+                Resource:
+                  - arn:aws:ec2:*:*:instance/*
+                Condition:
+                  StringLike:
+                    ssm:resourceTag/Name:
+                      - EKSBastion
+              - Effect: Allow
+                Action:
+                  - ssm:GetCommandInvocation
+                  - ssm:ListCommandInvocations
+                Resource:
+                  - arn:aws:ssm:*:*:*
+  DeployAttackerEnvStateMachineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - states.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/service-role/"
+      Policies:
+        - PolicyName: StateMachinePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - lambda:InvokeFunction
+                Resource:
+                  - !GetAtt DeleteAttackerNamespaceLambda.Arn
+                  - !GetAtt LaunchK8sManifestsLambda.Arn
+                  - !GetAtt GetAttackerLBHostnameLambda.Arn
+
+  # Create SSM Documents
+  LaunchK8sManifests:
+    Type: AWS::SSM::Document
+    Properties:
+      Content:
+        schemaVersion: "2.2"
+        description:
+          "Document that launches arbitrary k8s manifest files found in the
+          QSS3Bucket."
+        mainSteps:
+          - action: aws:runShellScript
+            name: LaunchManifestsIndempotent
+            inputs:
+              timeoutSeconds: "180"
+              runCommand:
+                - |
+                  NAMESPACE=fss-log4shell-attacker-env \
+                - !Sub |
+                  sudo /usr/local/bin/kubectl delete namespace $NAMESPACE --ignore-not-found=true && \
+                  sudo /usr/local/bin/kubectl create namespace $NAMESPACE && \
+                  mkdir -p /tmp/manifests-$NAMESPACE && \
+                  sudo /usr/local/bin/kubectl create --namespace=$NAMESPACE secret generic cfn-references --from-literal=TOOLSURL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}tools/ --from-literal=PLAYERPASSWORD="${PlayerPassword}" && \
+                  sudo /usr/local/bin/kubectl apply --namespace=$NAMESPACE -f https://${QSS3BucketName}.s3.${AWS::URLSuffix}/${QSS3KeyPrefix}templates/k8s/main.yaml
+      DocumentType: Command
+
+  # SSM Parameters
+  DeployAttackerEnvStateMachineArn:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/FSS/DeployAttackerEnvStateMachineArn
+      Type: String
+      Value: !Ref DeployAttackerEnvStateMachine
+      Description: ARN for DeployAttackerEnvStateMachine state machine
+  AttackerLBHostname:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /player/FSS/AttackerLBHostname
+      Type: String
+      Value: startingValue
+      Description: Load Balancer Hostname for nginx web server
+
+  # Lambda functions
+  DeleteAttackerNamespaceLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Timeout: 180
+      Handler: index.lambda_handler
+      Role: !GetAtt K8sAdminRole.Arn
+      Code:
+        ZipFile: !Sub
+          - |
+            import boto3
+
+            client = boto3.client("ssm")
+
+            def lambda_handler(event=None, context=None):
+                client.send_command(
+                    Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                    DocumentName="AWS-RunShellScript",
+                    Parameters={
+                        "commands": [
+                            "${commands}"
+                    },
+                )
+          - commands: |
+              sudo /usr/local/bin/kubectl delete namespace fss-log4shell-attacker-env --ignore-not-found=true
+  LaunchK8sManifestsLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Timeout: 180
+      Handler: index.lambda_handler
+      Role: !GetAtt K8sAdminRole.Arn
+      Code:
+        ZipFile: !Sub |
+          import boto3
+          import time
+
+          ssm = boto3.client("ssm")
+          region = "${AWS::Region}"
+
+
+          def lambda_handler(event=None, context=None):
+              response = ssm.send_command(
+                  Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                  DocumentName="${LaunchK8sManifests}",
+                  DocumentVersion="$DEFAULT",
+                  TimeoutSeconds=123,
+                  Comment="string",
+              )
+              command_id = response["Command"]["CommandId"]
+              tries = 0
+              while tries < 10:
+                  tries = tries + 1
+                  try:
+                      time.sleep(0.5)  # some delay always required...
+                      invocations_list = ssm.list_command_invocations(
+                          CommandId=command_id,
+                      )["CommandInvocations"]
+                      instance_id = sorted(
+                          invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
+                      )[0]["InstanceId"]
+                      print(instance_id)
+                      result = ssm.get_command_invocation(
+                          CommandId=command_id,
+                          InstanceId=instance_id,
+                      )
+                      print(result)
+                      if result["Status"] == "InProgress":
+                          continue
+                      if result["Status"] == "TimedOut" or result["Status"] == "Failed":
+                          raise Exception("Command failed/timed out.")
+                      break
+                  except ssm.exceptions.InvocationDoesNotExist:
+                      continue
+  GetAttackerLBHostnameLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      Runtime: python3.8
+      Timeout: 20
+      Handler: index.lambda_handler
+      Role: !GetAtt K8sAdminRole.Arn
+      Code:
+        ZipFile: |
+          import boto3
+          import time
+
+
+          def lambda_handler(event=None, context=None):
+              client = boto3.client("ssm")
+              response = client.send_command(
+                  Targets=[{"Key": "tag:Name", "Values": ["EKSBastion"]}],
+                  DocumentName="AWS-RunShellScript",
+                  Parameters={
+                      "commands": [
+                          "sudo /usr/local/bin/kubectl get services --namespace fss-log4shell-attacker-env attacker-machine-loadbalancer --output jsonpath='{.status.loadBalancer.ingress[0].hostname}'"
+                      ]
+                  },
+              )
+              command_id = response["Command"]["CommandId"]
+              tries = 0
+              output = "False"
+              while tries < 10:
+                  tries = tries + 1
+                  try:
+                      time.sleep(0.5)  # some delay always required...
+                      invocations_list = client.list_command_invocations(
+                          CommandId=command_id,
+                      )["CommandInvocations"]
+                      instance_id = sorted(
+                          invocations_list, key=lambda d: d["RequestedDateTime"], reverse=True
+                      )[0]["InstanceId"]
+                      print(instance_id)
+                      result = client.get_command_invocation(
+                          CommandId=command_id,
+                          InstanceId=instance_id,
+                      )
+                      print(result)
+                      if result["Status"] == "InProgress":
+                          continue
+                      output = result["StandardOutputContent"]
+                      break
+                  except client.exceptions.InvocationDoesNotExist:
+                      continue
+
+              client.put_parameter(
+                  Name="/player/FSS/AttackerLBHostname",
+                  Value=output,
+                  Type="String",
+                  Overwrite=True,
+              )
+
+  # State Machine
+  DeployAttackerEnvStateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: DeployAttackerEnvStateMachine
+      DefinitionString: !Sub |
+        {
+          "StartAt": "LaunchK8sManifestsLambda",
+          "States": {
+            "LaunchK8sManifestsLambda": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::lambda:invoke",
+              "Parameters": {
+                "Payload.$": "$",
+                "FunctionName": "${LaunchK8sManifestsLambda.Arn}"
+              },
+              "Retry": [
+                {
+                  "ErrorEquals": [
+                    "Lambda.ServiceException",
+                    "Lambda.AWSLambdaException",
+                    "Lambda.SdkClientException"
+                  ],
+                  "IntervalSeconds": 10,
+                  "MaxAttempts": 10,
+                  "BackoffRate": 2
+                }
+              ],
+              "Next": "Wait"
+            },
+            "Wait": {
+              "Type": "Wait",
+              "Seconds": 120,
+              "End": true
+            }
+          },
+          "Comment": "Idempotent state machine that deploys an attacker environment to EKS through an EKS bastion.\nNOTE: The EKS bastion(s) in question must have be tagged: \"Name:EKSBastion\"."
+        }
+      RoleArn: !GetAtt [DeployAttackerEnvStateMachineRole, Arn]
+
+  # Invoke the State Machine
+  InvokeAttackerEnvStateMachine:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/invokeAttackerStateMachine.template.yaml"
+    DependsOn: DeployAttackerEnvStateMachine
+
+  # Get hostname
+  GetFSSALBHostname:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters: 
+        Namespace: "fss-log4shell-attacker-env"
+      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/getALBHostname.template.yaml'
+    DependsOn: InvokeAttackerEnvStateMachine
+
+Outputs:
+  DeployAttackerEnvStateMachine:
+    Description: State Machine that deploys the attacker environment in EKS
+    Value: !GetAtt DeployAttackerEnvStateMachine.Arn
+  GetAttackerLBHostnameLambda:
+    Description: GetAttackerLBHostnameLambda Arn
+    Value: !GetAtt GetAttackerLBHostnameLambda.Arn
+  DeleteAttackerNamespaceLambda:
+    Description: DeleteAttackerNamespaceLambda Arn
+    Value: !GetAtt DeleteAttackerNamespaceLambda.Arn
+  FSSAttackAlbHostname:
+    Value: !GetAtt GetFSSALBHostname.Outputs.FSSAttackAlbHostname
+    Description: "Alb hostname for the FSS attack container."

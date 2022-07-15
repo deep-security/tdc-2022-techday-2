@@ -1,0 +1,124 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >
+  This template defines a the main stack for a challenge.
+
+Parameters:
+
+  VPCID:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC ID to use for the challenge.
+  LatestAmazonLinuxAmiId: 
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+    Description: DO NOT CHANGE THIS VALUE
+  PublicSubnetId:
+    Type: AWS::EC2::Subnet::Id
+    Description: The ID of the public subnet to use for the challenge.
+  ContainerRegistry:
+    Type: String
+    Description: The container registry to use for the challenge.
+    Default: public.ecr.aws/q4l4n3k8
+  ContainerRepository:
+    Type: String
+    Description: The container repository to use for the challenge.
+    Default: votk
+  ContainerTag:
+    Type: String
+    Description: The container tag to use for the challenge.
+    Default: v0.25.0
+  QSS3BucketName:
+    AllowedPattern: ^[0-9a-zA-Z]+([0-9a-zA-Z-]*[0-9a-zA-Z])*$
+    ConstraintDescription: Quick Start bucket name can include numbers, lowercase
+      letters, uppercase letters, and hyphens (-). It cannot start or end with a hyphen
+      (-).
+    Default: techday-2022-2
+    Description: S3 bucket name for the Quick Start assets. Quick Start bucket name
+      can include numbers, lowercase letters, uppercase letters, and hyphens (-).
+      It cannot start or end with a hyphen (-).
+    Type: String
+  QSS3KeyPrefix:
+    AllowedPattern: ^[0-9a-zA-Z-/._]*
+    ConstraintDescription: Quick Start key prefix can include numbers, lowercase letters,
+      uppercase letters, hyphens (-), dots(.) and forward slash (/).
+    Default: "latest/"
+    Description: S3 key prefix for the Quick Start assets. Quick Start key prefix
+      can include numbers, lowercase letters, uppercase letters, hyphens (-), dots(.) and
+      forward slash (/).
+    Type: String
+  VOTKInstanceRole:
+    Type: String
+    Description: Shared IAM Role
+
+Resources:
+  # VOTKInstanceRole:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #       - Effect: Allow
+  #         Principal:
+  #           Service:
+  #           - ec2.amazonaws.com
+  #         Action:
+  #         - sts:AssumeRole
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+  #     Path: /
+
+  VOTKInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - !Ref VOTKInstanceRole
+  VOTKSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enables access to VOTK
+      VpcId: !Ref VPCID
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Challenge
+          Value: VOTK
+        - Key: Name
+          Value: "VOTK"
+  VOTKInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref LatestAmazonLinuxAmiId
+      InstanceType: m6i.xlarge
+      SubnetId: !Ref PublicSubnetId
+      IamInstanceProfile: !Ref VOTKInstanceProfile
+      SecurityGroupIds:
+        - !GetAtt VOTKSecurityGroup.GroupId
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y && yum install docker -y
+          service docker start
+          systemctl enable docker.service
+          systemctl enable containerd.service
+          PUBLIC_NAME=$(curl -f http://169.254.169.254/latest/meta-data/public-hostname)
+          PACKAGE_URL=https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}packages/package.tar.gz 
+          CONTAINER_NAME=${ContainerRegistry}/${ContainerRepository}:${ContainerTag}
+          docker run \
+            -e PACKAGE=$PACKAGE_URL\
+            -e REVERSE_MODE=true \
+            -e URL=https://$PUBLIC_NAME \
+            --restart always \
+            -p 443:80 \
+            $CONTAINER_NAME bash run.sh
+      Tags:
+        - Key: Challenge
+          Value: VOTK   
+        - Key: Name
+          Value: "VOTK"
+
+Outputs:
+  VOTKPublicDNS:
+    Description: VOTK public DNS
+    Value: !Sub https://${VOTKInstance.PublicDnsName}
