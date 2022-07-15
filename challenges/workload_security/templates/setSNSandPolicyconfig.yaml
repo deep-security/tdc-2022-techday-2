@@ -119,9 +119,9 @@ Resources:
       Timeout: 300
       Environment:
         Variables:
-          ACCESS_KEY: "{{resolve:ssm:WSAccessKey:1}}"
-          SECRET_KEY: "{{resolve:ssm:WSSecretKey:1}}"
-          TOPICARN: "{{resolve:ssm:WSSNSTopicARN:1}}"
+          ACCESS_KEY: "{{resolve:ssm:WSAccessKey}}"
+          SECRET_KEY: "{{resolve:ssm:WSSecretKey}}"
+          TOPICARN: "{{resolve:ssm:WSSNSTopicARN}}"
 
   SetSNSandPolicyconfig:
     Type: AWS::CloudFormation::CustomResource
