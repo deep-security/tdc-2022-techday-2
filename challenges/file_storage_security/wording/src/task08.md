@@ -20,7 +20,7 @@ You've already deployed the stack, so you won't need to launch any CloudFormatio
 
 <!-- https://simple-regex.com/build/62d1a489e5df9 -->
 
-/^(?:SC)(?:-)[0-9]{12}(?:-pp-)(?:[0-9]|[a-z]){13}(?:-ScannerStack-)(?:[0-9]|[A-Z]){12}/
+^(?:SC)(?:-)[0-9]{12}(?:-pp-)(?:[0-9]|[a-z]){13}(?:-ScannerStack-)(?:[0-9]|[A-Z]){12}
 
 ## HINTS
 
