@@ -6,7 +6,7 @@ Now that you’re in the attacker’s environment, it’s time to see what they�
 
 ## DETAILS
 
-The hacker seems to have left an extremely suspicious folder on the desktop.
+The hacker seems to have left a suspicious folder on the machine… You will need to locate that folder.
 
 What is the filename of the hacking tool that the hacker has probably been using? Enter the full filename in the box below and hit “Submit” to complete this challenge.
 
