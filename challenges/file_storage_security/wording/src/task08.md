@@ -26,6 +26,10 @@ You've already deployed the stack, so you won't need to launch any CloudFormatio
 
 ### HINT 1
 
+Make sure you've deployed the All In One Stack Service catalog product template with "ScanOnGetObject" set to true, the region set to "trend-us-1", and your ExternalID properly set.
+
+### HINT 2
+
 1. Take note of the "ScannerStackManagementRoleARN" and "StorageStackManagementRoleARN" from the outputs of your provisioned Service Catalog product.
 2. Navigate to the FSS console, and click the blue "+ Deploy" button.
 3. Click the "Scanner Stack and Storage Stack" option.
