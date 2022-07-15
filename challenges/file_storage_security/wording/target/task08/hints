@@ -1,9 +1,10 @@
 ## HINTS
 
 ### HINT 1
-You can find the Code on the page if you scroll down a little. Make sure you have the "Code" tab selected. Also, make sure to enter the first line of code, exactly as it appears.
 
-### HINT 2
-1. Navigate to the URL found in the "Credentials" section under "FSSLambdaToProtect."
-2. Find the "Code" section of the Lambda page.
-3. Copy the first line (import base64) into Mission Control, and hit "Submit."
+1. Take note of the "ScannerStackManagementRoleARN" and "StorageStackManagementRoleARN" from the outputs of your provisioned Service Catalog product.
+2. Navigate to the FSS console, and click the blue "+ Deploy" button.
+3. Click the "Scanner Stack and Storage Stack" option.
+4. Paste in the value of "ScannerStackManagementRoleARN" for Step 3 and "StorageStackManagementRoleARN" for Step 4.
+5. Click submit and wait for the stacks to deploy successfully.
+6. When that has completed, copy the Scanner Stack name found under the "Scanner Stack" heading in the left-hand pane. It should look something like: "SC-############-pp-xxxxxxxxxxxxx-ScannerStack-xxxxxxxxxxxx"

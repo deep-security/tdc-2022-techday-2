@@ -6,6 +6,8 @@ Navigate to the Service Catalog and launch the “File Storage Security All in O
 
 Configure the stack to protect the bucket found under “FSSBucketToProtect” in the "Credentials" field below.
 
-Finally, you’ll need to acquire your FSS external ID to finish launching the AIO stack. I’ll leave this one up to you.
+Finally, you’ll need to acquire your FSS external ID to finish launching the All-In-One stack. I’ll leave this one up to you.
 
-Once the FSS All-In-One Stack is finished deploying, enter “I did it” in the box below, and hit “Submit.”
+To complete this challenge, answer the following question using the box below:
+
+How many entries are in the Events -> Outputs section of the Service Catalog Product you just deployed.

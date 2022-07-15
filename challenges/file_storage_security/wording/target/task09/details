@@ -1,7 +1,7 @@
-You can find the ScanOnGetObject Access point for the deployed “File Storage Security All in One Template” product under the “ScanOnGetObjectAccessPointARN” entry in Events ⇒ Outputs.
+In order to protect the microservice, you must find the microservice.
 
-Find the line that starts with “bucket =” at the top of the Python file, and replace everything inside the quotes with the ScanOnGetObjectAccessPointARN value.
+In the "Credentials" section, you can find a link to the Lambda with the microservice’s code under “FSSLambdaToProtect.” Go ahead and navigate to that link.
 
-Once you’ve done this, click “Deploy” to deploy your new function version to production.
+You’ll see it’s a Python function that fetches images from the Image bucket and returns them to the rest of the application.
 
-Click Verify once you’re done deploying protection.
+To complete this challenge, enter the first line of code of this Lambda function.

@@ -1,3 +1,1 @@
-This is just to make sure you’re on the right page.
-
-Deleting or messing up this code is like breaking a mirror—if you do it, you'll have seven years of bad luck. So be careful to not delete or change anything you shouldn't.
+You've already deployed the stack, so you won't need to launch any CloudFormation templates in this challenge. You'll just need to add a few ARNs to register the stack you've already created to your account.

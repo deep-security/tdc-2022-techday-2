@@ -1,38 +1,37 @@
-# C1 - File Storage Security - Task 9: Too EZ 😎
+# C1 - File Storage Security - Task 8: Import What? 😕
 
 ## DESCRIPTION
 
-To deploy protection, all you have to do is make the function grab objects from the FSS ScanOnGetObject Object Lambda Access Point (say that five times fast).
+Since you can’t fix the application to stop having vulnerabilities right now, you need to stop the application from returning malware to the user.
 
-Even if you don’t know Python, don’t worry. If you can type, you can deploy protection.
+To that end, you need to protect the microservice that serves the optimized images from the image bucket. That way, whenever the webpage asks for a file, if it would return malware, it instead … doesn't do that.
 
 ## DETAILS
 
-You can find the ScanOnGetObject Access point for the deployed “File Storage Security All in One Template” product under the “ScanOnGetObjectAccessPointARN” entry in Events ⇒ Outputs.
+In order to protect the microservice, you must find the microservice.
 
-Find the line that starts with “bucket =” at the top of the Python file, and replace everything inside the quotes with the ScanOnGetObjectAccessPointARN value.
+In the "Credentials" section, you can find a link to the Lambda with the microservice’s code under “FSSLambdaToProtect.” Go ahead and navigate to that link.
 
-Once you’ve done this, click “Deploy” to deploy your new function version to production.
+You’ll see it’s a Python function that fetches images from the Image bucket and returns them to the rest of the application.
 
-Click Verify once you’re done deploying protection.
+To complete this challenge, enter the first line of code of this Lambda function.
 
 ## NOTES
 
+This is just to make sure you’re on the right page.
+
+Deleting or messing up this code is like breaking a mirror—if you do it, you'll have seven years of bad luck. So be careful to not delete or change anything you shouldn't.
+
 ## SCORING
 
-protectionChecker
+import base64
 
 ## HINTS
 
 ### HINT 1
-If you don't have the “ScanOnGetObjectAccessPointARN” entry in Events ⇒ Outputs for your File Storage Security All In One Service Catalog product, redeploy the product with "ScanOnGetObject" set to "true". The ARN will look like: "arn:aws:s3-object-lambda:xx-xxxx-x:xxxxxxxxxxxx:accesspoint/fss-olap-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+You can find the Code on the page if you scroll down a little. Make sure you have the "Code" tab selected. Also, make sure to enter the first line of code, exactly as it appears.
 
 ### HINT 2
-The code you have to change is on line 11. Make sure you've activated your FSS stack in the FSS console using the ScannerStackManagementRoleARN and StorageStackManagementRoleARN. Finally, ensure that the ARN is entered correctly into the bucket variable. 
-
-### HINT 3
-
-1. Make sure you have the FSS AIO Service Catalog product deployed successfully with "ScanOnGetObject" set to "true," and that you've added the stack to the FSS console.
-2. Copy the ARN from “ScanOnGetObjectAccessPointARN” entry in Events ⇒ Outputs.
-3. Navigate to the "FSSLambdaToProtect" URL from the "Credentials" section to be taken to the Lambda code page.
-4. Replace line 11 with the following, replacing the ARN with the ARN you copied from step 2: bucket = "arn:aws:s3-object-lambda:xx-xxxx-x:xxxxxxxxxxxx:accesspoint/fss-olap-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+1. Navigate to the URL found in the "Credentials" section under "FSSLambdaToProtect."
+2. Find the "Code" section of the Lambda page.
+3. Copy the first line (import base64) into Mission Control, and hit "Submit."

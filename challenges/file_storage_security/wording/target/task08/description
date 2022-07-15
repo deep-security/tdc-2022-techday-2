@@ -1,3 +1,3 @@
-Since you can’t fix the application to stop having vulnerabilities right now, you need to stop the application from returning malware to the user.
+Good job deploying the All-In-One stack. Again, you would normally do this right from the FSS Console, but you can't do that today. So thanks for putting up with the extra steps.
 
-To that end, you need to protect the microservice that serves the optimized images from the image bucket. That way, whenever the webpage asks for a file, if it would return malware, it instead … doesn't do that.
+To finish setting up the FSS resources, you'll need to add the stack you created to the FSS console.

@@ -1,7 +1,3 @@
-In order to protect the microservice, you must find the microservice.
+Navigate to your FSS console and register the stack you just created. You'll add both the Scanner and Storage stack by clicking the "+ Deploy" button and using the outputs from the Service Catalog product.
 
-In the "Credentials" section, you can find a link to the Lambda with the microservice’s code under “FSSLambdaToProtect.” Go ahead and navigate to that link.
-
-You’ll see it’s a Python function that fetches images from the Image bucket and returns them to the rest of the application.
-
-To complete this challenge, enter the first line of code of this Lambda function.
+When you've added your Scanner and Storage stacks to the console, enter the name of the Scanner Stack, as it appears in the FSS console, and hit "Submit" below.
