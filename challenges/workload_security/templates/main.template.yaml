@@ -23,6 +23,12 @@ Parameters:
     Type: AWS::EC2::VPC::Id
   PublicSubnet1ID:
     Type: AWS::EC2::Subnet::Id
+  SharedIamRoleArn:
+    Type: String
+    Description: Shared IAM Role Arn
+  SharedIamRole:
+    Type: String
+    Description: Shared IAM Role
     
 Mappings:
   #Amazon Linux 2 x86_64 
@@ -96,6 +102,8 @@ Resources:
         QSS3KeyPrefix: !Sub ${QSS3KeyPrefix}templates/
         VPCID: !Ref VPCID
         PublicSubnet1ID: !Ref PublicSubnet1ID
+        AttackerRoleArn: !Ref SharedIamRoleArn
+        DSAkeysRole: !Ref SharedIamRole
         AMIID:
           !FindInMap
           - AMZN
@@ -113,6 +121,7 @@ Resources:
         QSS3BucketName: !Ref QSS3BucketName
         QSS3KeyPrefix: !Ref QSS3KeyPrefix
         PublicSubnet1: !Ref PublicSubnet1ID
+        DSAkeysRole: !Ref SharedIamRole
         AMIID:
           !FindInMap
           - AMZN
@@ -140,6 +149,8 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/scoring_EppOfflineScan.yaml
+      Parameters:
+        C1WSEppOfflineCheckScoreRole: !Ref SharedIamRoleArn
 
 Outputs:
   SNSTopicARN:

@@ -1,29 +1,34 @@
 AWSTemplateFormatVersion: 2010-09-09
 
-Resources:
+Parameters:
   scoreroleday1task1C1CS:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Action: sts:AssumeRole
-            Effect: Allow
-            Principal:
-              Service: lambda.amazonaws.com
-        Version: "2012-10-17"
-      Policies: 
-        - PolicyName: scoreroleday1task1C1CS
-          PolicyDocument:
-            Version: "2012-10-17"
-            Statement:
-              - Effect: "Allow"
-                Action: "ssm:GetParameter"
-                Resource: 
-                  - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
-                  - arn:aws:ssm:*:*:parameter/player/C1/c1Region
-                  - arn:aws:ssm:*:*:parameter/player/C1CS/clusterID
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+    Type: String
+    Description: Shared lambda arn
+
+Resources:
+  # scoreroleday1task1C1CS:
+  #   Type: AWS::IAM::Role
+  #   Properties:
+  #     AssumeRolePolicyDocument:
+  #       Statement:
+  #         - Action: sts:AssumeRole
+  #           Effect: Allow
+  #           Principal:
+  #             Service: lambda.amazonaws.com
+  #       Version: "2012-10-17"
+  #     Policies: 
+  #       - PolicyName: scoreroleday1task1C1CS
+  #         PolicyDocument:
+  #           Version: "2012-10-17"
+  #           Statement:
+  #             - Effect: "Allow"
+  #               Action: "ssm:GetParameter"
+  #               Resource: 
+  #                 - arn:aws:ssm:*:*:parameter/player/C1/c1ApiKey
+  #                 - arn:aws:ssm:*:*:parameter/player/C1/c1Region
+  #                 - arn:aws:ssm:*:*:parameter/player/C1CS/clusterID
+  #     ManagedPolicyArns:
+  #       - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
 
   C1CSScoreLambdarday1task1:
     Type: AWS::Lambda::Function
@@ -164,13 +169,11 @@ Resources:
 
       Handler: index.lambda_handler
       Role:
-        Fn::GetAtt:
-          - scoreroleday1task1C1CS
-          - Arn
+        Ref: scoreroleday1task1C1CS
       Runtime: python3.8
       Timeout: 60
-    DependsOn:
-      - scoreroleday1task1C1CS
+    # DependsOn:
+    #   - scoreroleday1task1C1CS
 Outputs:
   C1CSScoreLambdarday1task1:
     Value:
