@@ -248,7 +248,7 @@ Resources:
     DependsOn: 
       - VPCStack #inherent
       - CommonLambdaIamRole #inherent
-      - EKSStack
+      # - EKSStack prevents disabling C1 Stacks
 
 #  V1SOStack:
 #    Type: AWS::CloudFormation::Stack
