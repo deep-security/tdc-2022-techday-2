@@ -89,6 +89,10 @@ Parameters:
     Type: String
     AllowedValues: [true, false]
     Default: true
+  BuildV1Only:
+    Type: String
+    AllowedValues: [true, false]
+    Default: false
 
 Conditions:
   BuildEks:
@@ -97,10 +101,14 @@ Conditions:
   IsQSS3KeyPrefixNull: 
     !Equals [ !Ref QSS3KeyPrefix, "" ]
 
+  BuildV1Only:
+    !Equals [true, !Ref BuildV1Only]
+
 Resources:
 
   adfsStack:
       Type: AWS::CloudFormation::Stack
+      Condition: BuildV1Only
       Properties:
         Parameters:
           QSS3BucketName: !Ref QSS3BucketName
@@ -118,6 +126,7 @@ Resources:
 
   c1csStack:
       Type: AWS::CloudFormation::Stack
+      Condition: BuildV1Only
       Properties:
         Parameters:
           PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
@@ -135,6 +144,7 @@ Resources:
   deployC1csAttacks:
     Type: AWS::CloudFormation::Stack
     Condition: BuildEks
+    Condition: BuildV1Only
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
@@ -146,6 +156,7 @@ Resources:
 
   c1wsLog4ShellStack:
       Type: AWS::CloudFormation::Stack
+      Condition: BuildV1Only
       Properties:
         Parameters:
           QSS3BucketName: !Ref QSS3BucketName
@@ -163,6 +174,7 @@ Resources:
 
   FSSStack:
     Type: AWS::CloudFormation::Stack
+    Condition: BuildV1Only
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
@@ -183,6 +195,7 @@ Resources:
 
   c1nsStack:
     Type: AWS::CloudFormation::Stack
+    Condition: BuildV1Only
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/network_security/templates/network_security_main.template.yaml'
       Parameters:
@@ -212,6 +225,7 @@ Resources:
   FSSAttackerEnv:
     Type: AWS::CloudFormation::Stack
     Condition: BuildEks
+    Condition: BuildV1Only
     Properties:
       Parameters:
           QSS3BucketName: !Ref QSS3BucketName
@@ -248,6 +262,7 @@ Resources:
 
   WorkloadSecurityStack:
     Type: AWS::CloudFormation::Stack
+    Condition: BuildV1Only
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
@@ -331,6 +346,7 @@ Resources:
 
   EKSStack:
     Condition: BuildEks
+    Condition: BuildV1Only
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -365,6 +381,7 @@ Resources:
 
   ServiceCatalogPortfolioStack:
     Type: AWS::CloudFormation::Stack
+    Condition: BuildV1Only
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/service_catalog_portfolio.template.yaml'
       Parameters:
@@ -387,6 +404,7 @@ Resources:
 
   OnboardingStack:
     Type: AWS::CloudFormation::Stack
+    Condition: BuildV1Only
     Properties:
       Parameters:
         PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
