@@ -224,7 +224,6 @@ Resources:
   FSSAttackerEnv:
     Type: AWS::CloudFormation::Stack
     Condition: BuildEks
-    Condition: BuildV1Only
     Properties:
       Parameters:
           QSS3BucketName: !Ref QSS3BucketName
@@ -345,7 +344,6 @@ Resources:
 
   EKSStack:
     Condition: BuildEks
-    Condition: BuildV1Only
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
