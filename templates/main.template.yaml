@@ -88,8 +88,8 @@ Parameters:
   BuildEks:
     Type: String
     AllowedValues: [true, false]
-    Default: true
-  BuildV1Only:
+    Default: false
+  BuildC1Resources:
     Type: String
     AllowedValues: [true, false]
     Default: false
@@ -101,14 +101,14 @@ Conditions:
   IsQSS3KeyPrefixNull: 
     !Equals [ !Ref QSS3KeyPrefix, "" ]
 
-  BuildV1Only:
-    !Equals [true, !Ref BuildV1Only]
+  BuildC1Resources:
+    !Equals [true, !Ref BuildC1Resources]
 
 Resources:
 
   adfsStack:
       Type: AWS::CloudFormation::Stack
-      Condition: BuildV1Only
+      Condition: BuildC1Resources
       Properties:
         Parameters:
           QSS3BucketName: !Ref QSS3BucketName
@@ -126,7 +126,7 @@ Resources:
 
   c1csStack:
       Type: AWS::CloudFormation::Stack
-      Condition: BuildV1Only
+      Condition: BuildC1Resources
       Properties:
         Parameters:
           PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
@@ -155,7 +155,7 @@ Resources:
 
   c1wsLog4ShellStack:
       Type: AWS::CloudFormation::Stack
-      Condition: BuildV1Only
+      Condition: BuildC1Resources
       Properties:
         Parameters:
           QSS3BucketName: !Ref QSS3BucketName
@@ -173,7 +173,7 @@ Resources:
 
   FSSStack:
     Type: AWS::CloudFormation::Stack
-    Condition: BuildV1Only
+    Condition: BuildC1Resources
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
@@ -194,7 +194,7 @@ Resources:
 
   c1nsStack:
     Type: AWS::CloudFormation::Stack
-    Condition: BuildV1Only
+    Condition: BuildC1Resources
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/network_security/templates/network_security_main.template.yaml'
       Parameters:
@@ -260,7 +260,7 @@ Resources:
 
   WorkloadSecurityStack:
     Type: AWS::CloudFormation::Stack
-    Condition: BuildV1Only
+    Condition: BuildC1Resources
     Properties:
       Parameters:
         QSS3BucketName: !Ref QSS3BucketName
@@ -378,7 +378,7 @@ Resources:
 
   ServiceCatalogPortfolioStack:
     Type: AWS::CloudFormation::Stack
-    Condition: BuildV1Only
+    Condition: BuildC1Resources
     Properties:
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}templates/service_catalog_portfolio.template.yaml'
       Parameters:
@@ -401,7 +401,7 @@ Resources:
 
   OnboardingStack:
     Type: AWS::CloudFormation::Stack
-    Condition: BuildV1Only
+    Condition: BuildC1Resources
     Properties:
       Parameters:
         PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
@@ -430,10 +430,10 @@ Outputs:
     Description: IAM Role ARN that allows Mission Control to invoke the ScoreChecker function.
 
   PlayerServiceCatalogPortfolio:
-    Value: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+    Value: !If [ BuildC1Resources, !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio, "" ]
 
   ServiceCatalogLaunchRoleArn:
-    Value: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+    Value: !If [ BuildC1Resources, !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn, "" ]
 
   PlayerAssociationPrincipalArn:
     Value: !GetAtt PlayerStack.Outputs.PlayerUserArn
@@ -455,19 +455,20 @@ Outputs:
     Description: URL to access this AWS Account dashboard
 
   C1WSLog4ShellSite:
-    Value: !GetAtt c1wsLog4ShellStack.Outputs.Log4ShellSite
+    Value: !If [ BuildC1Resources, !GetAtt c1wsLog4ShellStack.Outputs.Log4ShellSite, "" ]
     Description: Tomcat Web App with Log4Shell Vulnerability.
 
   ADFSEndpointDNS:
-    Value: !GetAtt adfsStack.Outputs.PublicDNS
+    Description: ADFS Public Hostname
+    Value: !If [ BuildC1Resources, !GetAtt adfsStack.Outputs.PublicDNS, "" ]
 
   ADFSUsername:
     Description: ADFS Username
-    Value: !GetAtt adfsStack.Outputs.ADFSUsername
+    Value: !If [ BuildC1Resources, !GetAtt adfsStack.Outputs.ADFSUsername, "" ]
 
   ADFSPassword:
     Description: ADFS Password
-    Value: !GetAtt adfsStack.Outputs.ADFSPassword
+    Value: !If [ BuildC1Resources, !GetAtt adfsStack.Outputs.ADFSPassword, "" ]
 
 #  V1SOtaskBucketURL:
 #    Value: !GetAtt V1SOStack.Outputs.V1SOtaskBucket
@@ -486,17 +487,17 @@ Outputs:
     Description: "Alb hostname for the FSS attack container."
 
   FSSWebsite:
-    Value: !GetAtt FSSStack.Outputs.FSSWebsite
+    Value: !If [ BuildC1Resources, !GetAtt FSSStack.Outputs.FSSWebsite, "" ]
     Description: URL of SudoSingles, the vulnerable application to protect
 
   FSSBucketToProtect:
-    Value: !GetAtt FSSStack.Outputs.FSSBucketToProtect
+    Value: !If [ BuildC1Resources, !GetAtt FSSStack.Outputs.FSSBucketToProtect, "" ]
     Description: The bucket to protect with FSS
 
   FSSLambdaToProtect:
-    Value: !GetAtt FSSStack.Outputs.FSSLambdaToProtect
+    Value: !If [ BuildC1Resources, !GetAtt FSSStack.Outputs.FSSLambdaToProtect, "" ]
     Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
 
   FSSPayloadDropperUrl:
-    Value: !GetAtt FSSStack.Outputs.FSSPayloadDropperUrl
+    Value: !If [ BuildC1Resources, !GetAtt FSSStack.Outputs.FSSPayloadDropperUrl, "" ]
     Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.
