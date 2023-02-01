@@ -161,25 +161,25 @@ Resources:
         - WorkloadSecurityStack #inherent
         - CommonLambdaIamRole #inherent
 
-  FSSStack:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        QSS3BucketName: !Ref QSS3BucketName
-        QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
-        PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
-        ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
-        PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-        PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
-      TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
-    DependsOn:
-      - ServiceCatalogPortfolioStack #inherent
-      - Passwords #inherent
-      - PlayerStack #inherent
-      - c1wsLog4ShellStack # added for throttling
-      - VPCStack # already depended by c1wsLog4ShellStack
-      - WorkloadSecurityStack # already depended by c1wsLog4ShellStack
-      - CommonLambdaIamRole # already depended by c1wsLog4ShellStack
+  # FSSStack:
+  #   Type: AWS::CloudFormation::Stack
+  #   Properties:
+  #     Parameters:
+  #       QSS3BucketName: !Ref QSS3BucketName
+  #       QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+  #       PlayerServiceCatalogPortfolio: !GetAtt ServiceCatalogPortfolioStack.Outputs.PlayerServiceCatalogPortfolio
+  #       ServiceCatalogLaunchRoleArn: !GetAtt ServiceCatalogPortfolioStack.Outputs.ServiceCatalogLaunchRoleArn
+  #       PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+  #       PlayerGroupName: !GetAtt PlayerStack.Outputs.PlayerGroupName
+  #     TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/main.template.yaml'
+  #   DependsOn:
+  #     - ServiceCatalogPortfolioStack #inherent
+  #     - Passwords #inherent
+  #     - PlayerStack #inherent
+  #     - c1wsLog4ShellStack # added for throttling
+  #     - VPCStack # already depended by c1wsLog4ShellStack
+  #     - WorkloadSecurityStack # already depended by c1wsLog4ShellStack
+  #     - CommonLambdaIamRole # already depended by c1wsLog4ShellStack
 
   c1nsStack:
     Type: AWS::CloudFormation::Stack
@@ -200,7 +200,7 @@ Resources:
         IGWID: !GetAtt VPCStack.Outputs.IGWID
     DependsOn:
         - VPCStack #inherent
-        - FSSStack #added for throttling
+        # - FSSStack #added for throttling
         - CommonLambdaIamRole #already depended by FSSStack
         - VOTKStack #already depended by FSSStack
         - ServiceCatalogPortfolioStack #already depended by FSSStack
@@ -209,18 +209,18 @@ Resources:
         - c1wsLog4ShellStack #already depended by FSSStack
         - WorkloadSecurityStack #already depended by FSSStack
 
-  FSSAttackerEnv:
-    Type: AWS::CloudFormation::Stack
-    Condition: BuildEks
-    Properties:
-      Parameters:
-          QSS3BucketName: !Ref QSS3BucketName
-          QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
-          PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
-      TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
-    DependsOn:
-      - EKSStack #Required for build
-      - Passwords # Inherent
+  # FSSAttackerEnv:
+  #   Type: AWS::CloudFormation::Stack
+  #   Condition: BuildEks
+  #   Properties:
+  #     Parameters:
+  #         QSS3BucketName: !Ref QSS3BucketName
+  #         QSS3KeyPrefix: !Sub "${QSS3KeyPrefix}challenges/file_storage_security/"
+  #         PlayerPassword: !GetAtt Passwords.Outputs.PlayerPassword
+  #     TemplateURL: !Sub "https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}challenges/file_storage_security/templates/attackerMachine.template.yaml"
+  #   DependsOn:
+  #     - EKSStack #Required for build
+  #     - Passwords # Inherent
 
 
   VOTKStack:
@@ -466,22 +466,22 @@ Outputs:
     Description: ALB Hostname that the player uses to access the c1cs attack container
     Value: !If [ BuildEks, !GetAtt deployC1csAttacks.Outputs.c1csAttackAlbHostname, "" ]
 
-  FSSAttackerMachineAccessUrl:
-    Value: !If [ BuildEks, !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname, "" ]
-    Description: "Alb hostname for the FSS attack container."
+  # FSSAttackerMachineAccessUrl:
+  #   Value: !If [ BuildEks, !GetAtt FSSAttackerEnv.Outputs.FSSAttackAlbHostname, "" ]
+  #   Description: "Alb hostname for the FSS attack container."
 
-  FSSWebsite:
-    Value: !GetAtt FSSStack.Outputs.FSSWebsite
-    Description: URL of SudoSingles, the vulnerable application to protect
+  # FSSWebsite:
+  #   Value: !GetAtt FSSStack.Outputs.FSSWebsite
+  #   Description: URL of SudoSingles, the vulnerable application to protect
 
-  FSSBucketToProtect:
-    Value: !GetAtt FSSStack.Outputs.FSSBucketToProtect
-    Description: The bucket to protect with FSS
+  # FSSBucketToProtect:
+  #   Value: !GetAtt FSSStack.Outputs.FSSBucketToProtect
+  #   Description: The bucket to protect with FSS
 
-  FSSLambdaToProtect:
-    Value: !GetAtt FSSStack.Outputs.FSSLambdaToProtect
-    Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
+  # FSSLambdaToProtect:
+  #   Value: !GetAtt FSSStack.Outputs.FSSLambdaToProtect
+  #   Description: Link to the code for the lambda that needs to utilize FSS Scan-On-Get
 
-  FSSPayloadDropperUrl:
-    Value: !GetAtt FSSStack.Outputs.FSSPayloadDropperUrl
-    Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.
+  # FSSPayloadDropperUrl:
+  #   Value: !GetAtt FSSStack.Outputs.FSSPayloadDropperUrl
+  #   Description: Link that, when a GET is invoked, will cause the payload to be dropped in the image bucket.
