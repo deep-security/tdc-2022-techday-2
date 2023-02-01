@@ -88,7 +88,7 @@ Parameters:
   BuildEks:
     Type: String
     AllowedValues: [true, false]
-    Default: true
+    Default: false
 
 Conditions:
   BuildEks:
