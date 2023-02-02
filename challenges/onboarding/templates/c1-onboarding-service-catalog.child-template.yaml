@@ -555,18 +555,18 @@ Resources:
   #     ProductId: '{{resolve:ssm:C1WSAVCProductID:1}}'
   #     RoleArn: '{{resolve:ssm:RoleArn:1}}'  
 
-  FSSAllInOneProductAssociation:
-    Type: AWS::ServiceCatalog::PortfolioProductAssociation
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId}}'
-      ProductId: '{{resolve:ssm:FSSAllInOneProductID}}'
-  FSSAllInOneLaunchRoleConstraint:
-    DependsOn: FSSAllInOneProductAssociation
-    Type: AWS::ServiceCatalog::LaunchRoleConstraint
-    Properties:
-      PortfolioId: '{{resolve:ssm:PortfolioId}}'
-      ProductId: '{{resolve:ssm:FSSAllInOneProductID}}'
-      RoleArn: '{{resolve:ssm:RoleArn}}'
+  # FSSAllInOneProductAssociation:
+  #   Type: AWS::ServiceCatalog::PortfolioProductAssociation
+  #   Properties:
+  #     PortfolioId: '{{resolve:ssm:PortfolioId}}'
+  #     ProductId: '{{resolve:ssm:FSSAllInOneProductID}}'
+  # FSSAllInOneLaunchRoleConstraint:
+  #   DependsOn: FSSAllInOneProductAssociation
+  #   Type: AWS::ServiceCatalog::LaunchRoleConstraint
+  #   Properties:
+  #     PortfolioId: '{{resolve:ssm:PortfolioId}}'
+  #     ProductId: '{{resolve:ssm:FSSAllInOneProductID}}'
+  #     RoleArn: '{{resolve:ssm:RoleArn}}'
 
 Outputs:
   # Returns the AWS Lambda Function ARN of the Cloud One Onboarding module.
