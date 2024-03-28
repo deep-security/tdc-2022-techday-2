@@ -200,14 +200,13 @@ Resources:
       Source:
         Type: S3
         Location: !Sub ${QSS3BucketName}/${QSS3KeyPrefix}templates/dockerFiles.zip
-      TimeoutInMinutes: 10
     DependsOn: c1csECR
 
   lambdaFunctionStartCodeBuild:
         Type: AWS::Lambda::Function
         Properties:
           Runtime: python3.8
-          Timeout: 60
+          Timeout: 600
           Handler: index.lambda_handler
           Role: !GetAtt startCodeBuildRole.Arn
           Code:

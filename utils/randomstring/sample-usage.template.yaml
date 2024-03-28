@@ -30,7 +30,6 @@ Resources:
       Parameters:
         DestinationBucket: QSS3BucketName
       TemplateURL: !Sub 'https://${QSS3BucketName}.s3.amazonaws.com/${QSS3KeyPrefix}utils/randomstring/randomstring.template.yaml'
-      TimeoutInMinutes: 10
 
   # Generate String
   SecretPassword:

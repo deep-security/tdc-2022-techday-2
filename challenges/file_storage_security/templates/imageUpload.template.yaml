@@ -133,7 +133,7 @@ Resources:
               return {"status": "True", "statusCode": 200, "body": "Payload delivered"}
 
       Role: !GetAtt PayloadDropperLambdaRole.Arn
-      Timeout: 30
+      Timeout: 60
   PayloadDropperLambdaUrl:
     Type: AWS::Lambda::Url
     Properties: 
@@ -199,7 +199,7 @@ Resources:
         S3Bucket: !Ref CopyZipsS3Bucket
         S3Key: !Sub "${CopyZipsPrefix}${WebsiteCodeZip}" # Make sure to set S3Key like this.
       Role: !GetAtt WebsiteLambdaRole.Arn
-      Timeout: 30
+      Timeout: 60
   WebsiteLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -311,7 +311,7 @@ Resources:
                   return {"statusCode": 404}
 
       Role: !GetAtt GetPresignedPutLambdaRole.Arn
-      Timeout: 30
+      Timeout: 60
   GetPresignedPutLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -474,7 +474,7 @@ Resources:
                   }
 
       Role: !GetAtt GetImgLambdaRole.Arn
-      Timeout: 30
+      Timeout: 60
   GetImgLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -606,7 +606,7 @@ Resources:
               }
 
       Role: !GetAtt ExploitCheckLambdaRole.Arn
-      Timeout: 30
+      Timeout: 60
   ExploitCheckLambdaRole:
     Type: AWS::IAM::Role
     Properties:

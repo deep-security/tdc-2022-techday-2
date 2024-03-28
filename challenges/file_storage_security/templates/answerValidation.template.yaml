@@ -152,7 +152,7 @@ Resources:
                   raise Exception("Payload not detected! Try again.")
 
       Role: !GetAtt PayloadCheckerLambdaRole.Arn
-      Timeout: 30
+      Timeout: 60
   PayloadCheckerLambdaRole:
     Type: AWS::IAM::Role
     Properties:
@@ -327,4 +327,4 @@ Resources:
               return payload_file_present and payload_blocked and getimg_functioning_normally
                     
       Role: !GetAtt PayloadCheckerLambdaRole.Arn
-      Timeout: 30
+      Timeout: 60
